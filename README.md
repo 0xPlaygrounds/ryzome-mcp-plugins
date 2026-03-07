@@ -1,7 +1,7 @@
 ![claw-ryzome](https://github.com/user-attachments/assets/822727dc-dcd6-4af1-bc81-856a4e9a521f)
 
 # Ryzome OpenClaw Plugin
-Steering an OpenClaw agent by prompting your way to the right output is slow and inaccurate. With [Ryzome](https://ryzome.ai/claw), inspect its context as a canvas, edit what's wrong, and resume, instead of wrestling with a wall of text. 
+Steering an OpenClaw agent by prompting your way to the right output is slow and inaccurate. With [Ryzome](https://ryzome.ai/claw), you can inspect the agent's working context as a canvas, correct the map when it drifts, and continue from a better state instead of wrestling with a wall of text.
 
 ## Examples of workflow
 1. Catch wrong assumptions during planning
@@ -10,8 +10,9 @@ Steering an OpenClaw agent by prompting your way to the right output is slow and
 
 ## How it works
 1. **Ask for a canvas —** of its context (plan, completed steps, reasoning state, etc.)
-2. **Open the URL —** each step as a node, with dependency edges showing how they connect. Edit to fix wrong assumptions, add missing context, correct links the agent missed.
-5. **Hand it back —** ask the agent to re-read the canvas and continue from the corrected state
+2. **Open the URL —** each step becomes a node, with dependency edges showing how the context is connected.
+3. **Edit the graph —** fix wrong assumptions, add missing context, or rewire links the agent missed.
+4. **Hand it back —** ask the agent to re-read the canvas and continue from the corrected state.
 
 ## Requirements
 
@@ -97,12 +98,19 @@ Environment-based setup is also supported:
 
 ## Run
 
-Once installed and configured, use OpenClaw normally and ask it to create a
-canvas for a plan, investigation, or research summary.
+Once installed and configured, use OpenClaw normally and ask it to map a plan,
+research thread, or working context into Ryzome.
 
-The plugin exposes one tool:
+The plugin currently exposes four tools:
 
 - `create_ryzome_canvas`
+- `create_ryzome_plan`
+- `create_ryzome_research`
+- `get_ryzome_canvas`
+
+### `create_ryzome_canvas`
+
+Use this when you want full control over nodes and edges.
 
 Expected input shape:
 
@@ -110,7 +118,7 @@ Expected input shape:
 {
   "title": "Research plan",
   "description": "Optional canvas description",
-  "steps": [
+  "nodes": [
     {
       "id": "collect-sources",
       "title": "Collect sources",
@@ -119,25 +127,119 @@ Expected input shape:
     {
       "id": "synthesize",
       "title": "Synthesize findings",
-      "description": "Summarize the strongest evidence.",
-      "dependsOn": ["collect-sources"]
+      "description": "Summarize the strongest evidence."
     }
   ],
-  "runId": "optional-debug-trace-id"
+  "edges": [
+    {
+      "from": "collect-sources",
+      "to": "synthesize",
+      "label": "feeds"
+    }
+  ]
 }
 ```
 
 Notes:
 
-- `steps[].id` must be unique within the request
-- `dependsOn` should only reference other step IDs in the same request
-- `runId` is optional tracing metadata, not an idempotency key
+- `nodes[].id` must be unique within the request
+- `edges[].from` and `edges[].to` should only reference node IDs in the same request
+- `edges` is optional if you only need disconnected nodes
 
-On success, the tool returns:
+### `create_ryzome_plan`
+
+Use this when the context is naturally a sequence of steps. Steps are chained in
+order by default, but you can override that with explicit `dependsOn`.
+
+Expected input shape:
+
+```json
+{
+  "title": "Launch plan",
+  "description": "From draft to release",
+  "steps": [
+    {
+      "title": "Draft announcement",
+      "description": "Write the initial product announcement."
+    },
+    {
+      "title": "Review messaging",
+      "description": "Tighten claims and remove ambiguity."
+    },
+    {
+      "id": "ship",
+      "title": "Ship launch assets",
+      "description": "Publish the final version.",
+      "dependsOn": ["step-1"]
+    }
+  ]
+}
+```
+
+Notes:
+
+- If `id` is omitted, the tool assigns `step-0`, `step-1`, and so on
+- If `dependsOn` is omitted, each step depends on the previous step
+- Use explicit `dependsOn` when you want branching or merging instead of a linear chain
+
+### `create_ryzome_research`
+
+Use this when you want a root topic with findings branching from it. Findings
+can depend on `topic` or on other findings.
+
+Expected input shape:
+
+```json
+{
+  "title": "Model evaluation research",
+  "description": "Working notes on model quality and failure modes",
+  "topic": "How should we evaluate groundedness?",
+  "findings": [
+    {
+      "id": "f1",
+      "title": "Groundedness needs source visibility",
+      "description": "A claim is easier to validate when the originating context is visible.",
+      "dependsOn": ["topic"]
+    },
+    {
+      "id": "f2",
+      "title": "Evaluation should include correction loops",
+      "description": "A useful system should support editing context, not only scoring outputs.",
+      "dependsOn": ["f1"]
+    }
+  ]
+}
+```
+
+Notes:
+
+- The root topic node is created automatically with id `topic`
+- `findings[].id` must be unique within the request
+- Use `dependsOn: ["topic"]` to attach a finding directly to the root
+
+### `get_ryzome_canvas`
+
+Use this when the agent needs to re-read an existing canvas before continuing.
+
+Expected input shape:
+
+```json
+{
+  "canvas_id": "0123456789abcdef01234567"
+}
+```
+
+On success, the create tools return:
 
 - the created canvas title
 - the node and edge counts
 - a Ryzome viewer URL
+
+`get_ryzome_canvas` returns the canvas payload as JSON, including:
+
+- canvas id, name, and description
+- node and edge counts
+- full `nodes` and `edges` arrays
 
 ## Local Development
 

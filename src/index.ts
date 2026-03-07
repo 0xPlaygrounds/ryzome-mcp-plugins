@@ -51,6 +51,7 @@ function logSetupHint(api: PluginApi) {
   api.logger.info("[ryzome] bind it: openclaw ryzome setup");
   api.logger.info(`[ryzome] map the connection: ${RYZOME_SETUP_GUIDE_URL}`);
   api.logger.info(`[ryzome] mint a key: ${RYZOME_API_KEY_URL}`);
+  api.logger.info("[ryzome] until then, the model sees the outline of context, not the thing itself.");
   api.logger.info("[ryzome] env fallback: RYZOME_OPENCLAW_API_KEY");
 }
 

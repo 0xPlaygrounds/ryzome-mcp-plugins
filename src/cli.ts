@@ -51,6 +51,7 @@ const dim = (s: string) => (hasColors ? chalk.dim(s) : s);
 const accent = (s: string) => (hasColors ? chalk.hex("#F2A65A")(s) : s);
 const success = (s: string) => (hasColors ? chalk.hex("#7DD3A5")(s) : s);
 const bold = (s: string) => (hasColors ? chalk.bold(s) : s);
+const info = (s: string) => (hasColors ? chalk.hex("#8CC8FF")(s) : s);
 
 function maskSecret(value: string): string {
   if (value.length <= 12) {
@@ -105,15 +106,18 @@ function resolveApiKeyStatus(entry: RyzomePluginEntry | undefined): {
 
   return {};
 }
-
+dim(
+  "  Where does the config end and the context begin? You're about to weave",
+),
+dim("  the first thread between this terminal and your ryzome."),
 function printSetupHeader() {
   const lines = [
     "",
     dim("  ╭─────────────────────────────────────────────────────────╮"),
     dim("  │") +
-      "  🌱  " +
+      "  🫚  " +
       bold(accent("R Y Z O M E")) +
-      "  🌱  " +
+      "  🫚  " +
       dim("│"),
     dim("  │") + dim("  your mind on canvas • context that grows with you  ") + dim("│"),
     dim("  ╰─────────────────────────────────────────────────────────╯"),
@@ -122,6 +126,17 @@ function printSetupHeader() {
       "  Where does the config end and the context begin? You're about to weave",
     ),
     dim("  the first thread between this terminal and your ryzome."),
+    "",
+  ];
+  console.log(lines.join("\n"));
+}
+
+function printSetupGuide() {
+  const lines = [
+    accent("  Signal sources"),
+    `  ${dim("Guide:")} https://ryzome.ai/claw`,
+    `  ${dim("Key:  ")} https://ryzome.ai/api-key`,
+    `  ${dim("App:  ")} ${DEFAULT_RYZOME_APP_URL}`,
     "",
   ];
   console.log(lines.join("\n"));
@@ -143,6 +158,8 @@ function printSetupSuccess(params: {
     accent("  Synapse:") + ` ${maskSecret(apiKey)}`,
     accent("  API:   ") + ` ${apiUrl || DEFAULT_RYZOME_API_URL}`,
     accent("  App:   ") + ` ${appUrl || DEFAULT_RYZOME_APP_URL}`,
+    "",
+    info("  🌀 The map is live. The next output can actually touch your context."),
     "",
     dim("  Restart OpenClaw to feel the difference:"),
     bold(`  openclaw gateway restart`),
@@ -174,12 +191,7 @@ export function registerCliSetup(api: PluginApi): void {
         .action(async () => {
           printSetupHeader();
 
-          console.log(
-            accent("  Get your API key:") +
-              dim(" https://ryzome.ai (or your Ryzome environment)"),
-          );
-          console.log("");
-
+          printSetupGuide();
 
           const prompt = createPrompt();
 
@@ -281,6 +293,7 @@ export function registerCliSetup(api: PluginApi): void {
           console.log(
             dim("  Your context is mapped. Outputs land closer to intent."),
           );
+          console.log(info("  The map and the reply are finally looking at the same thing."));
           console.log("");
         });
     },
