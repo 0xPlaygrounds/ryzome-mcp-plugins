@@ -1,7 +1,24 @@
 {
-  "name": "@ryzome/openclaw-ryzome",
+  "name": "@ryzome-ai/openclaw-ryzome",
   "version": "0.1.0",
+  "description": "Ryzome Canvas OpenClaw Plugin",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xPlaygrounds/openclaw-ryzome.git"
+  },
+  "homepage": "https://ryzome.ai/claw",
+  "bugs": {
+    "url": "https://github.com/0xPlaygrounds/openclaw-ryzome/issues"
+  },
+  "keywords": [
+    "openclaw",
+    "ryzome",
+    "plugin",
+    "canvas",
+    "agent"
+  ],
   "openclaw": {
     "extensions": [
       "./src/index.ts"
@@ -9,6 +26,17 @@
   },
   "exports": {
     ".": "./src/index.ts"
+  },
+  "files": [
+    "src/*.ts",
+    "src/lib/*.ts",
+    "src/lib/client/*.ts",
+    "src/lib/client/*.d.ts",
+    "src/tools/*.ts",
+    "openclaw.plugin.json"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "test": "vitest run",
