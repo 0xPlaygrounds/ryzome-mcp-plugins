@@ -1,6 +1,7 @@
 import { computeLayout, estimateNodeHeight, NODE_WIDTH } from "./layout";
 import type { PatchOperation } from "./client";
 import { createHash } from "node:crypto";
+import { ObjectId } from "bson";
 
 export interface StepInput {
   id: string;
@@ -57,8 +58,11 @@ export interface CanvasPatchOperations {
   operations: PatchOperation[];
 }
 
+// The graph builder needs stable IDs for identical inputs, so we derive a
+// deterministic 24-hex value and validate it through bson's ObjectId parser.
 function deterministicObjectId(...parts: string[]): string {
-  return createHash("sha256").update(parts.join("\u001f")).digest("hex").slice(0, 24);
+  const hex = createHash("sha256").update(parts.join("\u001f")).digest("hex").slice(0, 24);
+  return ObjectId.createFromHexString(hex).toHexString();
 }
 
 export function buildCanvasGraph(
