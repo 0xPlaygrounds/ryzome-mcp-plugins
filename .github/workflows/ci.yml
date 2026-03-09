@@ -1,4 +1,4 @@
-name: Lint and Typecheck
+name: Lint, Typecheck and Test
 
 on:
   push:
@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-and-typecheck:
-    name: Lint and typecheck
+  lint-typecheck-and-test:
+    name: Lint, typecheck and test
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -41,3 +41,6 @@ jobs:
 
       - name: Typecheck
         run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm test
