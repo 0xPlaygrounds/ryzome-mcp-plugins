@@ -37,8 +37,9 @@ describe("parseConfig", () => {
   it("resolves apiKey from a config env reference", () => {
     process.env.RYZOME_OPENCLAW_API_KEY = "rz_env_key";
     delete process.env.RYZOME_API_KEY;
+    const apiKeyRef = "$" + "{RYZOME_OPENCLAW_API_KEY}";
 
-    expect(parseConfig({ apiKey: "${RYZOME_OPENCLAW_API_KEY}" })).toEqual({
+    expect(parseConfig({ apiKey: apiKeyRef })).toEqual({
       apiKey: "rz_env_key",
       apiUrl: DEFAULT_RYZOME_API_URL,
       appUrl: DEFAULT_RYZOME_APP_URL,

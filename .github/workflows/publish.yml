@@ -13,8 +13,8 @@ permissions:
   id-token: write
 
 jobs:
-  publish:
-    name: Publish to npm
+  verify:
+    name: Lint, typecheck and test package
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || (github.event_name == 'release' && !github.event.release.prerelease)
     steps:
@@ -27,7 +27,7 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 10.31.0
-          
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -42,13 +42,42 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm run lint:check
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: pnpm run typecheck
 
       - name: Test
         run: pnpm test
+
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    needs: verify
+    if: github.event_name == 'push' || (github.event_name == 'release' && !github.event.release.prerelease)
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.31.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Prepare prerelease version
         if: github.event_name == 'push'
