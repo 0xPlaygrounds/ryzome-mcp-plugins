@@ -1,51 +1,48 @@
 import readline from "node:readline";
 import chalk from "chalk";
 import {
-  DEFAULT_RYZOME_API_URL,
-  DEFAULT_RYZOME_APP_URL,
-  RYZOME_API_KEY_ENV_VARS,
-  parseConfig,
+	DEFAULT_RYZOME_API_URL,
+	DEFAULT_RYZOME_APP_URL,
+	parseConfig,
+	RYZOME_API_KEY_ENV_VARS,
 } from "./config.js";
 
 type RyzomePluginEntry = {
-  enabled?: boolean;
-  config?: Record<string, unknown>;
+	enabled?: boolean;
+	config?: Record<string, unknown>;
 };
 
 type OpenClawLikeConfig = {
-  plugins?: {
-    entries?: Record<string, RyzomePluginEntry | undefined>;
-  };
+	plugins?: {
+		entries?: Record<string, RyzomePluginEntry | undefined>;
+	};
 };
 
 type CliCommand = {
-  command(name: string): CliCommand;
-  description(text: string): CliCommand;
-  action(handler: () => void | Promise<void>): CliCommand;
-  name(): string;
-  commands?: CliCommand[];
+	command(name: string): CliCommand;
+	description(text: string): CliCommand;
+	action(handler: () => void | Promise<void>): CliCommand;
+	name(): string;
+	commands?: CliCommand[];
 };
 
-type CliRegistrarContext = {
-  program: CliCommand;
-};
 
 type PluginApi = {
-  runtime: {
-    config: {
-      loadConfig: () => unknown;
-      writeConfigFile: (config: unknown) => Promise<void> | void;
-    };
-  };
-  registerCli: (
-    registrar: (context: { program: unknown }) => void,
-    opts?: { commands?: string[] },
-  ) => void;
+	runtime: {
+		config: {
+			loadConfig: () => unknown;
+			writeConfigFile: (config: unknown) => Promise<void> | void;
+		};
+	};
+	registerCli: (
+		registrar: (context: { program: unknown }) => void,
+		opts?: { commands?: string[] },
+	) => void;
 };
 
 const hasColors =
-  process.env.NO_COLOR == null &&
-  (process.env.FORCE_COLOR === "1" || process.stdout.isTTY);
+	process.env.NO_COLOR == null &&
+	(process.env.FORCE_COLOR === "1" || process.stdout.isTTY);
 
 const dim = (s: string) => (hasColors ? chalk.dim(s) : s);
 const accent = (s: string) => (hasColors ? chalk.hex("#F2A65A")(s) : s);
@@ -54,246 +51,251 @@ const bold = (s: string) => (hasColors ? chalk.bold(s) : s);
 const info = (s: string) => (hasColors ? chalk.hex("#8CC8FF")(s) : s);
 
 function maskSecret(value: string): string {
-  if (value.length <= 12) {
-    return value;
-  }
+	if (value.length <= 12) {
+		return value;
+	}
 
-  return `${value.slice(0, 8)}...${value.slice(-4)}`;
+	return `${value.slice(0, 8)}...${value.slice(-4)}`;
 }
 
 function createPrompt() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+	const rl = readline.createInterface({
+		input: process.stdin,
+		output: process.stdout,
+	});
 
-  const ask = (question: string) =>
-    new Promise<string>((resolve) => {
-      rl.question(question, resolve);
-    });
+	const ask = (question: string) =>
+		new Promise<string>((resolve) => {
+			rl.question(question, resolve);
+		});
 
-  return {
-    ask,
-    close: () => rl.close(),
-  };
+	return {
+		ask,
+		close: () => rl.close(),
+	};
 }
 
 function asOpenClawLikeConfig(value: unknown): OpenClawLikeConfig {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as OpenClawLikeConfig;
-  }
+	if (value && typeof value === "object" && !Array.isArray(value)) {
+		return value as OpenClawLikeConfig;
+	}
 
-  return {};
+	return {};
 }
 
 function resolveApiKeyStatus(entry: RyzomePluginEntry | undefined): {
-  apiKey?: string;
-  source?: string;
+	apiKey?: string;
+	source?: string;
 } {
-  const envVar = RYZOME_API_KEY_ENV_VARS.find((name) => {
-    const value = process.env[name];
-    return typeof value === "string" && value.trim().length > 0;
-  });
-  if (envVar) {
-    return { apiKey: process.env[envVar], source: `environment (${envVar})` };
-  }
+	const envVar = RYZOME_API_KEY_ENV_VARS.find((name) => {
+		const value = process.env[name];
+		return typeof value === "string" && value.trim().length > 0;
+	});
+	if (envVar) {
+		return { apiKey: process.env[envVar], source: `environment (${envVar})` };
+	}
 
-  const rawConfig = entry?.config;
-  const parsed = parseConfig(rawConfig);
-  if (parsed.apiKey) {
-    return { apiKey: parsed.apiKey, source: "config" };
-  }
+	const rawConfig = entry?.config;
+	const parsed = parseConfig(rawConfig);
+	if (parsed.apiKey) {
+		return { apiKey: parsed.apiKey, source: "config" };
+	}
 
-  return {};
+	return {};
 }
 
 function printSetupHeader() {
-  const lines = [
-    "",
-    dim("  ╭─────────────────────────────────────────────────────────╮"),
-    dim("  │") +
-      "  🫚  " +
-      bold(accent("R Y Z O M E")) +
-      "  🫚  " +
-      dim("│"),
-    dim("  │") + dim("  your mind on canvas • context that grows with you  ") + dim("│"),
-    dim("  ╰─────────────────────────────────────────────────────────╯"),
-    "",
-    dim(
-      "  Where does the config end and the context begin? You're about to weave",
-    ),
-    dim("  the first thread between this terminal and your ryzome."),
-    "",
-  ];
-  console.log(lines.join("\n"));
+	const lines = [
+		"",
+		dim("  ╭─────────────────────────────────────────────────────────╮"),
+		`${dim("  │")}  🫚  ${bold(accent("R Y Z O M E"))}  🫚  ${dim("│")}`,
+		dim("  │") +
+			dim("  your mind on canvas • context that grows with you  ") +
+			dim("│"),
+		dim("  ╰─────────────────────────────────────────────────────────╯"),
+		"",
+		dim(
+			"  Where does the config end and the context begin? You're about to weave",
+		),
+		dim("  the first thread between this terminal and your ryzome."),
+		"",
+	];
+	console.log(lines.join("\n"));
 }
 
 function printSetupGuide() {
-  const lines = [
-    accent("  Signal sources"),
-    `  ${dim("Guide:")} https://ryzome.ai/claw`,
-    `  ${dim("Key:  ")} https://ryzome.ai/api-key`,
-    `  ${dim("App:  ")} ${DEFAULT_RYZOME_APP_URL}`,
-    "",
-  ];
-  console.log(lines.join("\n"));
+	const lines = [
+		accent("  Signal sources"),
+		`  ${dim("Guide:")} https://ryzome.ai/claw`,
+		`  ${dim("Key:  ")} https://ryzome.ai/api-key`,
+		`  ${dim("App:  ")} ${DEFAULT_RYZOME_APP_URL}`,
+		"",
+	];
+	console.log(lines.join("\n"));
 }
 
 function printSetupSuccess(params: {
-  apiKey: string;
-  apiUrl: string;
-  appUrl: string;
+	apiKey: string;
+	apiUrl: string;
+	appUrl: string;
 }) {
-  const { apiKey, apiUrl, appUrl } = params;
-  const lines = [
-    "",
-    success(" 🫚 Ryzome internode bond established."),
-    "",
-    dim("  The boundary has softened. Your local environment now reaches into"),
-    dim("  your context library — what you've mapped and what you will map."),
-    "",
-    accent("  Synapse:") + ` ${maskSecret(apiKey)}`,
-    accent("  API:   ") + ` ${apiUrl || DEFAULT_RYZOME_API_URL}`,
-    accent("  App:   ") + ` ${appUrl || DEFAULT_RYZOME_APP_URL}`,
-    "",
-    info("  🌀 The map is live. The next output can actually touch your context."),
-    "",
-    dim("  Restart OpenClaw to feel the difference:"),
-    bold(`  openclaw gateway restart`),
-    "",
-  ];
-  console.log(lines.join("\n"));
+	const { apiKey, apiUrl, appUrl } = params;
+	const lines = [
+		"",
+		success(" 🫚 Ryzome internode bond established."),
+		"",
+		dim("  The boundary has softened. Your local environment now reaches into"),
+		dim("  your context library — what you've mapped and what you will map."),
+		"",
+		`${accent("  Synapse:")} ${maskSecret(apiKey)}`,
+		`${accent("  API:   ")} ${apiUrl || DEFAULT_RYZOME_API_URL}`,
+		`${accent("  App:   ")} ${appUrl || DEFAULT_RYZOME_APP_URL}`,
+		"",
+		info(
+			"  🌀 The map is live. The next output can actually touch your context.",
+		),
+		"",
+		dim("  Restart OpenClaw to feel the difference:"),
+		bold(`  openclaw gateway restart`),
+		"",
+	];
+	console.log(lines.join("\n"));
 }
 
 function printStatusHeader() {
-  const lines = [
-    "",
-    dim("  🌱 Ryzome • status check"),
-    "",
-  ];
-  console.log(lines.join("\n"));
+	const lines = ["", dim("  🌱 Ryzome • status check"), ""];
+	console.log(lines.join("\n"));
 }
 
 export function registerCliSetup(api: PluginApi): void {
-  api.registerCli(
-    ({ program }) => {
-      const cliProgram = program as CliCommand;
-      const cmd = cliProgram
-        .command("ryzome")
-        .description("Ryzome canvas plugin commands");
+	api.registerCli(
+		({ program }) => {
+			const cliProgram = program as CliCommand;
+			const cmd = cliProgram
+				.command("ryzome")
+				.description("Ryzome canvas plugin commands");
 
-      cmd
-        .command("setup")
-        .description("Configure the Ryzome API key for this plugin")
-        .action(async () => {
-          printSetupHeader();
+			cmd
+				.command("setup")
+				.description("Configure the Ryzome API key for this plugin")
+				.action(async () => {
+					printSetupHeader();
 
-          printSetupGuide();
+					printSetupGuide();
 
-          const prompt = createPrompt();
+					const prompt = createPrompt();
 
-          try {
-            const apiKey = (
-              await prompt.ask(
-                accent("  🔗 Paste your API key (bind your claw to the ryzome): ") +
-                  dim("[required] "),
-              )
-            ).trim();
-            if (!apiKey) {
-              console.log("");
-              console.log(dim("  No key provided. The thread remains unbound."));
-              console.log("");
-              return;
-            }
+					try {
+						const apiKey = (
+							await prompt.ask(
+								accent(
+									"  🔗 Paste your API key (bind your claw to the ryzome): ",
+								) + dim("[required] "),
+							)
+						).trim();
+						if (!apiKey) {
+							console.log("");
+							console.log(
+								dim("  No key provided. The thread remains unbound."),
+							);
+							console.log("");
+							return;
+						}
 
-            const apiUrl = (
-              await prompt.ask(
-                dim(`  API URL [${DEFAULT_RYZOME_API_URL}]: `),
-              )
-            ).trim();
-            const appUrl = (
-              await prompt.ask(
-                dim(`  App URL [${DEFAULT_RYZOME_APP_URL}]: `),
-              )
-            ).trim();
+						const apiUrl = (
+							await prompt.ask(dim(`  API URL [${DEFAULT_RYZOME_API_URL}]: `))
+						).trim();
+						const appUrl = (
+							await prompt.ask(dim(`  App URL [${DEFAULT_RYZOME_APP_URL}]: `))
+						).trim();
 
-            const current = asOpenClawLikeConfig(api.runtime.config.loadConfig());
-            const entries = current.plugins?.entries ?? {};
-            const existingEntry = entries["openclaw-ryzome"] ?? {};
-            const nextEntry: RyzomePluginEntry = {
-              ...existingEntry,
-              enabled: true,
-              config: {
-                ...(existingEntry.config ?? {}),
-                apiKey,
-                ...(apiUrl ? { apiUrl } : {}),
-                ...(appUrl ? { appUrl } : {}),
-              },
-            };
+						const current = asOpenClawLikeConfig(
+							api.runtime.config.loadConfig(),
+						);
+						const entries = current.plugins?.entries ?? {};
+						const existingEntry = entries["openclaw-ryzome"] ?? {};
+						const nextEntry: RyzomePluginEntry = {
+							...existingEntry,
+							enabled: true,
+							config: {
+								...(existingEntry.config ?? {}),
+								apiKey,
+								...(apiUrl ? { apiUrl } : {}),
+								...(appUrl ? { appUrl } : {}),
+							},
+						};
 
-            const nextConfig: OpenClawLikeConfig = {
-              ...current,
-              plugins: {
-                ...current.plugins,
-                entries: {
-                  ...entries,
-                  "openclaw-ryzome": nextEntry,
-                },
-              },
-            };
+						const nextConfig: OpenClawLikeConfig = {
+							...current,
+							plugins: {
+								...current.plugins,
+								entries: {
+									...entries,
+									"openclaw-ryzome": nextEntry,
+								},
+							},
+						};
 
-            await api.runtime.config.writeConfigFile(nextConfig);
+						await api.runtime.config.writeConfigFile(nextConfig);
 
-            printSetupSuccess({
-              apiKey,
-              apiUrl: apiUrl || DEFAULT_RYZOME_API_URL,
-              appUrl: appUrl || DEFAULT_RYZOME_APP_URL,
-            });
-          } finally {
-            prompt.close();
-          }
-        });
+						printSetupSuccess({
+							apiKey,
+							apiUrl: apiUrl || DEFAULT_RYZOME_API_URL,
+							appUrl: appUrl || DEFAULT_RYZOME_APP_URL,
+						});
+					} finally {
+						prompt.close();
+					}
+				});
 
-      cmd
-        .command("status")
-        .description("Show the current Ryzome plugin configuration status")
-        .action(() => {
-          const current = asOpenClawLikeConfig(api.runtime.config.loadConfig());
-          const entry = current.plugins?.entries?.["openclaw-ryzome"];
-          const resolved = parseConfig(entry?.config);
-          const apiKeyStatus = resolveApiKeyStatus(entry);
+			cmd
+				.command("status")
+				.description("Show the current Ryzome plugin configuration status")
+				.action(() => {
+					const current = asOpenClawLikeConfig(api.runtime.config.loadConfig());
+					const entry = current.plugins?.entries?.["openclaw-ryzome"];
+					const resolved = parseConfig(entry?.config);
+					const apiKeyStatus = resolveApiKeyStatus(entry);
 
-          printStatusHeader();
+					printStatusHeader();
 
-          if (!apiKeyStatus.apiKey) {
-            console.log(dim("  No bound thread detected. The rhizome stays out of circuit."));
-            console.log("");
-            console.log(dim("  Bind it:") + bold(" openclaw ryzome setup"));
-            console.log(dim("  Map it:  https://ryzome.ai/claw"));
-            console.log("");
-            return;
-          }
+					if (!apiKeyStatus.apiKey) {
+						console.log(
+							dim(
+								"  No bound thread detected. The rhizome stays out of circuit.",
+							),
+						);
+						console.log("");
+						console.log(dim("  Bind it:") + bold(" openclaw ryzome setup"));
+						console.log(dim("  Map it:  https://ryzome.ai/claw"));
+						console.log("");
+						return;
+					}
 
-          console.log(
-            success(" 🫚 Ryzome in circuit.") +
-              dim(` (key from ${apiKeyStatus.source})`),
-          );
-          console.log("");
-          console.log(accent("  Key:     ") + maskSecret(apiKeyStatus.apiKey));
-          console.log(
-            accent("  Enabled: ") +
-              (entry?.enabled ?? true ? success("yes") : dim("no")),
-          );
-          console.log(accent("  API:     ") + resolved.apiUrl);
-          console.log(accent("  App:     ") + resolved.appUrl);
-          console.log("");
-          console.log(
-            dim("  Your context is mapped. Outputs land closer to intent."),
-          );
-          console.log(info("  The map and the reply are finally looking at the same thing."));
-          console.log("");
-        });
-    },
-    { commands: ["ryzome"] },
-  );
+					console.log(
+						success(" 🫚 Ryzome in circuit.") +
+							dim(` (key from ${apiKeyStatus.source})`),
+					);
+					console.log("");
+					console.log(accent("  Key:     ") + maskSecret(apiKeyStatus.apiKey));
+					console.log(
+						accent("  Enabled: ") +
+							((entry?.enabled ?? true) ? success("yes") : dim("no")),
+					);
+					console.log(accent("  API:     ") + resolved.apiUrl);
+					console.log(accent("  App:     ") + resolved.appUrl);
+					console.log("");
+					console.log(
+						dim("  Your context is mapped. Outputs land closer to intent."),
+					);
+					console.log(
+						info(
+							"  The map and the reply are finally looking at the same thing.",
+						),
+					);
+					console.log("");
+				});
+		},
+		{ commands: ["ryzome"] },
+	);
 }

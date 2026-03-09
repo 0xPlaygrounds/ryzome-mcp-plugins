@@ -10,16 +10,27 @@ import {
 const NODE_GAP_X = 80;
 const NODE_GAP_Y = 60;
 
+function getPositionOrThrow(
+  positions: ReturnType<typeof computeLayout>,
+  id: string,
+) {
+  const position = positions.get(id);
+  expect(position).toBeDefined();
+  if (!position) {
+    throw new Error(`Expected position for node ${id}`);
+  }
+  return position;
+}
+
 describe('computeLayout', () => {
   it('should center a single node horizontally at x = -NODE_WIDTH/2', () => {
     const nodes: LayoutNode[] = [{ id: 'a', depth: 0 }];
     const positions = computeLayout(nodes);
 
-    const pos = positions.get('a');
-    expect(pos).toBeDefined();
+    const pos = getPositionOrThrow(positions, 'a');
     // 1 node: totalWidth = NODE_WIDTH, startX = -NODE_WIDTH/2
-    expect(pos!.x).toBe(-NODE_WIDTH / 2);
-    expect(pos!.y).toBe(0);
+    expect(pos.x).toBe(-NODE_WIDTH / 2);
+    expect(pos.y).toBe(0);
   });
 
   it('should spread two nodes at the same depth horizontally, centered around x=0', () => {
@@ -29,8 +40,8 @@ describe('computeLayout', () => {
     ];
     const positions = computeLayout(nodes);
 
-    const a = positions.get('a')!;
-    const b = positions.get('b')!;
+    const a = getPositionOrThrow(positions, 'a');
+    const b = getPositionOrThrow(positions, 'b');
 
     expect(a.y).toBe(0);
     expect(b.y).toBe(0);
@@ -51,9 +62,9 @@ describe('computeLayout', () => {
     const positions = computeLayout(nodes);
 
     const yStep = BASE_NODE_HEIGHT + NODE_GAP_Y;
-    expect(positions.get('a')!.y).toBe(0);
-    expect(positions.get('b')!.y).toBe(yStep);
-    expect(positions.get('c')!.y).toBe(2 * yStep);
+    expect(getPositionOrThrow(positions, 'a').y).toBe(0);
+    expect(getPositionOrThrow(positions, 'b').y).toBe(yStep);
+    expect(getPositionOrThrow(positions, 'c').y).toBe(2 * yStep);
   });
 
   it('should handle gaps in depth levels', () => {
@@ -65,9 +76,9 @@ describe('computeLayout', () => {
     const positions = computeLayout(nodes);
 
     const yStep = BASE_NODE_HEIGHT + NODE_GAP_Y;
-    expect(positions.get('a')!.y).toBe(0);
+    expect(getPositionOrThrow(positions, 'a').y).toBe(0);
     // depth 1 is empty but still occupies vertical space
-    expect(positions.get('b')!.y).toBe(2 * yStep);
+    expect(getPositionOrThrow(positions, 'b').y).toBe(2 * yStep);
   });
 
   it('should return a position for every input node', () => {
