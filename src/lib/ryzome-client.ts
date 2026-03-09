@@ -2,7 +2,6 @@ import {
   createApiClient,
   type CreateCanvasRequest,
   type CreateCanvasResponse,
-  type GetCanvasResponse,
   type PatchCanvasRequest,
 } from "./client";
 
@@ -195,7 +194,7 @@ export class RyzomeClient {
     }
   }
 
-  async getCanvas(canvasId: string): Promise<GetCanvasResponse> {
+  async getCanvas(canvasId: string) {
     const path = `/canvas/${canvasId}`;
 
     try {

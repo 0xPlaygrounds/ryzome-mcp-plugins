@@ -4,6 +4,7 @@
   "description": "Ryzome Canvas OpenClaw Plugin",
   "license": "MIT",
   "type": "module",
+  "packageManager": "pnpm@10.31.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/0xPlaygrounds/openclaw-ryzome.git"

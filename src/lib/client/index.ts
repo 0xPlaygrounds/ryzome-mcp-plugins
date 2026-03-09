@@ -13,7 +13,8 @@ export type CanvasSchemas = components["schemas"];
 
 export type CreateCanvasRequest = CanvasSchemas["api.create_canvas.Request"];
 export type CreateCanvasResponse = CanvasSchemas["api.create_canvas.Response"];
-export type GetCanvasResponse = CanvasSchemas["CanvasEditorView"];
+export type GetCanvasResponse =
+  paths["/canvas/{canvas_id}"]["get"]["responses"][200]["content"]["application/json"];
 export type PatchCanvasRequest = CanvasSchemas["api.patch_canvas.Request"];
 export type PatchOperation = Extract<
   CanvasSchemas["Operation"],

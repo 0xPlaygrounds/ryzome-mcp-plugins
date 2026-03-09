@@ -139,7 +139,7 @@ describe('buildCanvasGraph', () => {
     expect(edges).toHaveLength(0);
   });
 
-  it('should produce deterministic output for the same canvas and input', () => {
+  it('should produce equivalent graph structure for the same canvas and input', () => {
     const steps: StepInput[] = [
       { id: 'a', title: 'A', description: 'Root' },
       { id: 'b', title: 'B', description: 'Child', dependsOn: ['a'] },
@@ -152,8 +152,62 @@ describe('buildCanvasGraph', () => {
     const edges1 = createEdgeOps(g1.operations);
     const edges2 = createEdgeOps(g2.operations);
 
-    expect(nodes1.map(n => n.id)).toEqual(nodes2.map(n => n.id));
-    expect(edges1.map(e => e.id)).toEqual(edges2.map(e => e.id));
+    expect(nodes1.map(n => n.id)).not.toEqual(nodes2.map(n => n.id));
+    expect(edges1.map(e => e.id)).not.toEqual(edges2.map(e => e.id));
+
+    expect(nodes1.every((node) => typeof node.id === 'string' && hexRegex24().test(node.id))).toBe(
+      true,
+    );
+    expect(nodes2.every((node) => typeof node.id === 'string' && hexRegex24().test(node.id))).toBe(
+      true,
+    );
+    expect(edges1.every((edge) => typeof edge.id === 'string' && hexRegex24().test(edge.id))).toBe(
+      true,
+    );
+    expect(edges2.every((edge) => typeof edge.id === 'string' && hexRegex24().test(edge.id))).toBe(
+      true,
+    );
+
+    expect(new Set(nodes1.map(n => n.id)).size).toBe(nodes1.length);
+    expect(new Set(nodes2.map(n => n.id)).size).toBe(nodes2.length);
+    expect(new Set(edges1.map(e => e.id)).size).toBe(edges1.length);
+    expect(new Set(edges2.map(e => e.id)).size).toBe(edges2.length);
+
+    expect(
+      nodes1.map(n => ({
+        x: n.x,
+        y: n.y,
+        title: n.data?._type === 'NewDocument' ? n.data._content.title : null,
+      })),
+    ).toEqual(
+      nodes2.map(n => ({
+        x: n.x,
+        y: n.y,
+        title: n.data?._type === 'NewDocument' ? n.data._content.title : null,
+      })),
+    );
+
+    const edgeShape = (
+      edges: typeof edges1,
+      nodes: typeof nodes1,
+    ) => {
+      const nodeTitles = new Map(
+        nodes.map((node) => [
+          node.id,
+          node.data?._type === 'NewDocument' ? node.data._content.title ?? null : null,
+        ]),
+      );
+
+      return edges.map((edge) => ({
+        from: nodeTitles.get(edge.fromNodeId) ?? null,
+        to: nodeTitles.get(edge.toNodeId) ?? null,
+        fromSide: edge.fromSide,
+        toSide: edge.toSide,
+      }));
+    };
+
+    expect(edgeShape(edges1, nodes1)).toEqual(edgeShape(edges2, nodes2));
+
     expect(nodes1.map(n => ({ x: n.x, y: n.y }))).toEqual(
       nodes2.map(n => ({ x: n.x, y: n.y })),
     );

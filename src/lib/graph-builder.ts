@@ -1,6 +1,5 @@
 import { computeLayout, estimateNodeHeight, NODE_WIDTH } from "./layout";
 import type { PatchOperation } from "./client";
-import { createHash } from "node:crypto";
 import { ObjectId } from "bson";
 
 export interface StepInput {
@@ -58,17 +57,11 @@ export interface CanvasPatchOperations {
   operations: PatchOperation[];
 }
 
-// The graph builder needs stable IDs for identical inputs, so we derive a
-// deterministic 24-hex value and validate it through bson's ObjectId parser.
-function deterministicObjectId(...parts: string[]): string {
-  const hex = createHash("sha256").update(parts.join("\u001f")).digest("hex").slice(0, 24);
-  return ObjectId.createFromHexString(hex).toHexString();
-}
-
 export function buildCanvasGraph(
   steps: StepInput[],
   canvasId: string,
 ): CanvasPatchOperations {
+  void canvasId;
   const depths = computeDepths(steps);
 
   const layoutNodes = steps.map((s) => ({
@@ -80,7 +73,7 @@ export function buildCanvasGraph(
 
   const nodeIdMap = new Map<string, string>();
   for (const step of steps) {
-    nodeIdMap.set(step.id, deterministicObjectId("node", canvasId, step.id));
+    nodeIdMap.set(step.id, new ObjectId().toString());
   }
 
   const nodeOperations: PatchOperation[] = steps.map((step) => {
@@ -115,7 +108,6 @@ export function buildCanvasGraph(
   });
 
   const edgeOperations: PatchOperation[] = [];
-  let edgeIndex = 0;
 
   for (const step of steps) {
     for (const dep of step.dependsOn ?? []) {
@@ -125,14 +117,13 @@ export function buildCanvasGraph(
 
       edgeOperations.push({
         _type: "createEdge" as const,
-        id: deterministicObjectId("edge", canvasId, dep, step.id, String(edgeIndex)),
+        id: new ObjectId().toString(),
         fromNodeId: fromId,
         fromSide: "bottom" as const,
         toNodeId: toId,
         toSide: "top" as const,
         label: "",
       });
-      edgeIndex++;
     }
   }
 
