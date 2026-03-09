@@ -1,6 +1,6 @@
 {
   "name": "@ryzome-ai/openclaw-ryzome",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Ryzome Canvas OpenClaw Plugin",
   "license": "MIT",
   "type": "module",
