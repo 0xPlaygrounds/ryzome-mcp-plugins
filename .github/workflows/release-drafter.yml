@@ -1,0 +1,31 @@
+name: Draft Release Notes
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+      - labeled
+      - unlabeled
+      - closed
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  update-release-draft:
+    name: Update release draft
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update draft release
+        uses: release-drafter/release-drafter@v6
+        with:
+          disable-autolabeler: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

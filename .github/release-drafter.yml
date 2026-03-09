@@ -1,0 +1,61 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
+change-title-escapes: '\<*_&'
+template: |
+  ## Changes
+
+  $CHANGES
+
+categories:
+  - title: Features
+    labels:
+      - feature
+      - feat
+      - enhancement
+  - title: Fixes
+    labels:
+      - fix
+      - bug
+      - bugfix
+  - title: Documentation
+    labels:
+      - docs
+      - documentation
+  - title: Maintenance
+    labels:
+      - chore
+      - ci
+      - dependencies
+      - refactor
+      - test
+
+exclude-labels:
+  - skip-changelog
+  - no-release-notes
+
+version-resolver:
+  major:
+    labels:
+      - major
+      - breaking
+  minor:
+    labels:
+      - minor
+      - feature
+      - feat
+      - enhancement
+  patch:
+    labels:
+      - patch
+      - fix
+      - bug
+      - bugfix
+      - chore
+      - ci
+      - dependencies
+      - docs
+      - documentation
+      - refactor
+      - test
+  default: patch

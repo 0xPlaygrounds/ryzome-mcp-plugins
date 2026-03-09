@@ -1,0 +1,68 @@
+name: Publish Package
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'release' && !github.event.release.prerelease)
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Prepare prerelease version
+        if: github.event_name == 'push'
+        run: >
+          node scripts/prepare-publish-version.mjs
+          --mode dev
+          --run-number "${{ github.run_number }}"
+          --run-attempt "${{ github.run_attempt }}"
+
+      - name: Publish prerelease to npm
+        if: github.event_name == 'push'
+        run: npm publish --tag dev
+
+      - name: Prepare stable version
+        if: github.event_name == 'release'
+        run: >
+          node scripts/prepare-publish-version.mjs
+          --mode stable
+          --tag "${{ github.event.release.tag_name }}"
+
+      - name: Publish stable release to npm
+        if: github.event_name == 'release'
+        run: npm publish
