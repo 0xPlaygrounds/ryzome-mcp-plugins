@@ -26,33 +26,13 @@ Steering an OpenClaw agent by prompting your way to the right output is slow and
 If the package is published to npm, install it with:
 
 ```bash
-openclaw plugins install @ryzome/openclaw-ryzome
+openclaw plugins install @ryzome-ai/openclaw-ryzome
 ```
 
 OpenClaw plugin install behavior is documented in the official plugin docs:
 [Plugins](https://docs.openclaw.ai/plugin).
 
-### From a local checkout
-
-For local development from this monorepo:
-
-```bash
-git clone https://github.com/0xPlaygrounds/ryzome
-cd ryzome
-pnpm install
-openclaw plugins install -l .
-```
-
-`-l` links the plugin directory instead of copying it, which is the better
-development workflow for local iteration. OpenClaw also supports installing a
-directory without linking:
-
-```bash
-openclaw plugins install .
-```
-
-See the official CLI/plugin docs for install modes and local path behavior:
-[Plugins](https://docs.openclaw.ai/plugin), [CLI](https://docs.openclaw.ai/cli).
+To install from a local checkout, see [Install from a local checkout](#install-from-a-local-checkout).
 
 ## Configure
 
@@ -258,6 +238,28 @@ For local configuration checks:
 ```bash
 openclaw ryzome status
 ```
+
+#### Install from a local checkout
+
+For local development from this monorepo:
+
+```bash
+git clone https://github.com/0xPlaygrounds/ryzome
+cd ryzome
+pnpm install
+openclaw plugins install -l .
+```
+
+`-l` links the plugin directory instead of copying it, which is the better
+development workflow for local iteration. OpenClaw also supports installing a
+directory without linking:
+
+```bash
+openclaw plugins install .
+```
+
+See the official CLI/plugin docs for install modes and local path behavior:
+[Plugins](https://docs.openclaw.ai/plugin), [CLI](https://docs.openclaw.ai/cli).
 
 ## Troubleshooting
 
