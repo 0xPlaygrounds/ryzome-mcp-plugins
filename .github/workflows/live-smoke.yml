@@ -1,26 +1,28 @@
-name: Lint, Typecheck and Test
+name: Live Smoke
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: live-smoke-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lint-typecheck-and-test:
-    name: Lint, typecheck and test
+  live-smoke:
+    name: Live production smoke test
     runs-on: ubuntu-latest
+    if: ${{ secrets.RYZOME_LIVE_SMOKE_API_KEY != '' }}
+    env:
+      RYZOME_ENABLE_LIVE_SMOKE: "1"
+      RYZOME_LIVE_SMOKE_API_KEY: ${{ secrets.RYZOME_LIVE_SMOKE_API_KEY }}
+      RYZOME_LIVE_SMOKE_API_URL: ${{ vars.RYZOME_LIVE_SMOKE_API_URL }}
+      RYZOME_LIVE_SMOKE_APP_URL: ${{ vars.RYZOME_LIVE_SMOKE_APP_URL }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -42,14 +44,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm run lint:check
-
-      - name: Typecheck
-        run: pnpm run typecheck
-
-      - name: Test
-        run: pnpm test
-
-      - name: Integration test
+      - name: Run live smoke integration test
         run: pnpm run test:integration

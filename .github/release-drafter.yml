@@ -1,5 +1,6 @@
 name-template: "v$RESOLVED_VERSION"
 tag-template: "v$RESOLVED_VERSION"
+tag-prefix: "v"
 change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
 change-title-escapes: '\<*_&'
 template: |
@@ -34,6 +35,28 @@ exclude-labels:
   - skip-changelog
   - no-release-notes
 
+autolabeler:
+  - label: enhancement
+    branch:
+      - "/^(feat|feature|enhancement)\\/.+/i"
+    title:
+      - "/^(feat|feature)(\\([^)]+\\))?!?:/i"
+  - label: bug
+    branch:
+      - "/^(fix|bugfix|bug)\\/.+/i"
+    title:
+      - "/^(fix|bugfix)(\\([^)]+\\))?!?:/i"
+  - label: documentation
+    branch:
+      - "/^docs?\\/.+/i"
+    title:
+      - "/^docs(\\([^)]+\\))?!?:/i"
+  - label: ci
+    branch:
+      - "/^ci\\/.+/i"
+    title:
+      - "/^ci(\\([^)]+\\))?!?:/i"
+
 version-resolver:
   major:
     labels:
@@ -59,3 +82,5 @@ version-resolver:
       - refactor
       - test
   default: patch
+
+filter-by-commitish: true

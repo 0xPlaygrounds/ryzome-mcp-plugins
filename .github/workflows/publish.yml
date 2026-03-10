@@ -50,6 +50,9 @@ jobs:
             - name: Test
               run: pnpm test
 
+            - name: Integration test
+              run: pnpm run test:integration
+
     publish:
         name: Publish to npm
         runs-on: ubuntu-latest

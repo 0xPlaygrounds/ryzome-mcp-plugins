@@ -1,6 +1,6 @@
 {
   "name": "@ryzome-ai/openclaw-ryzome",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Ryzome Canvas OpenClaw Plugin",
   "license": "MIT",
   "type": "module",
@@ -41,6 +41,7 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:watch": "vitest watch",
     "typecheck": "tsc --noEmit",
     "lint": "biome lint . && tsc --noEmit",
@@ -49,8 +50,9 @@
     "lint:check": "biome lint --diagnostic-level=error ."
   },
   "devDependencies": {
-    "@types/node": "^25.4.0",
     "@biomejs/biome": "^2.4.6",
+    "@types/node": "^25.4.0",
+    "openclaw": "^2026.3.8",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
