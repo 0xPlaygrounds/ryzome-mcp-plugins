@@ -354,6 +354,7 @@ describe("OpenClaw integration", () => {
 
       const apiUrl = liveSmokeApiUrl || "https://api.ryzome.ai";
       const appUrl = liveSmokeAppUrl || "https://ryzome.ai";
+      const appBase = appUrl.replace(/\/+$/, "");
 
       await setPluginConfig(stateDir, {
         apiKey: liveSmokeApiKey!,
@@ -372,7 +373,7 @@ describe("OpenClaw integration", () => {
       );
       const resultText = result.content?.[0]?.text ?? "";
       expect(resultText).toContain("Canvas created:");
-      expect(resultText).toContain(`${appUrl}/canvas/`);
+      expect(resultText).toContain(`${appBase}/canvas/`);
     },
     180_000,
   );
