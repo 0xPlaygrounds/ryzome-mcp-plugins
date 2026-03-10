@@ -2,6 +2,8 @@ name: Lint, Typecheck and Test
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 permissions:
