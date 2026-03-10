@@ -100,7 +100,9 @@ jobs:
     publish-dev:
         name: Publish dev build to npm
         runs-on: ubuntu-latest
-        needs: verify
+        needs: 
+            - verify
+            - live-smoke
         if: github.event_name == 'push'
         steps:
             - name: Check out repository
