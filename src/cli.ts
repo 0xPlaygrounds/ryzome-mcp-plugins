@@ -104,20 +104,102 @@ function resolveApiKeyStatus(entry: RyzomePluginEntry | undefined): {
 	return {};
 }
 
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
+
+function visibleWidth(s: string): number {
+	const stripped = s.replace(ANSI_RE, "");
+	let width = 0;
+	for (const ch of stripped) {
+		const cp = ch.codePointAt(0) ?? 0;
+		// Wide characters: CJK, fullwidth forms, emoji
+		if (
+			(cp >= 0x1100 && cp <= 0x115f) ||
+			(cp >= 0x2e80 && cp <= 0x303e) ||
+			(cp >= 0x3040 && cp <= 0x33bf) ||
+			(cp >= 0xac00 && cp <= 0xd7af) ||
+			(cp >= 0xf900 && cp <= 0xfaff) ||
+			(cp >= 0xfe10 && cp <= 0xfe6f) ||
+			(cp >= 0xff01 && cp <= 0xff60) ||
+			(cp >= 0xffe0 && cp <= 0xffe6) ||
+			(cp >= 0x1f000 && cp <= 0x1faff) ||
+			(cp >= 0x20000 && cp <= 0x2fffd)
+		) {
+			width += 2;
+		} else {
+			width += 1;
+		}
+	}
+	return width;
+}
+
+function centerPad(content: string, totalWidth: number): string {
+	const w = visibleWidth(content);
+	if (w >= totalWidth) return content;
+	const left = Math.floor((totalWidth - w) / 2);
+	const right = totalWidth - w - left;
+	return " ".repeat(left) + content + " ".repeat(right);
+}
+
+function wrapText(text: string, maxWidth: number): string[] {
+	const words = text.split(/\s+/);
+	const lines: string[] = [];
+	let current = "";
+	for (const word of words) {
+		const candidate = current ? `${current} ${word}` : word;
+		if (visibleWidth(candidate) <= maxWidth) {
+			current = candidate;
+		} else {
+			if (current) lines.push(current);
+			current = word;
+		}
+	}
+	if (current) lines.push(current);
+	return lines;
+}
+
 function printSetupHeader() {
+	const cols = process.stdout.columns || 80;
+	const margin = 2;
+
+	const titleLine = `🫚  ${bold(accent("R Y Z O M E"))}  🫚`;
+	const subtitleLine = "context that grows with you";
+
+	const titleWidth = visibleWidth(titleLine);
+	const subtitleWidth = visibleWidth(subtitleLine);
+	const contentWidth = Math.max(titleWidth, subtitleWidth);
+	const innerWidth = contentWidth + 4; // 2 padding each side
+	const boxWidth = innerWidth + 2; // + 2 for │ chars
+
+	const prose =
+		"Where does the config end and the context begin? You're about to weave the first thread between this terminal and your ryzome.";
+
+	if (boxWidth + margin > cols || cols < 30) {
+		// Narrow terminal — skip the box
+		const textWidth = Math.max(cols - margin * 2, 20);
+		const lines = [
+			"",
+			`${"  "}${titleLine}`,
+			`${"  "}${dim(subtitleLine)}`,
+			"",
+			...wrapText(prose, textWidth).map((l) => dim(`${"  "}${l}`)),
+			"",
+		];
+		console.log(lines.join("\n"));
+		return;
+	}
+
+	const pad = " ".repeat(margin);
+	const hr = "─".repeat(innerWidth);
+	const proseWidth = Math.max(cols - margin * 2, 20);
+
 	const lines = [
 		"",
-		dim("  ╭─────────────────────────────────────────────────────────╮"),
-		`${dim("  │")}  🫚  ${bold(accent("R Y Z O M E"))}  🫚  ${dim("│")}`,
-		dim("  │") +
-			dim("  context that grows with you  ") +
-			dim("   │"),
-		dim("  ╰─────────────────────────────────────────────────────────╯"),
+		dim(`${pad}╭${hr}╮`),
+		`${dim(`${pad}│`)}${centerPad(titleLine, innerWidth)}${dim("│")}`,
+		`${dim(`${pad}│`)}${centerPad(dim(subtitleLine), innerWidth)}${dim("│")}`,
+		dim(`${pad}╰${hr}╯`),
 		"",
-		dim(
-			"  Where does the config end and the context begin? You're about to weave",
-		),
-		dim("  the first thread between this terminal and your ryzome."),
+		...wrapText(prose, proseWidth).map((l) => dim(`${pad}${l}`)),
 		"",
 	];
 	console.log(lines.join("\n"));
