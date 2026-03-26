@@ -110,8 +110,8 @@ function printSetupHeader() {
 		dim("  ╭─────────────────────────────────────────────────────────╮"),
 		`${dim("  │")}  🫚  ${bold(accent("R Y Z O M E"))}  🫚  ${dim("│")}`,
 		dim("  │") +
-			dim("  your mind on canvas • context that grows with you  ") +
-			dim("│"),
+			dim("  context that grows with you  ") +
+			dim("   │"),
 		dim("  ╰─────────────────────────────────────────────────────────╯"),
 		"",
 		dim(
@@ -126,9 +126,8 @@ function printSetupHeader() {
 function printSetupGuide() {
 	const lines = [
 		accent("  Signal sources"),
-		`  ${dim("Guide:")} https://ryzome.ai/claw`,
-		`  ${dim("Key:  ")} https://ryzome.ai/api-key`,
-		`  ${dim("App:  ")} ${DEFAULT_RYZOME_APP_URL}`,
+		`  ${dim("Instructions:")} https://ryzome.ai/claw`,
+		`  ${dim("API Key:  ")} http://localhost:3000/workspace#settings/api-keys`,
 		"",
 	];
 	console.log(lines.join("\n"));
