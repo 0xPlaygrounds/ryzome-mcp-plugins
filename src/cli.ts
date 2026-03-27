@@ -14,7 +14,7 @@ import {
 	visibleWidth,
 	wrapText,
 } from "./cli-theme.js";
-import { promptDemoCanvas } from "./onboarding.js";
+import { printDemoHints, promptDemoCanvas } from "./onboarding.js";
 
 type RyzomePluginEntry = {
 	enabled?: boolean;
@@ -312,7 +312,11 @@ export function registerCliSetup(api: PluginApi): void {
 							appUrl: appUrl || DEFAULT_RYZOME_APP_URL,
 						});
 
-						await promptDemoCanvas(prompt.ask);
+						if (nonInteractive) {
+							printDemoHints();
+						} else {
+							await promptDemoCanvas(prompt.ask);
+						}
 					} finally {
 						prompt.close();
 					}

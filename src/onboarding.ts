@@ -70,6 +70,20 @@ export function printDemoSuggestion(idea: DemoIdea): void {
 	console.log(lines.join("\n"));
 }
 
+export function printDemoHints(): void {
+	const lines = [
+		"",
+		accent("  Try creating your first canvas:"),
+		"",
+		...DEMO_IDEAS.map(
+			(idea) =>
+				`  ${dim("•")} ${idea.prompt} ${dim(`(${idea.toolHint})`)}`,
+		),
+		"",
+	];
+	console.log(lines.join("\n"));
+}
+
 export function printSkipMessage(): void {
 	console.log("");
 	console.log(

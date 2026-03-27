@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	DEMO_IDEAS,
+	printDemoHints,
 	printDemoMenu,
 	printDemoSuggestion,
 	printSkipMessage,
@@ -33,6 +34,18 @@ describe("printDemoSuggestion", () => {
 		expect(output).toContain(idea.toolHint);
 		// Check that at least part of the prompt text appears (may be wrapped)
 		expect(output).toContain("plan canvas");
+	});
+});
+
+describe("printDemoHints", () => {
+	it("prints all demo prompts and tool hints", () => {
+		const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+		printDemoHints();
+		const output = spy.mock.calls.map((c) => c[0]).join("\n");
+		for (const idea of DEMO_IDEAS) {
+			expect(output).toContain(idea.toolHint);
+		}
+		expect(output).toContain("Try creating your first canvas");
 	});
 });
 
