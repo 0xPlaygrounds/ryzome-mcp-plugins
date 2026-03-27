@@ -48,10 +48,9 @@ const RYZOME_API_KEY_URL = "https://ryzome.ai/api-key";
 
 function logSetupHint(api: PluginApi) {
   api.logger.info("[ryzome] context engine detected, but the thread is still unbound.");
-  api.logger.info("[ryzome] bind it: openclaw ryzome setup");
-  api.logger.info(`[ryzome] map the connection: ${RYZOME_SETUP_GUIDE_URL}`);
-  api.logger.info(`[ryzome] mint a key: ${RYZOME_API_KEY_URL}`);
-  api.logger.info("[ryzome] until then, the model sees the outline of context, not the thing itself.");
+  api.logger.info("[ryzome] run: openclaw ryzome setup --key <api-key>");
+  api.logger.info(`[ryzome] guide: ${RYZOME_SETUP_GUIDE_URL}`);
+  api.logger.info(`[ryzome] get a key: ${RYZOME_API_KEY_URL}`);
   api.logger.info("[ryzome] env fallback: RYZOME_OPENCLAW_API_KEY");
 }
 
@@ -59,7 +58,7 @@ function resolveConfig(api: PluginApi): RyzomeClientConfig {
   const cfg = parseConfig(api.pluginConfig);
   if (!cfg.apiKey) {
     throw new Error(
-      `Ryzome plugin: apiKey is required in config or env. Bind the thread with 'openclaw ryzome setup' or see ${RYZOME_SETUP_GUIDE_URL}`,
+      `Ryzome plugin: apiKey is required. Run: openclaw ryzome setup --key <api-key>  (guide: ${RYZOME_SETUP_GUIDE_URL})`,
     );
   }
   return {

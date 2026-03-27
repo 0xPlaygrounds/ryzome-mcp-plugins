@@ -30,7 +30,10 @@ type OpenClawLikeConfig = {
 type CliCommand = {
 	command(name: string): CliCommand;
 	description(text: string): CliCommand;
-	action(handler: () => void | Promise<void>): CliCommand;
+	option(flags: string, description?: string): CliCommand;
+	action(
+		handler: (options: Record<string, string>) => void | Promise<void>,
+	): CliCommand;
 	name(): string;
 	commands?: CliCommand[];
 };
@@ -212,21 +215,39 @@ export function registerCliSetup(api: PluginApi): void {
 			cmd
 				.command("setup")
 				.description("Configure the Ryzome API key for this plugin")
-				.action(async () => {
+				.option("--key <api-key>", "Ryzome API key")
+				.option("--api-url <url>", "Ryzome API URL")
+				.option("--app-url <url>", "Ryzome App URL")
+				.action(async (options) => {
+					const nonInteractive = !!options.key;
+
+					if (!nonInteractive && !process.stdin.isTTY) {
+						console.error(
+							"Error: No TTY available for interactive prompts. Pass the key directly: openclaw ryzome setup --key <api-key>",
+						);
+						process.exitCode = 1;
+						return;
+					}
+
 					printSetupHeader();
 
-					printSetupGuide();
+					if (!nonInteractive) {
+						printSetupGuide();
+					}
 
 					const prompt = createPrompt();
 
 					try {
-						const apiKey = (
-							await prompt.ask(
-								accent(
-									"  🔗 Paste your API key (bind your claw to the ryzome): ",
-								) + dim("[required] "),
-							)
-						).trim();
+						const apiKey = nonInteractive
+							? options.key
+							: (
+									await prompt.ask(
+										accent(
+											"  🔗 Paste your API key (bind your claw to the ryzome): ",
+										) + dim("[required] "),
+									)
+								).trim();
+
 						if (!apiKey) {
 							console.log("");
 							console.log(
@@ -236,12 +257,25 @@ export function registerCliSetup(api: PluginApi): void {
 							return;
 						}
 
-						const apiUrl = (
-							await prompt.ask(dim(`  API URL [${DEFAULT_RYZOME_API_URL}]: `))
-						).trim();
-						const appUrl = (
-							await prompt.ask(dim(`  App URL [${DEFAULT_RYZOME_APP_URL}]: `))
-						).trim();
+						const apiUrl = options.apiUrl
+							? options.apiUrl
+							: nonInteractive
+								? ""
+								: (
+										await prompt.ask(
+											dim(`  API URL [${DEFAULT_RYZOME_API_URL}]: `),
+										)
+									).trim();
+
+						const appUrl = options.appUrl
+							? options.appUrl
+							: nonInteractive
+								? ""
+								: (
+										await prompt.ask(
+											dim(`  App URL [${DEFAULT_RYZOME_APP_URL}]: `),
+										)
+									).trim();
 
 						const current = asOpenClawLikeConfig(
 							api.runtime.config.loadConfig(),
