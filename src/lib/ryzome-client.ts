@@ -3,6 +3,7 @@ import {
   type CreateCanvasRequest,
   type CreateCanvasResponse,
   type PatchCanvasRequest,
+  type GetUploadUrlResponse,
 } from "./client";
 
 export interface RyzomeClientConfig {
@@ -15,7 +16,9 @@ export type RyzomeRequestStage =
   | "createCanvas"
   | "getCanvas"
   | "patchCanvas"
-  | "patchSharingConfig";
+  | "patchSharingConfig"
+  | "getUploadUrl"
+  | "uploadFile";
 
 function isRetryableStatus(status: number): boolean {
   return status === 408 || status === 429 || status >= 500;
@@ -260,6 +263,82 @@ export class RyzomeClient {
         path,
         error,
         canvasId,
+      });
+    }
+  }
+
+  /**
+   * Request a presigned S3 upload URL.
+   * NOTE: This route currently requires cookie auth on the backend.
+   * API key auth support is being added — calls may fail with 401/403 until then.
+   */
+  async requestUploadUrl(s3Key: string): Promise<GetUploadUrlResponse> {
+    try {
+      const { data, error, response } = await this.client.POST("/files", {
+        body: { s3_key: s3Key },
+      });
+
+      if (!response.ok || !data) {
+        throw this.buildHttpError({
+          stage: "getUploadUrl",
+          method: "POST",
+          path: "/files",
+          response,
+          error,
+        });
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof RyzomeApiError) throw error;
+      throw this.buildNetworkError({
+        stage: "getUploadUrl",
+        method: "POST",
+        path: "/files",
+        error,
+      });
+    }
+  }
+
+  /**
+   * Upload a file to S3 using the presigned POST URL and fields.
+   */
+  async uploadFile(
+    presignedUrl: string,
+    fields: Record<string, string>,
+    fileBuffer: Uint8Array,
+    contentType: string,
+  ): Promise<void> {
+    try {
+      const formData = new FormData();
+      for (const [key, value] of Object.entries(fields)) {
+        formData.append(key, value);
+      }
+      formData.append("Content-Type", contentType);
+      formData.append("file", new Blob([fileBuffer as BlobPart], { type: contentType }));
+
+      const response = await fetch(presignedUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new RyzomeApiError({
+          stage: "uploadFile",
+          method: "POST",
+          path: presignedUrl,
+          status: response.status,
+          body: await response.text().catch(() => ""),
+          retryable: isRetryableStatus(response.status),
+        });
+      }
+    } catch (error) {
+      if (error instanceof RyzomeApiError) throw error;
+      throw this.buildNetworkError({
+        stage: "uploadFile",
+        method: "POST",
+        path: presignedUrl,
+        error,
       });
     }
   }
