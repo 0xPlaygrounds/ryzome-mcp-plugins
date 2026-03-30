@@ -21,7 +21,7 @@ export async function executeCanvasWithSteps(
   );
 
   const appBase = clientConfig.appUrl.replace(/\/+$/, "");
-  const canvasUrl = `${appBase}/canvas/${canvasId}`;
+  const canvasUrl = `${appBase}/view/${canvasId}`;
 
   const nodeCount = graph.operations.filter(
     (o) => o._type === "createNode",
