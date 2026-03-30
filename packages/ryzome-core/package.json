@@ -1,0 +1,42 @@
+{
+	"name": "@ryzome-ai/ryzome-core",
+	"version": "0.1.0",
+	"description": "Ryzome core library — shared client, graph builder, and tools",
+	"license": "MIT",
+	"type": "module",
+	"packageManager": "pnpm@10.31.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/0xPlaygrounds/openclaw-ryzome.git"
+	},
+	"exports": {
+		".": "./dist/index.js",
+		"./config": "./dist/config.js",
+		"./tools": "./dist/tools/index.js",
+		"./lib/ryzome-client": "./dist/lib/ryzome-client.js"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"build": "tsc && cp src/lib/client/schema.d.ts dist/lib/client/schema.d.ts",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome lint . && tsc --noEmit",
+		"lint:check": "biome lint --diagnostic-level=error .",
+		"format": "biome format --write .",
+		"format:check": "biome format ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.6",
+		"@types/node": "^25.4.0",
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.18"
+	},
+	"dependencies": {
+		"bson": "^7.2.0",
+		"openapi-fetch": "^0.17.0",
+		"zod": "^4.3.6"
+	}
+}

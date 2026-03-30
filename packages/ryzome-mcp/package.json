@@ -1,0 +1,56 @@
+{
+	"name": "@ryzome-ai/ryzome-mcp",
+	"version": "0.1.0",
+	"description": "Ryzome MCP server — expose Ryzome canvas tools to Claude Code and other MCP clients",
+	"license": "MIT",
+	"type": "module",
+	"packageManager": "pnpm@10.31.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/0xPlaygrounds/openclaw-ryzome.git"
+	},
+	"homepage": "https://ryzome.ai",
+	"bugs": {
+		"url": "https://github.com/0xPlaygrounds/openclaw-ryzome/issues"
+	},
+	"keywords": [
+		"mcp",
+		"ryzome",
+		"canvas",
+		"agent",
+		"claude"
+	],
+	"bin": {
+		"ryzome-mcp": "./dist/index.js"
+	},
+	"exports": {
+		".": "./dist/index.js"
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"build": "tsc",
+		"test": "vitest run",
+		"test:watch": "vitest watch",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome lint . && tsc --noEmit",
+		"lint:check": "biome lint --diagnostic-level=error .",
+		"format": "biome format --write .",
+		"format:check": "biome format ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.6",
+		"@types/node": "^25.4.0",
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.18"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.13.1",
+		"@ryzome-ai/ryzome-core": "workspace:*",
+		"zod": "^4.3.6"
+	}
+}

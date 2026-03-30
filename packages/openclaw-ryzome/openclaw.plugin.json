@@ -1,0 +1,40 @@
+{
+	"id": "openclaw-ryzome",
+	"name": "Ryzome Canvas OpenClaw Plugin",
+	"description": "Create Ryzome canvases from plans and research",
+	"version": "0.2.1",
+	"configSchema": {
+		"type": "object",
+		"additionalProperties": false,
+		"properties": {
+			"apiKey": {
+				"type": "string"
+			},
+			"apiUrl": {
+				"type": "string",
+				"default": "https://api.ryzome.ai"
+			},
+			"appUrl": {
+				"type": "string",
+				"default": "https://ryzome.ai"
+			}
+		},
+		"required": []
+	},
+	"uiHints": {
+		"apiKey": {
+			"label": "Ryzome API Key",
+			"sensitive": true,
+			"placeholder": "rz_...",
+			"help": "Ryzome API key (or use ${RYZOME_OPENCLAW_API_KEY})"
+		},
+		"apiUrl": {
+			"label": "Ryzome API URL",
+			"placeholder": "https://api.ryzome.ai"
+		},
+		"appUrl": {
+			"label": "Ryzome App URL",
+			"placeholder": "https://ryzome.ai"
+		}
+	}
+}

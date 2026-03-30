@@ -1,0 +1,22 @@
+{
+  "name": "ryzome",
+  "version": "0.2.0",
+  "description": "Ryzome — AI context library. Create, retrieve, and manage visual canvases for externalizing agent working memory.",
+  "author": {
+    "name": "Ryzome AI",
+    "url": "https://ryzome.ai"
+  },
+  "userConfig": {
+    "api_key": {
+      "description": "Your Ryzome API key. Get one at https://ryzome.ai/api-key",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "scopes": [
+    "mcp",
+    "hooks",
+    "skills",
+    "agents"
+  ]
+}

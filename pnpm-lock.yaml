@@ -6,17 +6,50 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  packages/openclaw-ryzome:
     dependencies:
+      '@ryzome-ai/ryzome-core':
+        specifier: workspace:*
+        version: link:../ryzome-core
       '@sinclair/typebox':
         specifier: ^0.34.48
         version: 0.34.48
-      bson:
-        specifier: ^7.2.0
-        version: 7.2.0
       chalk:
         specifier: ^5.6.2
         version: 5.6.2
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^2.4.6
+        version: 2.4.6
+      '@types/node':
+        specifier: ^25.4.0
+        version: 25.4.0
+      openclaw:
+        specifier: ^2026.3.8
+        version: 2026.3.8(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(@napi-rs/canvas@0.1.96)(@types/express@5.0.6)(hono@4.12.7)(node-llama-cpp@3.16.2(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.4.0)(jiti@2.6.1)(yaml@2.8.2)
+
+  packages/ryzome-claude-plugin:
+    dependencies:
+      '@ryzome-ai/ryzome-mcp':
+        specifier: workspace:*
+        version: link:../ryzome-mcp
+
+  packages/ryzome-core:
+    dependencies:
+      bson:
+        specifier: ^7.2.0
+        version: 7.2.0
       openapi-fetch:
         specifier: ^0.17.0
         version: 0.17.0
@@ -30,9 +63,31 @@ importers:
       '@types/node':
         specifier: ^25.4.0
         version: 25.4.0
-      openclaw:
-        specifier: ^2026.3.8
-        version: 2026.3.8(@napi-rs/canvas@0.1.96)(@types/express@5.0.6)(hono@4.12.7)(node-llama-cpp@3.16.2(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.4.0)(jiti@2.6.1)(yaml@2.8.2)
+
+  packages/ryzome-mcp:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.13.1
+        version: 1.28.0(zod@4.3.6)
+      '@ryzome-ai/ryzome-core':
+        specifier: workspace:*
+        version: link:../ryzome-core
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^2.4.6
+        version: 2.4.6
+      '@types/node':
+        specifier: ^25.4.0
+        version: 25.4.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -807,6 +862,16 @@ packages:
 
   '@mistralai/mistralai@1.14.1':
     resolution: {integrity: sha512-IiLmmZFCCTReQgPAT33r7KQ1nYo5JPdvGkrkZqA8qQ2qB1GHgs5LoP5K2ICyrjnpw2n8oSxMM/VP+liiKcGNlQ==}
+
+  '@modelcontextprotocol/sdk@1.28.0':
+    resolution: {integrity: sha512-gmloF+i+flI8ouQK7MWW4mOwuMh4RePBuPFAEPC6+pdqyWOUMDOixb6qZ69owLJpz6XmyllCouc4t8YWO+E2Nw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@cfworker/json-schema': ^4.1.1
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      '@cfworker/json-schema':
+        optional: true
 
   '@mozilla/readability@0.6.0':
     resolution: {integrity: sha512-juG5VWh4qAivzTAeMzvY9xs9HY5rAcr2E4I7tiSSCokRFi7XIZCAu92ZkSTsIj1OPceCifL3cpfteP3pDT9/QQ==}
@@ -2006,6 +2071,10 @@ packages:
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
 
+  cors@2.8.6:
+    resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
+    engines: {node: '>= 0.10'}
+
   croner@10.0.1:
     resolution: {integrity: sha512-ixNtAJndqh173VQ4KodSdJEI6nuioBWI0V1ITNKhZZsO0pEMoDxz539T4FTTbSZ/xIOSuDnzxLVRqBVSvPNE2g==}
     engines: {node: '>=18.0'}
@@ -2198,9 +2267,23 @@ packages:
   eventemitter3@5.0.4:
     resolution: {integrity: sha512-mlsTRyGaPBjPedk6Bvw+aqbsXDtoAyAzm5MO7JgU+yVRyMQ5O8bD4Kcci7BS85f93veegeCPkL8R4GLClnjLFw==}
 
+  eventsource-parser@3.0.6:
+    resolution: {integrity: sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==}
+    engines: {node: '>=18.0.0'}
+
+  eventsource@3.0.7:
+    resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
+    engines: {node: '>=18.0.0'}
+
   expect-type@1.3.0:
     resolution: {integrity: sha512-knvyeauYhqjOYvQ66MznSMs83wmHrCycNEN6Ao+2AeYEfxUIkuiVxdEa1qlGEPK+We3n0THiDciYSsCcgW/DoA==}
     engines: {node: '>=12.0.0'}
+
+  express-rate-limit@8.3.1:
+    resolution: {integrity: sha512-D1dKN+cmyPWuvB+G2SREQDzPY1agpBIcTa9sJxOPMCNeH3gwzhqJRDWCXW3gg0y//+LQ/8j52JbMROWyrKdMdw==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      express: '>= 4.11'
 
   express@5.2.1:
     resolution: {integrity: sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==}
@@ -2495,6 +2578,9 @@ packages:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
 
+  jose@6.2.2:
+    resolution: {integrity: sha512-d7kPDd34KO/YnzaDOlikGpOurfF0ByC2sEV4cANCtdqLlTfBlw2p14O/5d/zv40gJPbIQxfES3nSx1/oYNyuZQ==}
+
   json-bigint@1.0.0:
     resolution: {integrity: sha512-SiPv/8VpZuWbvLSMtTDU8hEfrZWg/mH/nV/b4o0CYbSxu1UIQPLdwKOCIyLQX+VIPO5vrLX3i8qtqFyhdPSUSQ==}
 
@@ -2504,6 +2590,9 @@ packages:
 
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
+
+  json-schema-typed@8.0.2:
+    resolution: {integrity: sha512-fQhoXdcvc3V28x7C7BMs4P5+kNlgUURe2jmUT1T//oBRMDrqy1QPelJimwZGo7Hg9VPV3EQV5Bnq4hbFy2vetA==}
 
   json-with-bigint@3.5.7:
     resolution: {integrity: sha512-7ei3MdAI5+fJPVnKlW77TKNKwQ5ppSzWvhPuSuINT/GYW9ZOC1eRKOuhV9yHG5aEsUPj9BBx5JIekkmoLHxZOw==}
@@ -2927,6 +3016,10 @@ packages:
   pino@9.14.0:
     resolution: {integrity: sha512-8OEwKp5juEvb/MjpIc4hjqfgCNysrS94RIOMXYvpYCdm/jglrKEiAYmiumbmGhCvs+IcInsphYDFwqrjr7398w==}
     hasBin: true
+
+  pkce-challenge@5.0.1:
+    resolution: {integrity: sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ==}
+    engines: {node: '>=16.20.0'}
 
   playwright-core@1.58.2:
     resolution: {integrity: sha512-yZkEtftgwS8CsfYo7nm0KE8jsvm6i/PTgVtB8DL726wNf6H2IMsDuxCpJj59KDaxCtSnrWan2AeDqM7JBaultg==}
@@ -4212,12 +4305,14 @@ snapshots:
   '@esbuild/win32-x64@0.27.3':
     optional: true
 
-  '@google/genai@1.44.0':
+  '@google/genai@1.44.0(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))':
     dependencies:
       google-auth-library: 10.6.1
       p-retry: 4.6.2
       protobufjs: 7.5.4
       ws: 8.19.0
+    optionalDependencies:
+      '@modelcontextprotocol/sdk': 1.28.0(zod@4.3.6)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -4253,7 +4348,6 @@ snapshots:
   '@hono/node-server@1.19.9(hono@4.12.7)':
     dependencies:
       hono: 4.12.7
-    optional: true
 
   '@huggingface/jinja@0.5.6': {}
 
@@ -4482,9 +4576,9 @@ snapshots:
       std-env: 3.10.0
       yoctocolors: 2.1.2
 
-  '@mariozechner/pi-agent-core@0.57.1(ws@8.19.0)(zod@4.3.6)':
+  '@mariozechner/pi-agent-core@0.57.1(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(ws@8.19.0)(zod@4.3.6)':
     dependencies:
-      '@mariozechner/pi-ai': 0.57.1(ws@8.19.0)(zod@4.3.6)
+      '@mariozechner/pi-ai': 0.57.1(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(ws@8.19.0)(zod@4.3.6)
     transitivePeerDependencies:
       - '@modelcontextprotocol/sdk'
       - aws-crt
@@ -4494,11 +4588,11 @@ snapshots:
       - ws
       - zod
 
-  '@mariozechner/pi-ai@0.57.1(ws@8.19.0)(zod@4.3.6)':
+  '@mariozechner/pi-ai@0.57.1(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(ws@8.19.0)(zod@4.3.6)':
     dependencies:
       '@anthropic-ai/sdk': 0.73.0(zod@4.3.6)
       '@aws-sdk/client-bedrock-runtime': 3.1005.0
-      '@google/genai': 1.44.0
+      '@google/genai': 1.44.0(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))
       '@mistralai/mistralai': 1.14.1
       '@sinclair/typebox': 0.34.48
       ajv: 8.18.0
@@ -4518,11 +4612,11 @@ snapshots:
       - ws
       - zod
 
-  '@mariozechner/pi-coding-agent@0.57.1(ws@8.19.0)(zod@4.3.6)':
+  '@mariozechner/pi-coding-agent@0.57.1(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(ws@8.19.0)(zod@4.3.6)':
     dependencies:
       '@mariozechner/jiti': 2.6.5
-      '@mariozechner/pi-agent-core': 0.57.1(ws@8.19.0)(zod@4.3.6)
-      '@mariozechner/pi-ai': 0.57.1(ws@8.19.0)(zod@4.3.6)
+      '@mariozechner/pi-agent-core': 0.57.1(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(ws@8.19.0)(zod@4.3.6)
+      '@mariozechner/pi-ai': 0.57.1(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(ws@8.19.0)(zod@4.3.6)
       '@mariozechner/pi-tui': 0.57.1
       '@silvia-odwyer/photon-node': 0.3.4
       chalk: 5.6.2
@@ -4568,6 +4662,28 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  '@modelcontextprotocol/sdk@1.28.0(zod@4.3.6)':
+    dependencies:
+      '@hono/node-server': 1.19.9(hono@4.12.7)
+      ajv: 8.18.0
+      ajv-formats: 3.0.1(ajv@8.18.0)
+      content-type: 1.0.5
+      cors: 2.8.6
+      cross-spawn: 7.0.6
+      eventsource: 3.0.7
+      eventsource-parser: 3.0.6
+      express: 5.2.1
+      express-rate-limit: 8.3.1(express@5.2.1)
+      hono: 4.12.7
+      jose: 6.2.2
+      json-schema-typed: 8.0.2
+      pkce-challenge: 5.0.1
+      raw-body: 3.0.2
+      zod: 4.3.6
+      zod-to-json-schema: 3.25.1(zod@4.3.6)
+    transitivePeerDependencies:
+      - supports-color
 
   '@mozilla/readability@0.6.0': {}
 
@@ -5775,6 +5891,11 @@ snapshots:
 
   core-util-is@1.0.3: {}
 
+  cors@2.8.6:
+    dependencies:
+      object-assign: 4.1.1
+      vary: 1.1.2
+
   croner@10.0.1: {}
 
   cross-spawn@7.0.6:
@@ -5953,7 +6074,18 @@ snapshots:
 
   eventemitter3@5.0.4: {}
 
+  eventsource-parser@3.0.6: {}
+
+  eventsource@3.0.7:
+    dependencies:
+      eventsource-parser: 3.0.6
+
   expect-type@1.3.0: {}
+
+  express-rate-limit@8.3.1(express@5.2.1):
+    dependencies:
+      express: 5.2.1
+      ip-address: 10.1.0
 
   express@5.2.1:
     dependencies:
@@ -6199,8 +6331,7 @@ snapshots:
 
   highlight.js@10.7.3: {}
 
-  hono@4.12.7:
-    optional: true
+  hono@4.12.7: {}
 
   hookified@1.15.1: {}
 
@@ -6313,6 +6444,8 @@ snapshots:
 
   jiti@2.6.1: {}
 
+  jose@6.2.2: {}
+
   json-bigint@1.0.0:
     dependencies:
       bignumber.js: 9.3.1
@@ -6323,6 +6456,8 @@ snapshots:
       ts-algebra: 2.0.0
 
   json-schema-traverse@1.0.0: {}
+
+  json-schema-typed@8.0.2: {}
 
   json-with-bigint@3.5.7: {}
 
@@ -6644,7 +6779,7 @@ snapshots:
 
   openapi-typescript-helpers@0.1.0: {}
 
-  openclaw@2026.3.8(@napi-rs/canvas@0.1.96)(@types/express@5.0.6)(hono@4.12.7)(node-llama-cpp@3.16.2(typescript@5.9.3)):
+  openclaw@2026.3.8(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(@napi-rs/canvas@0.1.96)(@types/express@5.0.6)(hono@4.12.7)(node-llama-cpp@3.16.2(typescript@5.9.3)):
     dependencies:
       '@agentclientprotocol/sdk': 0.15.0(zod@4.3.6)
       '@aws-sdk/client-bedrock': 3.1005.0
@@ -6657,9 +6792,9 @@ snapshots:
       '@larksuiteoapi/node-sdk': 1.59.0
       '@line/bot-sdk': 10.6.0
       '@lydell/node-pty': 1.2.0-beta.3
-      '@mariozechner/pi-agent-core': 0.57.1(ws@8.19.0)(zod@4.3.6)
-      '@mariozechner/pi-ai': 0.57.1(ws@8.19.0)(zod@4.3.6)
-      '@mariozechner/pi-coding-agent': 0.57.1(ws@8.19.0)(zod@4.3.6)
+      '@mariozechner/pi-agent-core': 0.57.1(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(ws@8.19.0)(zod@4.3.6)
+      '@mariozechner/pi-ai': 0.57.1(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(ws@8.19.0)(zod@4.3.6)
+      '@mariozechner/pi-coding-agent': 0.57.1(@modelcontextprotocol/sdk@1.28.0(zod@4.3.6))(ws@8.19.0)(zod@4.3.6)
       '@mariozechner/pi-tui': 0.57.1
       '@mozilla/readability': 0.6.0
       '@napi-rs/canvas': 0.1.96
@@ -6843,6 +6978,8 @@ snapshots:
       safe-stable-stringify: 2.5.0
       sonic-boom: 4.2.1
       thread-stream: 3.1.0
+
+  pkce-challenge@5.0.1: {}
 
   playwright-core@1.58.2: {}
 
