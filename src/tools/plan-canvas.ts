@@ -29,11 +29,36 @@ export const planCanvasToolDef = {
               "IDs of steps this step depends on (defaults to previous step)",
           }),
         ),
+        color: Type.Optional(
+          Type.String({ description: "Step color as hex (e.g. '#FF6B6B')" }),
+        ),
+        group: Type.Optional(
+          Type.String({ description: "ID of the group this step belongs to" }),
+        ),
       }),
       { description: "Steps to chain into a plan", minItems: 1 },
     ),
+    groups: Type.Optional(
+      Type.Array(
+        Type.Object({
+          id: Type.String({ description: "Unique group identifier" }),
+          title: Type.Optional(
+            Type.String({ description: "Group label displayed on the frame" }),
+          ),
+          color: Type.Optional(
+            Type.String({ description: "Group color as hex (e.g. '#4ECDC4')" }),
+          ),
+        }),
+        { description: "Groups that visually contain steps" },
+      ),
+    ),
   }),
 };
+
+const hexColorSchema = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, "Color must be a hex string (e.g. '#FF6B6B')")
+  .optional();
 
 const planCanvasParamsSchema = z.object({
   title: z.string(),
@@ -45,9 +70,20 @@ const planCanvasParamsSchema = z.object({
         title: z.string(),
         description: z.string(),
         dependsOn: z.array(z.string()).optional(),
+        color: hexColorSchema,
+        group: z.string().optional(),
       }),
     )
     .min(1),
+  groups: z
+    .array(
+      z.object({
+        id: z.string(),
+        title: z.string().optional(),
+        color: hexColorSchema,
+      }),
+    )
+    .optional(),
 });
 
 export async function executePlanCanvas(
@@ -62,11 +98,11 @@ export async function executePlanCanvas(
   const steps: StepInput[] = params.steps.map((s, i) => {
     const id = resolvedIds[i];
     const dependsOn = s.dependsOn ?? (i > 0 ? [resolvedIds[i - 1]] : undefined);
-    return { id, title: s.title, description: s.description, dependsOn };
+    return { id, title: s.title, description: s.description, dependsOn, color: s.color, group: s.group };
   });
 
   return executeCanvasWithSteps(
-    { title: params.title, description: params.description, steps },
+    { title: params.title, description: params.description, steps, groups: params.groups },
     clientConfig,
   );
 }

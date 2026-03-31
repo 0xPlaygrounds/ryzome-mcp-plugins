@@ -104,7 +104,8 @@ function resolveApiKeyStatus(entry: RyzomePluginEntry | undefined): {
 	return {};
 }
 
-const ANSI_RE = /\x1b\[[0-9;]*m/g;
+// biome-ignore lint/suspicious/noControlCharactersInRegex: ESC (0x1B) is required to match ANSI escape sequences
+const ANSI_RE = /\u001b\[[0-9;]*m/g;
 
 function visibleWidth(s: string): number {
 	const stripped = s.replace(ANSI_RE, "");

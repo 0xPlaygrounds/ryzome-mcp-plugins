@@ -1,7 +1,7 @@
 import { Type } from "@sinclair/typebox";
 import { z } from "zod";
 import { executeCanvasWithSteps } from "../lib/canvas-executor";
-import type { StepInput } from "../lib/graph-builder";
+import type { StepInput, GroupInput } from "../lib/graph-builder";
 import type { RyzomeClientConfig } from "../lib/ryzome-client";
 
 export const createCanvasToolDef = {
@@ -17,6 +17,12 @@ export const createCanvasToolDef = {
         id: Type.String({ description: "Unique node identifier" }),
         title: Type.String({ description: "Node title" }),
         description: Type.String({ description: "Node content" }),
+        color: Type.Optional(
+          Type.String({ description: "Node color as hex (e.g. '#FF6B6B')" }),
+        ),
+        group: Type.Optional(
+          Type.String({ description: "ID of the group this node belongs to" }),
+        ),
       }),
       { description: "Nodes to place on the canvas", minItems: 1 },
     ),
@@ -30,8 +36,27 @@ export const createCanvasToolDef = {
         { description: "Edges connecting nodes" },
       ),
     ),
+    groups: Type.Optional(
+      Type.Array(
+        Type.Object({
+          id: Type.String({ description: "Unique group identifier" }),
+          title: Type.Optional(
+            Type.String({ description: "Group label displayed on the frame" }),
+          ),
+          color: Type.Optional(
+            Type.String({ description: "Group color as hex (e.g. '#4ECDC4')" }),
+          ),
+        }),
+        { description: "Groups that visually contain nodes. Nodes reference a group by its id." },
+      ),
+    ),
   }),
 };
+
+const hexColorSchema = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, "Color must be a hex string (e.g. '#FF6B6B')")
+  .optional();
 
 const createCanvasParamsSchema = z.object({
   title: z.string(),
@@ -42,6 +67,8 @@ const createCanvasParamsSchema = z.object({
         id: z.string(),
         title: z.string(),
         description: z.string(),
+        color: hexColorSchema,
+        group: z.string().optional(),
       }),
     )
     .min(1),
@@ -51,6 +78,15 @@ const createCanvasParamsSchema = z.object({
         from: z.string(),
         to: z.string(),
         label: z.string().optional(),
+      }),
+    )
+    .optional(),
+  groups: z
+    .array(
+      z.object({
+        id: z.string(),
+        title: z.string().optional(),
+        color: hexColorSchema,
       }),
     )
     .optional(),
@@ -75,10 +111,14 @@ export async function executeCreateCanvas(
     title: node.title,
     description: node.description,
     dependsOn: edgesByTo.get(node.id),
+    color: node.color,
+    group: node.group,
   }));
 
+  const groups: GroupInput[] | undefined = params.groups;
+
   return executeCanvasWithSteps(
-    { title: params.title, description: params.description, steps },
+    { title: params.title, description: params.description, steps, groups },
     clientConfig,
   );
 }

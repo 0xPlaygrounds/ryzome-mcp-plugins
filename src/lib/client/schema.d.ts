@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+  /**
+   * File upload presigned URL endpoint.
+   * NOTE: Manually added — regenerate from backend OpenAPI spec once API key auth is enabled on this route.
+   */
+  "/files": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["get_upload_url"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/canvas": {
     parameters: {
       query?: never;
@@ -422,6 +442,15 @@ export interface components {
     "api.update_canvas.Response": {
       updated: boolean;
     };
+    /** NOTE: Manually added — regenerate from backend OpenAPI spec once API key auth is enabled. */
+    "api.get_upload_url.Request": {
+      s3_key: string;
+    };
+    /** NOTE: Manually added — regenerate from backend OpenAPI spec once API key auth is enabled. */
+    "api.get_upload_url.Response": {
+      url: string;
+      fields: Record<string, string>;
+    };
   };
   responses: never;
   parameters: never;
@@ -594,6 +623,45 @@ export interface operations {
     responses: {
       /** @description Canvas updated successfully */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  /** NOTE: Manually added — regenerate from backend OpenAPI spec once API key auth is enabled. */
+  get_upload_url: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["api.get_upload_url.Request"];
+      };
+    };
+    responses: {
+      /** @description Presigned upload URL generated successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["api.get_upload_url.Response"];
+        };
+      };
+      /** @description Unauthorized — API key auth not yet available for this route */
+      401: {
         headers: {
           [name: string]: unknown;
         };
