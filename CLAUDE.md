@@ -25,7 +25,7 @@ Integration tests hit the live Ryzome API and are gated by env vars: `RYZOME_ENA
 
 ## Architecture
 
-**Plugin entry point:** `src/index.ts` — default export `register(api)` receives the OpenClaw plugin API, parses config, and registers 4 tools + CLI commands.
+**Plugin entry point:** `src/index.ts` — default export `register(api)` receives the OpenClaw plugin API, parses config, and registers 5 tools + CLI commands.
 
 **Data flow for canvas creation:**
 ```
@@ -42,11 +42,11 @@ Tool params → Zod validation → canvas-executor
 - `src/config.ts` — Resolves config from plugin config object or env vars (`RYZOME_OPENCLAW_API_KEY`, `RYZOME_API_KEY`). Supports `${ENV_VAR}` syntax in config values.
 - `src/cli.ts` — `openclaw ryzome setup` (interactive key setup) and `openclaw ryzome status`.
 - `src/lib/ryzome-client.ts` — `openapi-fetch`-based API client with middleware pipeline. `RyzomeApiError` marks 408/429/5xx as retryable.
-- `src/lib/graph-builder.ts` — Converts tool steps into `createNode`/`createEdge` patch operations. Computes DAG depths via BFS for layout.
+- `src/lib/graph-builder.ts` — Converts tool steps into `createNode`/`createEdge`/`setNodeColor` patch operations. Supports node coloring and group containers. Computes DAG depths via BFS for layout.
 - `src/lib/layout.ts` — Positions nodes on canvas by depth level (horizontal grouping per depth, vertical stacking across depths).
 - `src/lib/canvas-executor.ts` — Orchestrates create → build graph → patch → return URL.
 - `src/lib/retry.ts` — Max 2 retries with exponential backoff (250ms base), only for retryable errors.
-- `src/tools/` — Each file defines a Typebox schema (for agent-facing params) + Zod validation + execute function. Tools: `create-canvas`, `plan-canvas`, `research-canvas`, `get-canvas`.
+- `src/tools/` — Each file defines a Typebox schema (for agent-facing params) + Zod validation + execute function. Tools: `create-canvas`, `plan-canvas`, `research-canvas`, `get-canvas`, `upload-image`.
 
 **Tool return format:** All tools return `{ content: [{ type: "text", text: string }] }`.
 
@@ -58,6 +58,12 @@ Tool params → Zod validation → canvas-executor
 - **Testing:** Vitest with globals enabled
 - **Schema:** Typebox for JSON schema generation (agent-facing), Zod for runtime validation
 - **API client:** openapi-fetch with generated types in `src/lib/client/schema.d.ts`
+
+## Adding New Canvas Operations
+
+`src/lib/client/index.ts` defines `PatchOperation` as a narrowed `Extract<>` of the full `Operation` union from `schema.d.ts`. It only includes the operation types the plugin actually uses. When adding a new canvas capability (e.g. a new patch operation type), widen this type first — downstream code won't compile until you do.
+
+`schema.d.ts` is auto-generated from the backend OpenAPI spec (`cargo run -p canvas-routes --bin generate-openapi` in the monorepo). When the backend has a route the spec hasn't been regenerated for, you can manually add paths/types with a `NOTE: Manually added — regenerate later` comment. Run `pnpm codegen:all` in the monorepo to regenerate all client specs.
 
 ## CI
 
