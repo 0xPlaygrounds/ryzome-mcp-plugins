@@ -40,7 +40,7 @@ describe("executeCreateCanvas", () => {
     expect(createCanvasSpy).toHaveBeenCalledTimes(1);
     expect(patchCanvasSpy).toHaveBeenCalledTimes(1);
     expect(result.content[0].text).toContain(
-      "https://ryzome.ai/canvas/0123456789abcdef01234567",
+      "https://ryzome.ai/view/0123456789abcdef01234567",
     );
   });
 
@@ -74,7 +74,7 @@ describe("executeCreateCanvas", () => {
     expect(createCanvasSpy).toHaveBeenCalledTimes(1);
     expect(patchCanvasSpy).toHaveBeenCalledTimes(2);
     expect(result.content[0].text).toContain(
-      "https://ryzome.ai/canvas/0123456789abcdef01234567",
+      "https://ryzome.ai/view/0123456789abcdef01234567",
     );
   });
 

@@ -325,7 +325,7 @@ describe("OpenClaw integration", () => {
       );
       const resultText = result?.content?.[0]?.text ?? "";
       expect(resultText).toContain("Canvas created: **Stubbed OpenClaw integration**");
-      expect(resultText).toContain(`View: ${stub.appUrl}/canvas/${stub.canvasId}`);
+      expect(resultText).toContain(`View: ${stub.appUrl}/view/${stub.canvasId}`);
 
       expect(stub.requests).toHaveLength(2);
       expect(stub.requests[0]).toMatchObject({
@@ -373,7 +373,7 @@ describe("OpenClaw integration", () => {
       );
       const resultText = result?.content?.[0]?.text ?? "";
       expect(resultText).toContain("Canvas created:");
-      expect(resultText).toContain(`${appBase}/canvas/`);
+      expect(resultText).toContain(`${appBase}/view/`);
     },
     180_000,
   );
