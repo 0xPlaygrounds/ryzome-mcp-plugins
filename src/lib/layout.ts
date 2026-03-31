@@ -61,4 +61,50 @@ export function computeLayout(
 	return positions;
 }
 
-export { NODE_WIDTH, BASE_NODE_HEIGHT };
+export interface GroupPadding {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+}
+
+export interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+const DEFAULT_GROUP_PADDING: Required<GroupPadding> = {
+  top: 60,
+  right: 40,
+  bottom: 40,
+  left: 40,
+};
+
+/**
+ * Computes a bounding box that encloses all child nodes with padding.
+ * Returns null if there are no children.
+ */
+export function computeGroupBounds(
+  children: Array<{ x: number; y: number; width: number; height: number }>,
+  padding?: GroupPadding,
+): BoundingBox | null {
+  if (children.length === 0) return null;
+
+  const pad = { ...DEFAULT_GROUP_PADDING, ...padding };
+
+  const minX = Math.min(...children.map((c) => c.x));
+  const minY = Math.min(...children.map((c) => c.y));
+  const maxX = Math.max(...children.map((c) => c.x + c.width));
+  const maxY = Math.max(...children.map((c) => c.y + c.height));
+
+  return {
+    x: minX - pad.left,
+    y: minY - pad.top,
+    width: maxX - minX + pad.left + pad.right,
+    height: maxY - minY + pad.top + pad.bottom,
+  };
+}
+
+export { NODE_WIDTH, BASE_NODE_HEIGHT, DEFAULT_GROUP_PADDING };

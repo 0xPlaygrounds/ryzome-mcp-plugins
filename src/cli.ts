@@ -1,20 +1,11 @@
 import readline from "node:readline";
+import chalk from "chalk";
 import {
 	DEFAULT_RYZOME_API_URL,
 	DEFAULT_RYZOME_APP_URL,
 	parseConfig,
 	RYZOME_API_KEY_ENV_VARS,
 } from "./config.js";
-import {
-	accent,
-	bold,
-	dim,
-	info,
-	success,
-	visibleWidth,
-	wrapText,
-} from "./cli-theme.js";
-import { printDemoHints, promptDemoCanvas } from "./onboarding.js";
 
 type RyzomePluginEntry = {
 	enabled?: boolean;
@@ -30,13 +21,11 @@ type OpenClawLikeConfig = {
 type CliCommand = {
 	command(name: string): CliCommand;
 	description(text: string): CliCommand;
-	option(flags: string, description?: string): CliCommand;
-	action(
-		handler: (options: Record<string, string>) => void | Promise<void>,
-	): CliCommand;
+	action(handler: () => void | Promise<void>): CliCommand;
 	name(): string;
 	commands?: CliCommand[];
 };
+
 
 type PluginApi = {
 	runtime: {
@@ -50,6 +39,16 @@ type PluginApi = {
 		opts?: { commands?: string[] },
 	) => void;
 };
+
+const hasColors =
+	process.env.NO_COLOR == null &&
+	(process.env.FORCE_COLOR === "1" || process.stdout.isTTY);
+
+const dim = (s: string) => (hasColors ? chalk.dim(s) : s);
+const accent = (s: string) => (hasColors ? chalk.hex("#F2A65A")(s) : s);
+const success = (s: string) => (hasColors ? chalk.hex("#7DD3A5")(s) : s);
+const bold = (s: string) => (hasColors ? chalk.bold(s) : s);
+const info = (s: string) => (hasColors ? chalk.hex("#8CC8FF")(s) : s);
 
 function maskSecret(value: string): string {
 	if (value.length <= 12) {
@@ -105,12 +104,58 @@ function resolveApiKeyStatus(entry: RyzomePluginEntry | undefined): {
 	return {};
 }
 
+// biome-ignore lint/suspicious/noControlCharactersInRegex: ESC (0x1B) is required to match ANSI escape sequences
+const ANSI_RE = /\u001b\[[0-9;]*m/g;
+
+function visibleWidth(s: string): number {
+	const stripped = s.replace(ANSI_RE, "");
+	let width = 0;
+	for (const ch of stripped) {
+		const cp = ch.codePointAt(0) ?? 0;
+		// Wide characters: CJK, fullwidth forms, emoji
+		if (
+			(cp >= 0x1100 && cp <= 0x115f) ||
+			(cp >= 0x2e80 && cp <= 0x303e) ||
+			(cp >= 0x3040 && cp <= 0x33bf) ||
+			(cp >= 0xac00 && cp <= 0xd7af) ||
+			(cp >= 0xf900 && cp <= 0xfaff) ||
+			(cp >= 0xfe10 && cp <= 0xfe6f) ||
+			(cp >= 0xff01 && cp <= 0xff60) ||
+			(cp >= 0xffe0 && cp <= 0xffe6) ||
+			(cp >= 0x1f000 && cp <= 0x1faff) ||
+			(cp >= 0x20000 && cp <= 0x2fffd)
+		) {
+			width += 2;
+		} else {
+			width += 1;
+		}
+	}
+	return width;
+}
+
 function centerPad(content: string, totalWidth: number): string {
 	const w = visibleWidth(content);
 	if (w >= totalWidth) return content;
 	const left = Math.floor((totalWidth - w) / 2);
 	const right = totalWidth - w - left;
 	return " ".repeat(left) + content + " ".repeat(right);
+}
+
+function wrapText(text: string, maxWidth: number): string[] {
+	const words = text.split(/\s+/);
+	const lines: string[] = [];
+	let current = "";
+	for (const word of words) {
+		const candidate = current ? `${current} ${word}` : word;
+		if (visibleWidth(candidate) <= maxWidth) {
+			current = candidate;
+		} else {
+			if (current) lines.push(current);
+			current = word;
+		}
+	}
+	if (current) lines.push(current);
+	return lines;
 }
 
 function printSetupHeader() {
@@ -215,39 +260,21 @@ export function registerCliSetup(api: PluginApi): void {
 			cmd
 				.command("setup")
 				.description("Configure the Ryzome API key for this plugin")
-				.option("--key <api-key>", "Ryzome API key")
-				.option("--api-url <url>", "Ryzome API URL")
-				.option("--app-url <url>", "Ryzome App URL")
-				.action(async (options) => {
-					const nonInteractive = !!options.key;
-
-					if (!nonInteractive && !process.stdin.isTTY) {
-						console.error(
-							"Error: No TTY available for interactive prompts. Pass the key directly: openclaw ryzome setup --key <api-key>",
-						);
-						process.exitCode = 1;
-						return;
-					}
-
+				.action(async () => {
 					printSetupHeader();
 
-					if (!nonInteractive) {
-						printSetupGuide();
-					}
+					printSetupGuide();
 
 					const prompt = createPrompt();
 
 					try {
-						const apiKey = nonInteractive
-							? options.key
-							: (
-									await prompt.ask(
-										accent(
-											"  🔗 Paste your API key (bind your claw to the ryzome): ",
-										) + dim("[required] "),
-									)
-								).trim();
-
+						const apiKey = (
+							await prompt.ask(
+								accent(
+									"  🔗 Paste your API key (bind your claw to the ryzome): ",
+								) + dim("[required] "),
+							)
+						).trim();
 						if (!apiKey) {
 							console.log("");
 							console.log(
@@ -257,25 +284,12 @@ export function registerCliSetup(api: PluginApi): void {
 							return;
 						}
 
-						const apiUrl = options.apiUrl
-							? options.apiUrl
-							: nonInteractive
-								? ""
-								: (
-										await prompt.ask(
-											dim(`  API URL [${DEFAULT_RYZOME_API_URL}]: `),
-										)
-									).trim();
-
-						const appUrl = options.appUrl
-							? options.appUrl
-							: nonInteractive
-								? ""
-								: (
-										await prompt.ask(
-											dim(`  App URL [${DEFAULT_RYZOME_APP_URL}]: `),
-										)
-									).trim();
+						const apiUrl = (
+							await prompt.ask(dim(`  API URL [${DEFAULT_RYZOME_API_URL}]: `))
+						).trim();
+						const appUrl = (
+							await prompt.ask(dim(`  App URL [${DEFAULT_RYZOME_APP_URL}]: `))
+						).trim();
 
 						const current = asOpenClawLikeConfig(
 							api.runtime.config.loadConfig(),
@@ -311,12 +325,6 @@ export function registerCliSetup(api: PluginApi): void {
 							apiUrl: apiUrl || DEFAULT_RYZOME_API_URL,
 							appUrl: appUrl || DEFAULT_RYZOME_APP_URL,
 						});
-
-						if (nonInteractive) {
-							printDemoHints();
-						} else {
-							await promptDemoCanvas(prompt.ask);
-						}
 					} finally {
 						prompt.close();
 					}

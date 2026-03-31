@@ -11,6 +11,10 @@ import {
   researchCanvasToolDef,
   executeResearchCanvas,
 } from "./tools/research-canvas.js";
+import {
+  uploadImageToolDef,
+  executeUploadImage,
+} from "./tools/upload-image.js";
 
 interface PluginApi {
   pluginConfig?: Record<string, unknown>;
@@ -111,7 +115,14 @@ export default function register(api: PluginApi) {
     },
   });
 
+  api.registerTool({
+    ...uploadImageToolDef,
+    async execute(id, params) {
+      return executeUploadImage(id, params, clientConfig);
+    },
+  });
+
   api.logger.info(
-    "[ryzome] registered tools: create_ryzome_canvas, get_ryzome_canvas, create_ryzome_plan, create_ryzome_research",
+    "[ryzome] registered tools: create_ryzome_canvas, get_ryzome_canvas, create_ryzome_plan, create_ryzome_research, upload_ryzome_image",
   );
 }
