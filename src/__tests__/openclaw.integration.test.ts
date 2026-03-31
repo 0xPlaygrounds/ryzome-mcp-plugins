@@ -323,7 +323,7 @@ describe("OpenClaw integration", () => {
         configuredConfig,
         "Stubbed OpenClaw integration",
       );
-      const resultText = result.content?.[0]?.text ?? "";
+      const resultText = result?.content?.[0]?.text ?? "";
       expect(resultText).toContain("Canvas created: **Stubbed OpenClaw integration**");
       expect(resultText).toContain(`View: ${stub.appUrl}/canvas/${stub.canvasId}`);
 
@@ -371,7 +371,7 @@ describe("OpenClaw integration", () => {
         configuredConfig,
         `Live smoke ${new Date().toISOString()}`,
       );
-      const resultText = result.content?.[0]?.text ?? "";
+      const resultText = result?.content?.[0]?.text ?? "";
       expect(resultText).toContain("Canvas created:");
       expect(resultText).toContain(`${appBase}/canvas/`);
     },
