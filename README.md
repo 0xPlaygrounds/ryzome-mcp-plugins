@@ -244,8 +244,8 @@ openclaw ryzome status
 For local development from this monorepo:
 
 ```bash
-git clone https://github.com/0xPlaygrounds/ryzome
-cd ryzome
+git clone https://github.com/0xPlaygrounds/openclaw-ryzome
+cd openclaw-ryzome
 pnpm install
 openclaw plugins install -l .
 ```

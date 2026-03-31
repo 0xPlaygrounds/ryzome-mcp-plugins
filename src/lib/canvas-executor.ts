@@ -1,9 +1,9 @@
-import { buildCanvasGraph, type StepInput } from "./graph-builder";
+import { buildCanvasGraph, type StepInput, type GroupInput } from "./graph-builder";
 import { RyzomeClient, type RyzomeClientConfig } from "./ryzome-client";
 import { retryStage } from "./retry";
 
 export async function executeCanvasWithSteps(
-  params: { title: string; description?: string; steps: StepInput[] },
+  params: { title: string; description?: string; steps: StepInput[]; groups?: GroupInput[] },
   clientConfig: RyzomeClientConfig,
 ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
   const client = new RyzomeClient(clientConfig);
@@ -14,7 +14,7 @@ export async function executeCanvasWithSteps(
   });
 
   const canvasId = canvas_id.$oid;
-  const graph = buildCanvasGraph(params.steps, canvasId);
+  const graph = buildCanvasGraph(params.steps, canvasId, params.groups);
 
   await retryStage(() =>
     client.patchCanvas(canvasId, { operations: graph.operations }),
