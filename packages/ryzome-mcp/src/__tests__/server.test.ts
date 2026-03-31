@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { toolRegistry, RyzomeClient } from "@ryzome-ai/ryzome-core";
+import { RyzomeClient, toolRegistry } from "@ryzome-ai/ryzome-core";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRyzomeMcpServer } from "../server.js";
 
 describe("createRyzomeMcpServer", () => {
@@ -9,15 +9,6 @@ describe("createRyzomeMcpServer", () => {
 	});
 
 	it("registers all tools from the registry", () => {
-		const registered: string[] = [];
-		const mockServer = {
-			tool: vi.fn((name: string) => {
-				registered.push(name);
-			}),
-		};
-
-		// Access internals via the real McpServer won't work simply, so
-		// verify indirectly that toolRegistry has the expected tool names
 		const expectedNames = toolRegistry.map((t) => t.name);
 		expect(expectedNames).toContain("create_ryzome_canvas");
 		expect(expectedNames).toContain("get_ryzome_canvas");
@@ -65,12 +56,16 @@ describe("tool execution via server", () => {
 		);
 		expect(createCanvasTool).toBeDefined();
 
-		const result = await createCanvasTool!.execute(
+		const result = await createCanvasTool?.execute(
 			{
 				title: "Test Canvas",
 				nodes: [{ id: "n1", title: "Node 1", description: "Test node" }],
 			},
-			{ apiKey: "test-key", apiUrl: "https://api.ryzome.ai", appUrl: "https://ryzome.ai" },
+			{
+				apiKey: "test-key",
+				apiUrl: "https://api.ryzome.ai",
+				appUrl: "https://ryzome.ai",
+			},
 		);
 
 		expect(result.content).toHaveLength(1);

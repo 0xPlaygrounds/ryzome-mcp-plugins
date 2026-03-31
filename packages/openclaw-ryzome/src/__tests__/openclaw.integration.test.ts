@@ -208,7 +208,7 @@ async function executeCreateCanvasTool(
 	const tool = tools.find((entry) => entry.name === "create_ryzome_canvas");
 	expect(tool).toBeDefined();
 
-	return await tool!.execute("integration-call", {
+	return await tool?.execute("integration-call", {
 		title,
 		nodes: [
 			{
