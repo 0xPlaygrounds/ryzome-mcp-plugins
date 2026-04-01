@@ -48,6 +48,13 @@ export {
 	executeResearchCanvas,
 } from "./research-canvas.js";
 
+export {
+	uploadImageToolName,
+	uploadImageToolDescription,
+	uploadImageParamsSchema,
+	executeUploadImage,
+} from "./upload-image.js";
+
 import {
 	createCanvasToolName,
 	createCanvasToolDescription,
@@ -78,6 +85,12 @@ import {
 	researchCanvasParamsSchema,
 	executeResearchCanvas,
 } from "./research-canvas.js";
+import {
+	uploadImageToolName,
+	uploadImageToolDescription,
+	uploadImageParamsSchema,
+	executeUploadImage,
+} from "./upload-image.js";
 
 export const toolRegistry: ToolEntry[] = [
 	{
@@ -109,5 +122,11 @@ export const toolRegistry: ToolEntry[] = [
 		description: researchCanvasToolDescription,
 		paramsSchema: researchCanvasParamsSchema,
 		execute: executeResearchCanvas,
+	},
+	{
+		name: uploadImageToolName,
+		description: uploadImageToolDescription,
+		paramsSchema: uploadImageParamsSchema,
+		execute: executeUploadImage,
 	},
 ];

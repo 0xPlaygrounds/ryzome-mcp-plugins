@@ -15,7 +15,8 @@ describe("createRyzomeMcpServer", () => {
 		expect(expectedNames).toContain("list_ryzome_canvases");
 		expect(expectedNames).toContain("create_ryzome_plan");
 		expect(expectedNames).toContain("create_ryzome_research");
-		expect(expectedNames).toHaveLength(5);
+		expect(expectedNames).toContain("upload_ryzome_image");
+		expect(expectedNames).toHaveLength(6);
 	});
 });
 
@@ -56,7 +57,7 @@ describe("tool execution via server", () => {
 		);
 		expect(createCanvasTool).toBeDefined();
 
-		const result = await createCanvasTool?.execute(
+		const result = await createCanvasTool!.execute(
 			{
 				title: "Test Canvas",
 				nodes: [{ id: "n1", title: "Node 1", description: "Test node" }],

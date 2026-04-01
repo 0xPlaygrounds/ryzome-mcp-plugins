@@ -1,4 +1,9 @@
-import { computeLayout, estimateNodeHeight, NODE_WIDTH } from "./layout.js";
+import {
+	computeLayout,
+	computeGroupBounds,
+	estimateNodeHeight,
+	NODE_WIDTH,
+} from "./layout.js";
 import type { PatchOperation } from "./client/index.js";
 import { ObjectId } from "bson";
 
@@ -7,6 +12,14 @@ export interface StepInput {
 	title: string;
 	description: string;
 	dependsOn?: string[];
+	color?: string;
+	group?: string;
+}
+
+export interface GroupInput {
+	id: string;
+	title?: string;
+	color?: string;
 }
 
 /**
@@ -60,6 +73,7 @@ export interface CanvasPatchOperations {
 export function buildCanvasGraph(
 	steps: StepInput[],
 	canvasId: string,
+	groups?: GroupInput[],
 ): CanvasPatchOperations {
 	void canvasId;
 	const depths = computeDepths(steps);
@@ -127,7 +141,62 @@ export function buildCanvasGraph(
 		}
 	}
 
+	const colorOperations: PatchOperation[] = steps
+		.filter((s) => s.color)
+		.map((s) => {
+			const id = nodeIdMap.get(s.id);
+			if (!id) throw new Error(`Missing node ID for step ${s.id}`);
+			return { _type: "setNodeColor" as const, id, color: s.color };
+		});
+
+	const groupOperations: PatchOperation[] = [];
+	const groupColorOperations: PatchOperation[] = [];
+
+	for (const group of groups ?? []) {
+		const memberSteps = steps.filter((s) => s.group === group.id);
+		if (memberSteps.length === 0) continue;
+
+		const children = memberSteps.map((s) => {
+			const pos = positions.get(s.id);
+			if (!pos) throw new Error(`Missing position for step ${s.id}`);
+			const height = estimateNodeHeight(s.description);
+			return { x: pos.x, y: pos.y, width: NODE_WIDTH, height };
+		});
+
+		const bounds = computeGroupBounds(children);
+		if (!bounds) continue;
+
+		const groupNodeId = new ObjectId().toString();
+
+		groupOperations.push({
+			_type: "createNode" as const,
+			id: groupNodeId,
+			x: bounds.x,
+			y: bounds.y,
+			width: bounds.width,
+			height: bounds.height,
+			data: {
+				_type: "Group" as const,
+				_content: { title: group.title ?? null },
+			},
+		});
+
+		if (group.color) {
+			groupColorOperations.push({
+				_type: "setNodeColor" as const,
+				id: groupNodeId,
+				color: group.color,
+			});
+		}
+	}
+
 	return {
-		operations: [...nodeOperations, ...edgeOperations],
+		operations: [
+			...groupOperations,
+			...nodeOperations,
+			...edgeOperations,
+			...colorOperations,
+			...groupColorOperations,
+		],
 	};
 }

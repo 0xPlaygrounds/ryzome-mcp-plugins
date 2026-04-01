@@ -20,5 +20,8 @@ export type ListCanvasesResponse =
 export type PatchCanvasRequest = CanvasSchemas["api.patch_canvas.Request"];
 export type PatchOperation = Extract<
 	CanvasSchemas["Operation"],
-	{ _type: "createNode" | "createEdge" }
+	{ _type: "createNode" | "createEdge" | "setNodeColor" }
 >;
+export type GetUploadUrlRequest = CanvasSchemas["api.get_upload_url.Request"];
+export type GetUploadUrlResponse =
+	CanvasSchemas["api.get_upload_url.Response"];
