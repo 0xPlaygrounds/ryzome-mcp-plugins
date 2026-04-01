@@ -165,7 +165,7 @@ function printSetupGuide() {
 	const lines = [
 		accent("  Signal sources"),
 		`  ${dim("Instructions:")} https://ryzome.ai/claw`,
-		`  ${dim("API Key:  ")} http://localhost:3000/workspace#settings/api-keys`,
+		`  ${dim("API Key:  ")} ${DEFAULT_RYZOME_APP_URL}/workspace#settings/api-keys`,
 		"",
 	];
 	console.log(lines.join("\n"));
