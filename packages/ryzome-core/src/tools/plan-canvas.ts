@@ -31,9 +31,7 @@ export const planCanvasParamsSchema = z.object({
 					.describe(
 						"IDs of steps this step depends on (defaults to previous step)",
 					),
-				color: hexColorSchema.describe(
-					"Step color as hex (e.g. '#FF6B6B')",
-				),
+				color: hexColorSchema.describe("Step color as hex (e.g. '#FF6B6B')"),
 				group: z
 					.string()
 					.optional()
@@ -50,9 +48,7 @@ export const planCanvasParamsSchema = z.object({
 					.string()
 					.optional()
 					.describe("Group label displayed on the frame"),
-				color: hexColorSchema.describe(
-					"Group color as hex (e.g. '#4ECDC4')",
-				),
+				color: hexColorSchema.describe("Group color as hex (e.g. '#4ECDC4')"),
 			}),
 		)
 		.optional()
@@ -69,8 +65,7 @@ export async function executePlanCanvas(
 
 	const steps: StepInput[] = params.steps.map((s, i) => {
 		const id = resolvedIds[i];
-		const dependsOn =
-			s.dependsOn ?? (i > 0 ? [resolvedIds[i - 1]] : undefined);
+		const dependsOn = s.dependsOn ?? (i > 0 ? [resolvedIds[i - 1]] : undefined);
 		return {
 			id,
 			title: s.title,

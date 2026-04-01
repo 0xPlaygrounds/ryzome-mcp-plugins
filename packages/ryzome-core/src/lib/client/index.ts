@@ -23,5 +23,4 @@ export type PatchOperation = Extract<
 	{ _type: "createNode" | "createEdge" | "setNodeColor" }
 >;
 export type GetUploadUrlRequest = CanvasSchemas["api.get_upload_url.Request"];
-export type GetUploadUrlResponse =
-	CanvasSchemas["api.get_upload_url.Response"];
+export type GetUploadUrlResponse = CanvasSchemas["api.get_upload_url.Response"];

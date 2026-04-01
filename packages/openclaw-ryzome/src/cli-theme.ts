@@ -2,7 +2,8 @@ import chalk from "chalk";
 
 export const hasColors =
 	process.env.NO_COLOR == null &&
-	(["1", "2", "3"].includes(process.env.FORCE_COLOR ?? "") || process.stdout.isTTY);
+	(["1", "2", "3"].includes(process.env.FORCE_COLOR ?? "") ||
+		process.stdout.isTTY);
 
 export const dim = (s: string) => (hasColors ? chalk.dim(s) : s);
 export const accent = (s: string) => (hasColors ? chalk.hex("#F2A65A")(s) : s);

@@ -38,7 +38,9 @@ interface PluginApi {
 }
 
 function logSetupHint(api: PluginApi) {
-	api.logger.info("[ryzome] context engine detected, but the thread is still unbound.");
+	api.logger.info(
+		"[ryzome] context engine detected, but the thread is still unbound.",
+	);
 	api.logger.info("[ryzome] run: openclaw ryzome setup --key <api-key>");
 	api.logger.info(`[ryzome] guide: ${RYZOME_SETUP_GUIDE_URL}`);
 	api.logger.info(`[ryzome] get a key: ${RYZOME_API_KEY_URL}`);

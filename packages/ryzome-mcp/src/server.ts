@@ -161,10 +161,9 @@ export function createRyzomeMcpServer(): McpServer {
 
 			const client = new RyzomeClient(clientConfig);
 			const canvas = await client.getCanvas(id as string);
-			const markdown = formatCanvasAsMarkdown(
-				canvas as CanvasEditorView,
-				{ appUrl: clientConfig.appUrl },
-			);
+			const markdown = formatCanvasAsMarkdown(canvas as CanvasEditorView, {
+				appUrl: clientConfig.appUrl,
+			});
 
 			return {
 				contents: [

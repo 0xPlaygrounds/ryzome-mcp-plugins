@@ -32,9 +32,7 @@ export const researchCanvasParamsSchema = z.object({
 					.describe(
 						"IDs of nodes this finding depends on (use 'topic' to connect to root)",
 					),
-				color: hexColorSchema.describe(
-					"Finding color as hex (e.g. '#FF6B6B')",
-				),
+				color: hexColorSchema.describe("Finding color as hex (e.g. '#FF6B6B')"),
 				group: z
 					.string()
 					.optional()
@@ -51,9 +49,7 @@ export const researchCanvasParamsSchema = z.object({
 					.string()
 					.optional()
 					.describe("Group label displayed on the frame"),
-				color: hexColorSchema.describe(
-					"Group color as hex (e.g. '#4ECDC4')",
-				),
+				color: hexColorSchema.describe("Group color as hex (e.g. '#4ECDC4')"),
 			}),
 		)
 		.optional()

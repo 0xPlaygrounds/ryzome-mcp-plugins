@@ -31,7 +31,10 @@ describe("executeCreateCanvas", () => {
 			.spyOn(RyzomeClient.prototype, "patchCanvas")
 			.mockResolvedValue(undefined);
 
-		const result = await executeCreateCanvas({ title: "Plan", nodes }, clientConfig);
+		const result = await executeCreateCanvas(
+			{ title: "Plan", nodes },
+			clientConfig,
+		);
 
 		expect(createCanvasSpy).toHaveBeenCalledTimes(1);
 		expect(patchCanvasSpy).toHaveBeenCalledTimes(1);
@@ -61,7 +64,10 @@ describe("executeCreateCanvas", () => {
 			)
 			.mockResolvedValueOnce(undefined);
 
-		const result = await executeCreateCanvas({ title: "Plan", nodes }, clientConfig);
+		const result = await executeCreateCanvas(
+			{ title: "Plan", nodes },
+			clientConfig,
+		);
 
 		expect(createCanvasSpy).toHaveBeenCalledTimes(1);
 		expect(patchCanvasSpy).toHaveBeenCalledTimes(2);

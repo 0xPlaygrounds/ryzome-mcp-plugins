@@ -48,9 +48,7 @@ export const createCanvasParamsSchema = z.object({
 					.string()
 					.optional()
 					.describe("Group label displayed on the frame"),
-				color: hexColorSchema.describe(
-					"Group color as hex (e.g. '#4ECDC4')",
-				),
+				color: hexColorSchema.describe("Group color as hex (e.g. '#4ECDC4')"),
 			}),
 		)
 		.optional()

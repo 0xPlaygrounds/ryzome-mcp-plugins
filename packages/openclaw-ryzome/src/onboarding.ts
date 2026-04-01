@@ -76,8 +76,7 @@ export function printDemoHints(): void {
 		accent("  Try creating your first canvas:"),
 		"",
 		...DEMO_IDEAS.map(
-			(idea) =>
-				`  ${dim("•")} ${idea.prompt} ${dim(`(${idea.toolHint})`)}`,
+			(idea) => `  ${dim("•")} ${idea.prompt} ${dim(`(${idea.toolHint})`)}`,
 		),
 		"",
 	];
@@ -100,7 +99,9 @@ export async function promptDemoCanvas(
 	printDemoMenu();
 
 	const answer = (
-		await ask(dim(`  Pick one (1-${DEMO_IDEAS.length}), or press Enter to skip: `))
+		await ask(
+			dim(`  Pick one (1-${DEMO_IDEAS.length}), or press Enter to skip: `),
+		)
 	).trim();
 
 	if (!answer || answer === "0") {
