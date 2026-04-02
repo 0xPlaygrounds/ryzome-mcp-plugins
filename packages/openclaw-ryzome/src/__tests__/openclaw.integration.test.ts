@@ -46,6 +46,7 @@ const pluginRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"../..",
 );
+const coreRoot = path.resolve(pluginRoot, "..", "ryzome-core");
 const openclawRoot = path.join(pluginRoot, "node_modules", "openclaw");
 const openclawCliPath = path.join(openclawRoot, "openclaw.mjs");
 const liveSmokeEnabled = process.env.RYZOME_ENABLE_LIVE_SMOKE === "1";
@@ -296,14 +297,47 @@ async function startStubServer() {
 	};
 }
 
+async function packCoreTarball(tempDir: string) {
+	execFileSync(getPnpmCommand(), ["pack", "--pack-destination", tempDir], {
+		cwd: coreRoot,
+		encoding: "utf8",
+	});
+	const entries = await fs.readdir(tempDir);
+	const tarball = entries.find(
+		(entry) => entry.endsWith(".tgz") && entry.includes("ryzome-core"),
+	);
+	if (!tarball) {
+		throw new Error(`No ryzome-core tarball found in ${tempDir}`);
+	}
+	return path.join(tempDir, tarball);
+}
+
 async function installPackagedPlugin(stateDir: string) {
 	const packDir = await createTempRoot("openclaw-ryzome-pack-");
+
+	// Pack ryzome-core first (openclaw-ryzome depends on it)
+	const coreTarball = await packCoreTarball(packDir);
+
 	const tarballPath = await packPluginTarball(packDir);
+
+	// Rewrite the plugin tarball so @ryzome-ai/ryzome-core resolves locally
+	const unpackDir = path.join(packDir, "repack");
+	await fs.mkdir(unpackDir, { recursive: true });
+	execFileSync("tar", ["-xzf", tarballPath, "-C", unpackDir]);
+	const pkgJsonPath = path.join(unpackDir, "package", "package.json");
+	const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, "utf8"));
+	if (pkgJson.dependencies?.["@ryzome-ai/ryzome-core"]) {
+		pkgJson.dependencies["@ryzome-ai/ryzome-core"] = `file:${coreTarball}`;
+	}
+	await fs.writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2));
+	const repackedTarball = path.join(packDir, "repacked-plugin.tgz");
+	execFileSync("tar", ["-czf", repackedTarball, "-C", unpackDir, "package"]);
+
 	const installOutput = runOpenClaw(
-		["plugins", "install", tarballPath],
+		["plugins", "install", repackedTarball],
 		stateDir,
 	);
-	return { installOutput, tarballPath };
+	return { installOutput, tarballPath: repackedTarball };
 }
 
 afterEach(async () => {
