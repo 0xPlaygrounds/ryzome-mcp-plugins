@@ -1,0 +1,36 @@
+{
+  "name": "@ryzome-ai/ryzome-claude-plugin",
+  "version": "0.2.0",
+  "description": "Ryzome plugin for Claude Code — canvas tools, context resources, skills, and agents",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xPlaygrounds/openclaw-ryzome.git"
+  },
+  "homepage": "https://ryzome.ai",
+  "bugs": {
+    "url": "https://github.com/0xPlaygrounds/openclaw-ryzome/issues"
+  },
+  "keywords": [
+    "claude-code-plugin",
+    "ryzome",
+    "canvas",
+    "agent",
+    "mcp",
+    "context"
+  ],
+  "files": [
+    ".claude-plugin",
+    ".mcp.json",
+    "skills",
+    "agents",
+    "hooks"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@ryzome-ai/ryzome-mcp": "workspace:*"
+  }
+}

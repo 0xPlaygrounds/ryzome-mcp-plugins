@@ -1,66 +1,15 @@
 {
-  "name": "@ryzome-ai/openclaw-ryzome",
-  "version": "0.2.1",
-  "description": "Ryzome Canvas OpenClaw Plugin",
-  "license": "MIT",
-  "type": "module",
-  "packageManager": "pnpm@10.31.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/0xPlaygrounds/openclaw-ryzome.git"
-  },
-  "homepage": "https://ryzome.ai/claw",
-  "bugs": {
-    "url": "https://github.com/0xPlaygrounds/openclaw-ryzome/issues"
-  },
-  "keywords": [
-    "openclaw",
-    "ryzome",
-    "plugin",
-    "canvas",
-    "agent"
-  ],
-  "openclaw": {
-    "extensions": [
-      "./src/index.ts"
-    ]
-  },
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "files": [
-    "src/*.ts",
-    "src/lib/*.ts",
-    "src/lib/client/*.ts",
-    "src/lib/client/*.d.ts",
-    "src/tools/*.ts",
-    "openclaw.plugin.json"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "test": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:watch": "vitest watch",
-    "typecheck": "tsc --noEmit",
-    "lint": "biome lint . && tsc --noEmit",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "lint:check": "biome lint --diagnostic-level=error ."
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.6",
-    "@types/node": "^25.4.0",
-    "openclaw": "^2026.3.8",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
-  },
-  "dependencies": {
-    "@sinclair/typebox": "^0.34.48",
-    "bson": "^7.2.0",
-    "chalk": "^5.6.2",
-    "openapi-fetch": "^0.17.0",
-    "zod": "^4.3.6"
-  }
+	"private": true,
+	"name": "ryzome-openclaw-workspace",
+	"packageManager": "pnpm@10.31.0",
+	"scripts": {
+		"test": "pnpm --filter './packages/*' -r --if-present test",
+		"test:integration": "pnpm --filter './packages/*' -r --if-present test:integration",
+		"typecheck": "pnpm -r --if-present typecheck",
+		"lint": "pnpm -r --if-present lint",
+		"lint:check": "pnpm -r --if-present lint:check",
+		"format": "pnpm -r --if-present format",
+		"format:check": "pnpm -r --if-present format:check",
+		"build": "pnpm -r --if-present build"
+	}
 }
