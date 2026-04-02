@@ -357,7 +357,7 @@ describe("OpenClaw integration", () => {
 				configuredConfig,
 				"Stubbed OpenClaw integration",
 			);
-			const resultText = result.content?.[0]?.text ?? "";
+			const resultText = result?.content?.[0]?.text ?? "";
 			expect(resultText).toContain(
 				"Canvas created: **Stubbed OpenClaw integration**",
 			);
