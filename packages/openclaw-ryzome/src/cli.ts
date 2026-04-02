@@ -49,14 +49,13 @@ type PluginApi = {
 		registrar: (context: { program: unknown }) => void,
 		opts?: { commands?: string[] },
 	) => void;
+};
+
 function maskSecret(value: string): string {
 	if (value.length <= 8) {
 		return "****";
 	}
 	return `${value.slice(0, 4)}...${value.slice(-4)}`;
-}
-
-	return `${value.slice(0, 8)}...${value.slice(-4)}`;
 }
 
 function createPrompt() {

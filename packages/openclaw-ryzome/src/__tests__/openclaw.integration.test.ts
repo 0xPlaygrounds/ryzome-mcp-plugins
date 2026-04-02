@@ -208,7 +208,7 @@ async function executeCreateCanvasTool(
 	const tool = tools.find((entry) => entry.name === "create_ryzome_canvas");
 	expect(tool).toBeDefined();
 
-	return await tool!.execute("integration-call", {
+	return await tool?.execute("integration-call", {
 		title,
 		nodes: [
 			{
@@ -395,7 +395,7 @@ describe("OpenClaw integration", () => {
 			const appBase = appUrl.replace(/\/+$/, "");
 
 			await setPluginConfig(stateDir, {
-				apiKey: liveSmokeApiKey!,
+				apiKey: liveSmokeApiKey ?? "",
 				apiUrl,
 				appUrl,
 			});
@@ -409,7 +409,7 @@ describe("OpenClaw integration", () => {
 				configuredConfig,
 				`Live smoke ${new Date().toISOString()}`,
 			);
-			const resultText = result.content?.[0]?.text ?? "";
+			const resultText = result?.content?.[0]?.text ?? "";
 			expect(resultText).toContain("Canvas created:");
 			expect(resultText).toContain(`${appBase}/canvas/`);
 		},
