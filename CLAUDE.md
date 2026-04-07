@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A pnpm monorepo providing Ryzome canvas tools for AI agents via multiple integration surfaces:
 
-- `packages/ryzome-core` (`@ryzome-ai/ryzome-core`) — Shared logic: API client, 5 tools, graph builder, layout, canvas markdown formatter
+- `packages/ryzome-core` (`@ryzome-ai/ryzome-core`) — Shared logic: API client, 6 tools, graph builder, layout, canvas markdown formatter
 - `packages/openclaw-ryzome` (`@ryzome-ai/openclaw-ryzome`) — OpenClaw plugin adapter (thin wrapper over core)
 - `packages/ryzome-mcp` (`@ryzome-ai/ryzome-mcp`) — MCP server with tools + resources for Claude Code / any MCP client
 - `packages/ryzome-claude-plugin` (`@ryzome-ai/ryzome-claude-plugin`) — Claude Code plugin (skills, agent, hooks)
@@ -22,6 +22,9 @@ pnpm -r --if-present typecheck  # tsc --noEmit in each package
 pnpm -r --if-present lint       # biome lint + typecheck
 pnpm format                # biome format --write (root)
 pnpm format:check          # biome format check (CI mode)
+pnpm changeset             # Create a changeset for version bumps
+pnpm version-packages      # Apply changesets + sync plugin manifest
+pnpm release               # Build + publish all changed packages
 
 # Per-package
 pnpm --filter @ryzome-ai/ryzome-core test
@@ -83,4 +86,11 @@ Tool params → Zod validation → canvas-executor
 
 ## CI
 
-GitHub Actions runs lint, typecheck, and tests on every push to main and on PRs. Publishing happens via `publish.yml` — dev tags on main push, stable releases on GitHub release events. Live smoke tests run as a separate gated job.
+GitHub Actions runs lint, typecheck, and tests on every push to main and on PRs. Live smoke tests run as a separate gated job.
+
+**Publishing** uses [Changesets](https://github.com/changesets/changesets) for independent per-package versioning:
+
+- Each package is versioned independently — `pnpm changeset` to describe changes
+- On push to main, `changesets/action` either creates a "Version Packages" PR (if pending changesets exist) or publishes stable releases (if a version PR was just merged)
+- Dev snapshots are published on every main push under the `dev` npm tag when there are pending changesets
+- `scripts/sync-plugin-version.mjs` keeps `openclaw.plugin.json` version in sync with the `openclaw-ryzome` package version

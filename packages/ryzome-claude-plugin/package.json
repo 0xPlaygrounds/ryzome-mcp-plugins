@@ -6,11 +6,12 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/0xPlaygrounds/openclaw-ryzome.git"
+    "url": "git+https://github.com/0xPlaygrounds/ryzome-mcp-plugins.git",
+    "directory": "packages/ryzome-claude-plugin"
   },
-  "homepage": "https://ryzome.ai",
+  "homepage": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/tree/main/packages/ryzome-claude-plugin",
   "bugs": {
-    "url": "https://github.com/0xPlaygrounds/openclaw-ryzome/issues"
+    "url": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/issues"
   },
   "keywords": [
     "claude-code-plugin",
@@ -31,6 +32,6 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@ryzome-ai/ryzome-mcp": "workspace:*"
+    "@ryzome-ai/ryzome-mcp": "workspace:^"
   }
 }
