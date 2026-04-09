@@ -7,11 +7,12 @@
 	"packageManager": "pnpm@10.31.0",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/0xPlaygrounds/openclaw-ryzome.git"
+		"url": "git+https://github.com/0xPlaygrounds/ryzome-mcp-plugins.git",
+		"directory": "packages/ryzome-mcp"
 	},
-	"homepage": "https://ryzome.ai",
+	"homepage": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/tree/main/packages/ryzome-mcp",
 	"bugs": {
-		"url": "https://github.com/0xPlaygrounds/openclaw-ryzome/issues"
+		"url": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/issues"
 	},
 	"keywords": [
 		"mcp",

@@ -10,6 +10,12 @@
 		"lint:check": "pnpm -r --if-present lint:check",
 		"format": "pnpm -r --if-present format",
 		"format:check": "pnpm -r --if-present format:check",
-		"build": "pnpm -r --if-present build"
+		"build": "pnpm -r --if-present build",
+		"changeset": "changeset",
+		"version-packages": "changeset version && node scripts/sync-plugin-version.mjs",
+		"release": "pnpm build && changeset publish"
+	},
+	"devDependencies": {
+		"@changesets/cli": "^2.30.0"
 	}
 }

@@ -7,8 +7,20 @@
 	"packageManager": "pnpm@10.31.0",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/0xPlaygrounds/openclaw-ryzome.git"
+		"url": "git+https://github.com/0xPlaygrounds/ryzome-mcp-plugins.git",
+		"directory": "packages/ryzome-core"
 	},
+	"homepage": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/tree/main/packages/ryzome-core",
+	"bugs": {
+		"url": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/issues"
+	},
+	"keywords": [
+		"ryzome",
+		"canvas",
+		"api-client",
+		"graph",
+		"agent"
+	],
 	"exports": {
 		".": "./dist/index.js",
 		"./config": "./dist/config.js",

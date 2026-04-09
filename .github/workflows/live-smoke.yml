@@ -40,6 +40,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build packages
+        run: pnpm build
+
       - name: Validate live smoke configuration
         run: |
           test -n "$RYZOME_LIVE_SMOKE_API_KEY" || {
