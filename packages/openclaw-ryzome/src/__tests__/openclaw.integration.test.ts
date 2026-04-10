@@ -253,10 +253,23 @@ async function startStubServer() {
 			? String(req.headers["x-api-key"])
 			: null;
 
-		if (method === "POST" && url === "/v1/canvas") {
+		if (method === "POST" && url === "/v1/document") {
 			const body = await readJsonBody(req);
 			requests.push({ method, url, apiKey, body });
-			writeJson(res, 200, { canvas_id: { $oid: canvasId } });
+			writeJson(res, 200, {
+				documents: [
+					{
+						_id: { $oid: canvasId },
+						title: null,
+						description: null,
+						content: { _type: "Canvas", _content: { nodes: [], edges: [] } },
+						createdAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString(),
+						generated: false,
+						ownerId: "test-user",
+					},
+				],
+			});
 			return;
 		}
 
@@ -402,7 +415,7 @@ describe("OpenClaw integration", () => {
 			expect(stub.requests).toHaveLength(2);
 			expect(stub.requests[0]).toMatchObject({
 				method: "POST",
-				url: "/v1/canvas",
+				url: "/v1/document",
 				apiKey: "stub-api-key",
 			});
 			expect(stub.requests[1]).toMatchObject({

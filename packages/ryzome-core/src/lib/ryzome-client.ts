@@ -174,40 +174,48 @@ export class RyzomeClient {
 
 	async createCanvas(req: CreateCanvasRequest): Promise<CreateCanvasResponse> {
 		try {
-			const { data, error, response } = await this.client.POST("/canvas", {
-				body: req,
+			const { data, error, response } = await this.client.POST("/document", {
+				body: {
+					documents: [
+						{
+							title: req.name,
+							description: req.description,
+						},
+					],
+				},
 			});
 
 			if (!response.ok || !data) {
 				throw this.buildHttpError({
 					stage: "createCanvas",
 					method: "POST",
-					path: "/canvas",
+					path: "/document",
 					response,
 					error,
 				});
 			}
 
-			return data;
+			const doc = data.documents[0];
+			return { canvas_id: doc._id };
 		} catch (error) {
 			if (error instanceof RyzomeApiError) throw error;
 			throw this.buildNetworkError({
 				stage: "createCanvas",
 				method: "POST",
-				path: "/canvas",
+				path: "/document",
 				error,
 			});
 		}
 	}
 
 	async getCanvas(canvasId: string) {
-		const path = `/canvas/${canvasId}`;
+		const path = `/document/${canvasId}`;
 
 		try {
 			const { data, error, response } = await this.client.GET(
-				"/canvas/{canvas_id}",
+				"/document/{document_id}",
 				{
-					params: { path: { canvas_id: canvasId } },
+					params: { path: { document_id: canvasId } },
 				},
 			);
 
@@ -222,7 +230,21 @@ export class RyzomeClient {
 				});
 			}
 
-			return data;
+			// Transform DocumentView to CanvasEditorView shape
+			const nodes =
+				data.content._type === "Canvas" ? data.content._content.nodes : [];
+			const edges =
+				data.content._type === "Canvas" ? data.content._content.edges : [];
+
+			return {
+				_id: data._id,
+				name: data.title ?? "Untitled",
+				description: data.description,
+				nodes,
+				edges,
+				isTemplate: false,
+				ownerId: data.ownerId,
+			};
 		} catch (error) {
 			if (error instanceof RyzomeApiError) throw error;
 			throw this.buildNetworkError({
@@ -238,12 +260,12 @@ export class RyzomeClient {
 	async listCanvases(opts?: {
 		pinned?: boolean;
 	}): Promise<ListCanvasesResponse> {
-		const path = "/canvas";
+		const path = "/document";
 
 		try {
-			const { data, error, response } = await this.client.GET("/canvas", {
+			const { data, error, response } = await this.client.GET("/document", {
 				params: {
-					query: opts?.pinned != null ? { pinned: opts.pinned } : {},
+					query: opts?.pinned != null ? { isFavorite: opts.pinned } : {},
 				},
 			});
 
@@ -257,7 +279,19 @@ export class RyzomeClient {
 				});
 			}
 
-			return data;
+			// Filter for canvas-type documents and transform to CanvasSummaryView
+			const canvases = data
+				.filter((doc) => doc.content._type === "Canvas")
+				.map((doc) => ({
+					_id: doc._id,
+					name: doc.title ?? "Untitled",
+					description: doc.description,
+					isTemplate: false,
+					pinned: doc.isFavorite ?? false,
+					updatedAt: doc.updatedAt,
+				}));
+
+			return { data: canvases };
 		} catch (error) {
 			if (error instanceof RyzomeApiError) throw error;
 			throw this.buildNetworkError({
