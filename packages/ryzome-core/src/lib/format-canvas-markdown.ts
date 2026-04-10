@@ -15,7 +15,7 @@ function extractNodeTitle(node: NodeEditorView): string {
 
 function extractNodeContent(node: NodeEditorView): string {
 	if (node.data._type === "Document" && node.data.content._type === "Text") {
-		return node.data.content._content.text;
+		return node.data.content._content.text ?? "";
 	}
 	if (node.data._type === "Document" && node.data.content._type === "File") {
 		return "[File attachment]";

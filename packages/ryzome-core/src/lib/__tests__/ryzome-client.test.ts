@@ -28,7 +28,7 @@ describe("RyzomeClient", () => {
 		).rejects.toMatchObject({
 			stage: "createCanvas",
 			method: "POST",
-			path: "/canvas",
+			path: "/document",
 			status: 500,
 			body: "duplicate key",
 			retryable: true,
