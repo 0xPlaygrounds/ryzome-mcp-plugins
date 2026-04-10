@@ -78,11 +78,11 @@ Full control over nodes and edges:
 {
   "title": "Research plan",
   "nodes": [
-    { "id": "a", "title": "Collect sources", "description": "Gather papers.", "color": "#4CAF50" },
-    { "id": "b", "title": "Synthesize", "description": "Summarize evidence." }
+    { "id": "a", "title": "Collect sources", "description": "Gather papers.", "color": "#4CAF50", "group": "g1" },
+    { "id": "b", "title": "Synthesize", "description": "Summarize evidence.", "group": "g1" }
   ],
   "edges": [{ "from": "a", "to": "b", "label": "feeds" }],
-  "groups": [{ "id": "g1", "title": "Phase 1", "nodeIds": ["a", "b"] }]
+  "groups": [{ "id": "g1", "title": "Phase 1", "color": "#4ECDC4" }]
 }
 ```
 
@@ -109,9 +109,10 @@ Root topic with branching findings:
 {
   "title": "Model evaluation",
   "topic": "How should we evaluate groundedness?",
+  "topicColor": "#FF6B6B",
   "findings": [
-    { "id": "f1", "title": "Source visibility matters", "dependsOn": ["topic"] },
-    { "id": "f2", "title": "Correction loops needed", "dependsOn": ["f1"] }
+    { "id": "f1", "title": "Source visibility matters", "description": "Users need to see cited sources.", "dependsOn": ["topic"] },
+    { "id": "f2", "title": "Correction loops needed", "description": "Allow users to flag incorrect claims.", "dependsOn": ["f1"] }
   ]
 }
 ```
@@ -124,7 +125,11 @@ Root topic with branching findings:
 
 ### `list_ryzome_canvases`
 
-No parameters. Returns all accessible canvases with names, IDs, and descriptions.
+```json
+{ "pinned": true }
+```
+
+Optional `pinned` boolean filter. Returns all accessible canvases with names, IDs, and descriptions.
 
 ### `upload_ryzome_image`
 

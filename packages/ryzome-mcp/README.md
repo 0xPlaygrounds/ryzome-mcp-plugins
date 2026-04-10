@@ -37,7 +37,7 @@ Add to your `.mcp.json` or MCP client config:
 | `create_ryzome_research` | Create a canvas with research findings branching from a root topic |
 | `get_ryzome_canvas` | Retrieve a canvas by ID with all nodes and edges |
 | `list_ryzome_canvases` | List all canvases accessible to the current user |
-| `upload_ryzome_image` | Upload an image from a URL to an existing canvas |
+| `upload_ryzome_image` | Upload an image from a URL to an existing canvas (requires backend file-upload auth — not yet available) |
 
 ## Resources
 
