@@ -415,7 +415,7 @@ describe("OpenClaw integration", () => {
 			expect(stub.requests).toHaveLength(2);
 			expect(stub.requests[0]).toMatchObject({
 				method: "POST",
-				url: "/v1/canvas",
+				url: "/v1/document",
 				apiKey: "stub-api-key",
 			});
 			expect(stub.requests[1]).toMatchObject({
