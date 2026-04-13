@@ -2,7 +2,6 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { ObjectId } from "bson";
 import {
-	RyzomeApiError,
 	RyzomeClient,
 	type RyzomeClientConfig,
 } from "../lib/ryzome-client.js";
@@ -89,25 +88,7 @@ export async function executeUploadImage(
 	const s3Key = `canvas/${params.canvas_id}/images/${randomUUID()}.${ext}`;
 
 	// Request presigned upload URL and upload to S3
-	let uploadUrl: Awaited<ReturnType<RyzomeClient["requestUploadUrl"]>>;
-	try {
-		uploadUrl = await retryStage(() => client.requestUploadUrl(s3Key));
-	} catch (error) {
-		if (
-			error instanceof RyzomeApiError &&
-			(error.status === 401 || error.status === 403)
-		) {
-			return {
-				content: [
-					{
-						type: "text",
-						text: "Image upload is not yet available — the file upload API endpoint does not currently support API key authentication. This feature will be enabled once the backend adds API key auth to the /files route.",
-					},
-				],
-			};
-		}
-		throw error;
-	}
+	const uploadUrl = await retryStage(() => client.requestUploadUrl(s3Key));
 
 	await retryStage(() =>
 		client.uploadFile(
