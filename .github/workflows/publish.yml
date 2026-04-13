@@ -139,6 +139,26 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
 
+      - name: Create GitHub Release
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Build release body from published packages
+          BODY="## Published packages\n\n"
+          for pkg in $(echo '${{ steps.changesets.outputs.publishedPackages }}' | jq -r '.[] | "\(.name)@\(.version)"'); do
+            BODY="${BODY}- \`${pkg}\`\n"
+          done
+
+          # Use the highest non-snapshot version as the tag
+          VERSION=$(echo '${{ steps.changesets.outputs.publishedPackages }}' | jq -r '.[0].version')
+          TAG="v${VERSION}"
+
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes "$(echo -e "$BODY")" \
+            --latest
+
   dev-snapshot:
     name: Publish dev snapshots
     runs-on: ubuntu-latest
