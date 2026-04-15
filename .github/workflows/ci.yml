@@ -94,3 +94,47 @@ jobs:
 
       - name: Integration test
         run: pnpm run test:integration
+
+  changeset-live-smoke:
+    name: Live integration test for Changesets PRs
+    if: github.event_name == 'pull_request' && github.head_ref == 'changeset-release/main'
+    runs-on: ubuntu-latest
+    needs: lint-typecheck-and-test
+    env:
+      RYZOME_ENABLE_LIVE_SMOKE: "1"
+      RYZOME_LIVE_SMOKE_API_KEY: ${{ secrets.RYZOME_LIVE_SMOKE_API_KEY }}
+      RYZOME_LIVE_SMOKE_API_URL: ${{ vars.RYZOME_LIVE_SMOKE_API_URL }}
+      RYZOME_LIVE_SMOKE_APP_URL: ${{ vars.RYZOME_LIVE_SMOKE_APP_URL }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.31.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Validate live smoke configuration
+        run: |
+          test -n "$RYZOME_LIVE_SMOKE_API_KEY" || {
+            echo "RYZOME_LIVE_SMOKE_API_KEY is required for Changesets PR live smoke checks."
+            exit 1
+          }
+
+      - name: Run live smoke integration test
+        run: pnpm run test:integration
