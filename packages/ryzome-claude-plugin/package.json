@@ -1,6 +1,6 @@
 {
   "name": "@ryzome-ai/ryzome-claude-plugin",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Ryzome plugin for Claude Code — canvas and document tools, resources, skills, and agents",
   "license": "MIT",
   "type": "module",
