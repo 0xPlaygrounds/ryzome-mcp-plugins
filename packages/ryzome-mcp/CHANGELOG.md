@@ -1,5 +1,12 @@
 # @ryzome-ai/ryzome-mcp
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [2e42f57]
+  - @ryzome-ai/ryzome-core@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes
