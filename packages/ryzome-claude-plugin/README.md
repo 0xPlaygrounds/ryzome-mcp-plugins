@@ -1,6 +1,6 @@
 # @ryzome-ai/ryzome-claude-plugin
 
-[Ryzome](https://ryzome.ai) plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Adds canvas tools, context resources, skills, and a context retrieval agent.
+[Ryzome](https://ryzome.ai) plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Adds canvas and document tools, library resources, skills, and a context retrieval agent.
 
 ## Install
 
@@ -14,15 +14,20 @@ You'll be prompted for your Ryzome API key (stored securely in your system keych
 
 ## What's Included
 
-### MCP Tools (6)
+### MCP Tools (11)
 
 | Tool | Description |
 |------|-------------|
+| `create_ryzome_document` | Create a standalone document in the Ryzome library |
 | `create_ryzome_canvas` | Create a canvas with explicitly defined nodes and edges |
+| `get_ryzome_document` | Retrieve a document by ID with metadata and content details |
 | `create_ryzome_plan` | Create a canvas from sequential steps (auto-chained) |
 | `create_ryzome_research` | Create a canvas with research findings branching from a topic |
 | `get_ryzome_canvas` | Retrieve a canvas by ID with all nodes and edges |
+| `list_ryzome_documents` | List accessible documents, optionally filtered by tag, favorite state, or content type |
 | `list_ryzome_canvases` | List all accessible canvases |
+| `update_ryzome_document` | Update document metadata or content, including appending text |
+| `save_ryzome_node_to_library` | Promote a canvas node's backing document into the library |
 | `upload_ryzome_image` | Upload an image from a URL to an existing canvas |
 
 ### MCP Resources
@@ -31,6 +36,8 @@ You'll be prompted for your Ryzome API key (stored securely in your system keych
 |-----|-------------|
 | `ryzome://canvases` | JSON list of all canvas summaries |
 | `ryzome://canvas/{id}` | Single canvas rendered as structured markdown |
+| `ryzome://documents` | JSON list of library-visible document summaries |
+| `ryzome://document/{id}` | Single document rendered as structured markdown |
 
 ### Skills
 
@@ -42,7 +49,7 @@ You'll be prompted for your Ryzome API key (stored securely in your system keych
 
 ### Agent
 
-**`ryzome-context`** — A lightweight (Haiku-powered) context retrieval agent that finds and summarizes canvas content. It has access to `list_ryzome_canvases` and `get_ryzome_canvas`.
+**`ryzome-context`** — A lightweight (Haiku-powered) context retrieval agent that finds and summarizes canvas or document content. It has access to `list_ryzome_canvases`, `get_ryzome_canvas`, `list_ryzome_documents`, and `get_ryzome_document`.
 
 ### Hooks
 
@@ -62,13 +69,13 @@ userConfig.api_key → PLUGIN_USER_CONFIG_API_KEY env var → ryzome-mcp server
 
 ## Architecture
 
-This package ships no code — it's a static configuration bundle:
+This package ships no code. It is a static configuration bundle:
 
 ```
 .claude-plugin/plugin.json   # Plugin manifest (name, scopes, userConfig)
 .mcp.json                    # Bundled MCP server config (npx @ryzome-ai/ryzome-mcp)
 skills/                      # /plan, /research, /ryzome-status
-agents/                      # ryzome-context retrieval agent
+agents/                      # ryzome-context retrieval agent for canvases and documents
 hooks/                       # SessionStart greeting
 ```
 
