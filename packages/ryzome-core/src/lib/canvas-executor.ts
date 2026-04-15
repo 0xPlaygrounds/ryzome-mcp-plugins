@@ -3,6 +3,7 @@ import {
 	type StepInput,
 	type GroupInput,
 } from "./graph-builder.js";
+import { buildCanvasAppUrl } from "./app-url.js";
 import { RyzomeClient, type RyzomeClientConfig } from "./ryzome-client.js";
 import { retryStage } from "./retry.js";
 
@@ -29,8 +30,7 @@ export async function executeCanvasWithSteps(
 		client.patchCanvas(canvasId, { operations: graph.operations }),
 	);
 
-	const appBase = clientConfig.appUrl.replace(/\/+$/, "");
-	const canvasUrl = `${appBase}/canvas/${canvasId}`;
+	const canvasUrl = buildCanvasAppUrl(clientConfig.appUrl, canvasId);
 
 	const nodeCount = graph.operations.filter(
 		(o) => o._type === "createNode",

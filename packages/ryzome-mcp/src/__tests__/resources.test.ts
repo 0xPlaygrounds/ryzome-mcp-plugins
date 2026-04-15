@@ -57,6 +57,25 @@ const mockCanvasDetail = {
 	edges: [],
 };
 
+const mockDocuments = [
+	{
+		_id: { $oid: "doc123" },
+		title: "Spec",
+		description: "Working draft",
+		content: {
+			_type: "Text" as const,
+			_content: { text: "Hello world" },
+		},
+		generated: false,
+		inLibrary: true,
+		isFavorite: false,
+		ownerId: "owner1",
+		tags: ["draft"],
+		createdAt: "2026-01-01T00:00:00Z",
+		updatedAt: "2026-01-01T00:00:00Z",
+	},
+];
+
 async function createConnectedClient(envOverrides?: Record<string, string>) {
 	const originalEnv = { ...process.env };
 	if (envOverrides) {
@@ -95,6 +114,9 @@ describe("MCP resources", () => {
 		vi.spyOn(RyzomeClient.prototype, "listCanvases").mockResolvedValue({
 			data: mockCanvases,
 		});
+		vi.spyOn(RyzomeClient.prototype, "listDocuments").mockResolvedValue({
+			data: mockDocuments as never,
+		});
 
 		const { client } = await createConnectedClient({
 			RYZOME_API_KEY: "test-key",
@@ -106,6 +128,10 @@ describe("MCP resources", () => {
 			(r) => r.uri === "ryzome://canvases",
 		);
 		expect(staticResource).toBeDefined();
+		const staticDocumentResource = result.resources.find(
+			(r) => r.uri === "ryzome://documents",
+		);
+		expect(staticDocumentResource).toBeDefined();
 
 		// Should also list dynamic resources from the template's list callback
 		const dynamicResources = result.resources.filter((r) =>
@@ -114,6 +140,12 @@ describe("MCP resources", () => {
 		expect(dynamicResources).toHaveLength(2);
 		expect(dynamicResources[0].name).toBe("Research Canvas");
 		expect(dynamicResources[1].name).toBe("Plan Canvas");
+
+		const dynamicDocumentResources = result.resources.filter((r) =>
+			r.uri.startsWith("ryzome://document/"),
+		);
+		expect(dynamicDocumentResources).toHaveLength(1);
+		expect(dynamicDocumentResources[0].name).toBe("Spec");
 	});
 
 	it("reads ryzome://canvases and returns JSON canvas summaries", async () => {
@@ -136,8 +168,35 @@ describe("MCP resources", () => {
 		expect(parsed).toHaveLength(2);
 		expect(parsed[0].id).toBe("aaa111");
 		expect(parsed[0].name).toBe("Research Canvas");
-		expect(parsed[0].url).toBe("https://ryzome.ai/canvas/aaa111");
+		expect(parsed[0].url).toBe(
+			"https://ryzome.ai/workspace?canvas=aaa111",
+		);
 		expect(parsed[1].id).toBe("bbb222");
+	});
+
+	it("reads ryzome://documents and returns JSON document summaries", async () => {
+		vi.spyOn(RyzomeClient.prototype, "listDocuments").mockResolvedValue({
+			data: mockDocuments as never,
+		});
+
+		const { client } = await createConnectedClient({
+			RYZOME_API_KEY: "test-key",
+		});
+		const result = await client.readResource({ uri: "ryzome://documents" });
+
+		expect(result.contents).toHaveLength(1);
+		expect(result.contents[0].mimeType).toBe("application/json");
+
+		const content = result.contents[0];
+		expect("text" in content).toBe(true);
+		const text = (content as { text: string }).text;
+		const parsed = JSON.parse(text);
+		expect(parsed).toHaveLength(1);
+		expect(parsed[0].id).toBe("doc123");
+		expect(parsed[0].contentType).toBe("Text");
+		expect(parsed[0].url).toBe(
+			"https://ryzome.ai/workspace?document=doc123",
+		);
 	});
 
 	it("reads ryzome://canvas/{id} and returns markdown", async () => {
@@ -166,6 +225,33 @@ describe("MCP resources", () => {
 		expect(md).toContain("AI research notes");
 		expect(md).toContain("### Findings");
 		expect(md).toContain("Gathered research findings");
+	});
+
+	it("reads ryzome://document/{id} and returns markdown", async () => {
+		vi.spyOn(RyzomeClient.prototype, "getDocument").mockResolvedValue(
+			mockDocuments[0] as ReturnType<
+				typeof RyzomeClient.prototype.getDocument
+			> extends Promise<infer T>
+				? T
+				: never,
+		);
+
+		const { client } = await createConnectedClient({
+			RYZOME_API_KEY: "test-key",
+		});
+		const result = await client.readResource({
+			uri: "ryzome://document/doc123",
+		});
+
+		expect(result.contents).toHaveLength(1);
+		expect(result.contents[0].mimeType).toBe("text/markdown");
+
+		const content = result.contents[0];
+		expect("text" in content).toBe(true);
+		const md = (content as { text: string }).text;
+		expect(md).toContain("# Spec");
+		expect(md).toContain("> Type: Text");
+		expect(md).toContain("Hello world");
 	});
 
 	it("returns error text for resources when API key is missing", async () => {

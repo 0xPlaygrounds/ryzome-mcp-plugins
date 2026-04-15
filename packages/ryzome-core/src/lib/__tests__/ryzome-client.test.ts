@@ -71,4 +71,139 @@ describe("RyzomeClient", () => {
 			canvasId: "0123456789abcdef01234567",
 		});
 	});
+
+	it("creates a standalone document through the document endpoint", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					documents: [
+						{
+							_id: { $oid: "doc123" },
+							title: "Specs",
+							description: "Draft spec",
+							content: {
+								_type: "Text",
+								_content: { text: "Hello world" },
+							},
+							generated: false,
+							inLibrary: true,
+							isFavorite: false,
+							ownerId: "owner1",
+							tags: ["draft"],
+							createdAt: "2026-01-01T00:00:00Z",
+							updatedAt: "2026-01-01T00:00:00Z",
+						},
+					],
+				}),
+				{
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				},
+			),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new RyzomeClient({
+			apiKey: "secret-key",
+			apiUrl: "https://api.ryzome.ai",
+			appUrl: "https://ryzome.ai",
+		});
+
+		const document = await client.createDocument({
+			title: "Specs",
+			description: "Draft spec",
+		});
+
+		expect(document._id.$oid).toBe("doc123");
+		expect(document.content._type).toBe("Text");
+	});
+
+	it("filters documents client-side for library visibility and content type", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			new Response(
+				JSON.stringify([
+					{
+						_id: { $oid: "doc123" },
+						title: "Specs",
+						description: "Draft spec",
+						content: {
+							_type: "Text",
+							_content: { text: "Hello world" },
+						},
+						generated: false,
+						inLibrary: true,
+						isFavorite: false,
+						ownerId: "owner1",
+						tags: [],
+						createdAt: "2026-01-01T00:00:00Z",
+						updatedAt: "2026-01-01T00:00:00Z",
+					},
+					{
+						_id: { $oid: "doc456" },
+						title: "Private note",
+						description: null,
+						content: {
+							_type: "Website",
+							_content: { url: "https://example.com" },
+						},
+						generated: false,
+						inLibrary: false,
+						isFavorite: false,
+						ownerId: "owner1",
+						tags: [],
+						createdAt: "2026-01-01T00:00:00Z",
+						updatedAt: "2026-01-01T00:00:00Z",
+					},
+				]),
+				{
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				},
+			),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new RyzomeClient({
+			apiKey: "secret-key",
+			apiUrl: "https://api.ryzome.ai",
+			appUrl: "https://ryzome.ai",
+		});
+
+		const result = await client.listDocuments({
+			inLibraryOnly: true,
+			contentTypes: ["Text"],
+		});
+
+		expect(result.data).toHaveLength(1);
+		expect(result.data[0]?._id.$oid).toBe("doc123");
+	});
+
+	it("surfaces stage-aware metadata update failures for documents", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			new Response("forbidden", {
+				status: 404,
+				statusText: "Not Found",
+				headers: { "Content-Type": "text/plain" },
+			}),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new RyzomeClient({
+			apiKey: "secret-key",
+			apiUrl: "https://api.ryzome.ai",
+			appUrl: "https://ryzome.ai",
+		});
+
+		await expect(
+			client.updateDocumentMetadata("doc123", { inLibrary: true }),
+		).rejects.toMatchObject({
+			stage: "updateDocumentMetadata",
+			method: "PUT",
+			path: "/document/doc123/metadata",
+			status: 404,
+			body: "forbidden",
+			retryable: false,
+			documentId: "doc123",
+		});
+	});
 });

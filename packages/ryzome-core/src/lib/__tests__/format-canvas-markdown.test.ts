@@ -78,14 +78,18 @@ describe("formatCanvasAsMarkdown", () => {
 		const md = formatCanvasAsMarkdown(makeCanvas() as never, {
 			appUrl: "https://ryzome.ai",
 		});
-		expect(md).toContain("> View: https://ryzome.ai/canvas/canvas123");
+		expect(md).toContain(
+			"> View: https://ryzome.ai/workspace?canvas=canvas123",
+		);
 	});
 
 	it("should strip trailing slashes from appUrl", () => {
 		const md = formatCanvasAsMarkdown(makeCanvas() as never, {
 			appUrl: "https://ryzome.ai/",
 		});
-		expect(md).toContain("> View: https://ryzome.ai/canvas/canvas123");
+		expect(md).toContain(
+			"> View: https://ryzome.ai/workspace?canvas=canvas123",
+		);
 	});
 
 	it("should format nodes with titles and content", () => {

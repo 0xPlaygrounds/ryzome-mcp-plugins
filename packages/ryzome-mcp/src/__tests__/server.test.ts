@@ -10,13 +10,18 @@ describe("createRyzomeMcpServer", () => {
 
 	it("registers all tools from the registry", () => {
 		const expectedNames = toolRegistry.map((t) => t.name);
+		expect(expectedNames).toContain("create_ryzome_document");
 		expect(expectedNames).toContain("create_ryzome_canvas");
+		expect(expectedNames).toContain("get_ryzome_document");
 		expect(expectedNames).toContain("get_ryzome_canvas");
+		expect(expectedNames).toContain("list_ryzome_documents");
 		expect(expectedNames).toContain("list_ryzome_canvases");
 		expect(expectedNames).toContain("create_ryzome_plan");
 		expect(expectedNames).toContain("create_ryzome_research");
+		expect(expectedNames).toContain("update_ryzome_document");
+		expect(expectedNames).toContain("save_ryzome_node_to_library");
 		expect(expectedNames).toContain("upload_ryzome_image");
-		expect(expectedNames).toHaveLength(6);
+		expect(expectedNames).toHaveLength(11);
 	});
 });
 
@@ -56,8 +61,11 @@ describe("tool execution via server", () => {
 			(t) => t.name === "create_ryzome_canvas",
 		);
 		expect(createCanvasTool).toBeDefined();
+		if (!createCanvasTool) {
+			throw new Error("create_ryzome_canvas tool not registered");
+		}
 
-		const result = await createCanvasTool!.execute(
+		const result = await createCanvasTool.execute(
 			{
 				title: "Test Canvas",
 				nodes: [{ id: "n1", title: "Node 1", description: "Test node" }],
