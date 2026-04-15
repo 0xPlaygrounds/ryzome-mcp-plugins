@@ -88,6 +88,12 @@ Tool params → Zod validation → canvas-executor
 
 GitHub Actions runs lint, typecheck, and tests on every push to main and on PRs. Live smoke tests run as a separate gated job.
 
+## Changeset Discipline
+
+- Any PR with release-relevant changes under `packages/` should include a changeset file created with `pnpm changeset`.
+- Treat code, config, manifest, or shipped asset changes in published packages as release-relevant by default. Pure test-only changes and Markdown-only documentation edits do not need a changeset.
+- Do not leave changeset creation for later in the flow. Add or update the changeset in the same PR as the package change so CI can enforce it.
+
 **Publishing** uses [Changesets](https://github.com/changesets/changesets) for independent per-package versioning:
 
 - Each package is versioned independently — `pnpm changeset` to describe changes

@@ -24,6 +24,44 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require changeset for release-relevant package changes
+        if: github.event_name == 'pull_request'
+        run: |
+          base_ref="${{ github.base_ref }}"
+          diff_range="origin/${base_ref}...HEAD"
+
+          has_release_changes=0
+          has_changeset=0
+
+          while IFS= read -r file; do
+            case "$file" in
+              .changeset/*.md)
+                if [ "$file" != ".changeset/README.md" ]; then
+                  has_changeset=1
+                fi
+                ;;
+              packages/*)
+                case "$file" in
+                  *.md|*/__tests__/*|*.test.*|*.spec.*)
+                    ;;
+                  *)
+                    has_release_changes=1
+                    ;;
+                esac
+                ;;
+            esac
+          done <<EOF
+          $(git diff --name-only "$diff_range")
+          EOF
+
+          if [ "$has_release_changes" -eq 1 ] && [ "$has_changeset" -eq 0 ]; then
+            echo "Release-relevant changes were detected under packages/ without a changeset."
+            echo "Run 'pnpm changeset' and commit the generated .changeset/*.md file in this PR."
+            exit 1
+          fi
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
