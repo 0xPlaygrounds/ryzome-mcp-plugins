@@ -7,6 +7,19 @@ describe("RyzomeClient", () => {
 		vi.restoreAllMocks();
 	});
 
+	async function readJsonRequestBody(fetchMock: ReturnType<typeof vi.fn>) {
+		const [request, init] = fetchMock.mock.calls[0] ?? [];
+		if (request instanceof Request) {
+			return JSON.parse(await request.text());
+		}
+
+		if (typeof init?.body !== "string") {
+			throw new Error("Expected a JSON request body");
+		}
+
+		return JSON.parse(init.body);
+	}
+
 	it("should surface stage-aware HTTP failures from the generated canvas client", async () => {
 		const fetchMock = vi.fn().mockResolvedValue(
 			new Response("duplicate key", {
@@ -35,6 +48,116 @@ describe("RyzomeClient", () => {
 		});
 
 		expect(fetchMock).toHaveBeenCalledOnce();
+	});
+
+	it("creates a canvas document through the document endpoint", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					documents: [
+						{
+							_id: { $oid: "canvas123" },
+							title: "Test Canvas",
+							description: "Draft board",
+							content: {
+								_type: "Canvas",
+								_content: { nodes: [], edges: [] },
+							},
+							generated: false,
+							inLibrary: true,
+							isFavorite: false,
+							ownerId: "owner1",
+							tags: [],
+							createdAt: "2026-01-01T00:00:00Z",
+							updatedAt: "2026-01-01T00:00:00Z",
+						},
+					],
+				}),
+				{
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				},
+			),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new RyzomeClient({
+			apiKey: "secret-key",
+			apiUrl: "https://api.ryzome.ai",
+			appUrl: "https://ryzome.ai",
+		});
+
+		const result = await client.createCanvas({
+			name: "Test Canvas",
+			description: "Draft board",
+		});
+
+		expect(result.canvas_id.$oid).toBe("canvas123");
+		expect(await readJsonRequestBody(fetchMock)).toMatchObject({
+			documents: [
+				{
+					title: "Test Canvas",
+					description: "Draft board",
+					content: {
+						_type: "Canvas",
+						_content: {
+							nodes: [],
+							edges: [],
+						},
+					},
+				},
+			],
+		});
+	});
+
+	it("rejects non-canvas documents returned from createCanvas", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					documents: [
+						{
+							_id: { $oid: "doc123" },
+							title: "Not a canvas",
+							description: "Wrong content type",
+							content: {
+								_type: "Text",
+								_content: { text: "Hello world" },
+							},
+							generated: false,
+							inLibrary: true,
+							isFavorite: false,
+							ownerId: "owner1",
+							tags: [],
+							createdAt: "2026-01-01T00:00:00Z",
+							updatedAt: "2026-01-01T00:00:00Z",
+						},
+					],
+				}),
+				{
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				},
+			),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new RyzomeClient({
+			apiKey: "secret-key",
+			apiUrl: "https://api.ryzome.ai",
+			appUrl: "https://ryzome.ai",
+		});
+
+		await expect(
+			client.createCanvas({ name: "Test Canvas" }),
+		).rejects.toMatchObject({
+			stage: "createCanvas",
+			method: "POST",
+			path: "/document",
+			status: 200,
+			body: "Canvas creation returned a Text document",
+			retryable: false,
+			documentId: "doc123",
+		});
 	});
 
 	it("should include canvas context for post-create failures", async () => {

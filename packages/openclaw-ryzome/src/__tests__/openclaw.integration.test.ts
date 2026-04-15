@@ -236,6 +236,23 @@ async function readJsonBody(req: IncomingMessage) {
 	return raw ? (JSON.parse(raw) as unknown) : undefined;
 }
 
+function isCanvasCreateRequest(body: unknown): boolean {
+	if (typeof body !== "object" || body === null) return false;
+	const documents = (body as { documents?: unknown }).documents;
+	if (!Array.isArray(documents) || documents.length === 0) return false;
+	const firstDocument = documents[0];
+	if (typeof firstDocument !== "object" || firstDocument === null) return false;
+	const content = (firstDocument as { content?: unknown }).content;
+	if (typeof content !== "object" || content === null) return false;
+	if ((content as { _type?: unknown })._type !== "Canvas") return false;
+	const canvasContent = (content as { _content?: unknown })._content;
+	if (typeof canvasContent !== "object" || canvasContent === null) return false;
+	return (
+		Array.isArray((canvasContent as { nodes?: unknown }).nodes) &&
+		Array.isArray((canvasContent as { edges?: unknown }).edges)
+	);
+}
+
 function writeJson(res: ServerResponse, statusCode: number, body: unknown) {
 	res.statusCode = statusCode;
 	res.setHeader("content-type", "application/json");
@@ -255,6 +272,12 @@ async function startStubServer() {
 
 		if (method === "POST" && url === "/v1/document") {
 			const body = await readJsonBody(req);
+			if (!isCanvasCreateRequest(body)) {
+				writeJson(res, 400, {
+					error: "expected Canvas content when creating a canvas document",
+				});
+				return;
+			}
 			requests.push({ method, url, apiKey, body });
 			writeJson(res, 200, {
 				documents: [
@@ -417,6 +440,16 @@ describe("OpenClaw integration", () => {
 				method: "POST",
 				url: "/v1/document",
 				apiKey: "stub-api-key",
+			});
+			expect(stub.requests[0]?.body).toMatchObject({
+				documents: [
+					{
+						content: {
+							_type: "Canvas",
+							_content: { nodes: [], edges: [] },
+						},
+					},
+				],
 			});
 			expect(stub.requests[1]).toMatchObject({
 				method: "PATCH",
