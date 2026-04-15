@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { buildCanvasAppUrl } from "../lib/app-url.js";
 import {
 	RyzomeApiError,
 	RyzomeClient,
@@ -28,8 +29,6 @@ export async function executeListCanvases(
 			params.pinned != null ? { pinned: params.pinned } : undefined,
 		);
 
-		const appBase = clientConfig.appUrl.replace(/\/+$/, "");
-
 		const summaries = result.data.map((c) => ({
 			id: c._id.$oid,
 			name: c.name,
@@ -37,7 +36,7 @@ export async function executeListCanvases(
 			pinned: c.pinned ?? false,
 			isTemplate: c.isTemplate,
 			updatedAt: c.updatedAt,
-			url: `${appBase}/canvas/${c._id.$oid}`,
+			url: buildCanvasAppUrl(clientConfig.appUrl, c._id.$oid),
 		}));
 
 		return {

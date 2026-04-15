@@ -1,3 +1,4 @@
+import { buildCanvasAppUrl } from "./app-url.js";
 import type { components } from "./client/index.js";
 
 export type CanvasEditorView = components["schemas"]["CanvasEditorView"];
@@ -28,14 +29,13 @@ export function formatCanvasAsMarkdown(
 	opts?: { appUrl?: string },
 ): string {
 	const lines: string[] = [];
-	const appBase = opts?.appUrl?.replace(/\/+$/, "");
 
 	lines.push(`# ${canvas.name}`);
 	if (canvas.description) {
 		lines.push("", canvas.description);
 	}
-	if (appBase) {
-		lines.push("", `> View: ${appBase}/canvas/${canvas._id.$oid}`);
+	if (opts?.appUrl) {
+		lines.push("", `> View: ${buildCanvasAppUrl(opts.appUrl, canvas._id.$oid)}`);
 	}
 
 	const nodeIndex = new Map<string, { idx: number; title: string }>();

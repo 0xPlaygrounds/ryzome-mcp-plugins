@@ -2,9 +2,16 @@ import {
 	createApiClient,
 	type CreateCanvasRequest,
 	type CreateCanvasResponse,
+	type CreateDocumentRequestDocument,
+	type DocumentContentView,
+	type DocumentView,
 	type GetUploadUrlResponse,
 	type ListCanvasesResponse,
+	type ListDocumentsResponse,
 	type PatchCanvasRequest,
+	type PatchDocumentRequest,
+	type UpdateDocumentMetadataRequest,
+	type UpdateDocumentMetadataResponse,
 } from "./client/index.js";
 
 export interface RyzomeClientConfig {
@@ -15,12 +22,24 @@ export interface RyzomeClientConfig {
 
 export type RyzomeRequestStage =
 	| "createCanvas"
+	| "createDocument"
 	| "getCanvas"
+	| "getDocument"
 	| "listCanvases"
+	| "listDocuments"
 	| "patchCanvas"
+	| "patchDocument"
+	| "updateDocumentMetadata"
 	| "patchSharingConfig"
 	| "getUploadUrl"
 	| "uploadFile";
+
+export interface ListDocumentsOptions {
+	tag?: string;
+	favorite?: boolean;
+	inLibraryOnly?: boolean;
+	contentTypes?: DocumentContentView["_type"][];
+}
 
 function isRetryableStatus(status: number): boolean {
 	return status === 408 || status === 429 || status >= 500;
@@ -45,12 +64,14 @@ function buildErrorMessage(params: {
 	status: number;
 	body: string;
 	canvasId?: string;
+	documentId?: string;
 }) {
 	const context = [
 		`${params.stage} failed`,
 		`${params.method} ${params.path}`,
 		`status=${params.status}`,
 		params.canvasId ? `canvasId=${params.canvasId}` : null,
+		params.documentId ? `documentId=${params.documentId}` : null,
 	]
 		.filter(Boolean)
 		.join(" | ");
@@ -66,6 +87,7 @@ export class RyzomeApiError extends Error {
 	readonly body: string;
 	readonly retryable: boolean;
 	readonly canvasId?: string;
+	readonly documentId?: string;
 
 	constructor(params: {
 		stage: RyzomeRequestStage;
@@ -75,6 +97,7 @@ export class RyzomeApiError extends Error {
 		body: string;
 		retryable: boolean;
 		canvasId?: string;
+		documentId?: string;
 		cause?: unknown;
 	}) {
 		super(buildErrorMessage(params), { cause: params.cause });
@@ -86,6 +109,7 @@ export class RyzomeApiError extends Error {
 		this.body = params.body;
 		this.retryable = params.retryable;
 		this.canvasId = params.canvasId;
+		this.documentId = params.documentId;
 	}
 }
 
@@ -136,6 +160,7 @@ export class RyzomeClient {
 		response: Response;
 		error: unknown;
 		canvasId?: string;
+		documentId?: string;
 	}) {
 		const body =
 			this.responseBodies.get(params.response) ||
@@ -150,6 +175,7 @@ export class RyzomeClient {
 			body,
 			retryable: isRetryableStatus(params.response.status),
 			canvasId: params.canvasId,
+			documentId: params.documentId,
 		});
 	}
 
@@ -159,6 +185,7 @@ export class RyzomeClient {
 		path: string;
 		error: unknown;
 		canvasId?: string;
+		documentId?: string;
 	}) {
 		return new RyzomeApiError({
 			stage: params.stage,
@@ -168,6 +195,7 @@ export class RyzomeClient {
 			body: stringifyErrorBody(params.error),
 			retryable: true,
 			canvasId: params.canvasId,
+			documentId: params.documentId,
 			cause: params.error,
 		});
 	}
@@ -208,27 +236,86 @@ export class RyzomeClient {
 		}
 	}
 
-	async getCanvas(canvasId: string) {
-		const path = `/document/${canvasId}`;
+	async createDocument(req: CreateDocumentRequestDocument): Promise<DocumentView> {
+		try {
+			const { data, error, response } = await this.client.POST("/document", {
+				body: {
+					documents: [req],
+				},
+			});
+
+			if (!response.ok || !data) {
+				throw this.buildHttpError({
+					stage: "createDocument",
+					method: "POST",
+					path: "/document",
+					response,
+					error,
+				});
+			}
+
+			const document = data.documents[0];
+			if (!document) {
+				throw new RyzomeApiError({
+					stage: "createDocument",
+					method: "POST",
+					path: "/document",
+					status: response.status,
+					body: "Document creation returned no documents",
+					retryable: false,
+				});
+			}
+
+			return document;
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			throw this.buildNetworkError({
+				stage: "createDocument",
+				method: "POST",
+				path: "/document",
+				error,
+			});
+		}
+	}
+
+	async getDocument(documentId: string): Promise<DocumentView> {
+		const path = `/document/${documentId}`;
 
 		try {
 			const { data, error, response } = await this.client.GET(
 				"/document/{document_id}",
 				{
-					params: { path: { document_id: canvasId } },
+					params: { path: { document_id: documentId } },
 				},
 			);
 
 			if (!response.ok || !data) {
 				throw this.buildHttpError({
-					stage: "getCanvas",
+					stage: "getDocument",
 					method: "GET",
 					path,
 					response,
 					error,
-					canvasId,
+					documentId,
 				});
 			}
+
+			return data;
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			throw this.buildNetworkError({
+				stage: "getDocument",
+				method: "GET",
+				path,
+				error,
+				documentId,
+			});
+		}
+	}
+
+	async getCanvas(canvasId: string) {
+		try {
+			const data = await this.getDocument(canvasId);
 
 			// Transform DocumentView to CanvasEditorView shape
 			const nodes =
@@ -247,40 +334,22 @@ export class RyzomeClient {
 			};
 		} catch (error) {
 			if (error instanceof RyzomeApiError) throw error;
-			throw this.buildNetworkError({
-				stage: "getCanvas",
-				method: "GET",
-				path,
-				error,
-				canvasId,
-			});
+			throw error;
 		}
 	}
 
 	async listCanvases(opts?: {
 		pinned?: boolean;
 	}): Promise<ListCanvasesResponse> {
-		const path = "/document";
-
 		try {
-			const { data, error, response } = await this.client.GET("/document", {
-				params: {
-					query: opts?.pinned != null ? { isFavorite: opts.pinned } : {},
-				},
+			const result = await this.listDocuments({
+				favorite: opts?.pinned,
+				contentTypes: ["Canvas"],
+				inLibraryOnly: false,
 			});
 
-			if (!response.ok || !data) {
-				throw this.buildHttpError({
-					stage: "listCanvases",
-					method: "GET",
-					path,
-					response,
-					error,
-				});
-			}
-
 			// Filter for canvas-type documents and transform to CanvasSummaryView
-			const canvases = data
+			const canvases = result.data
 				.filter((doc) => doc.content._type === "Canvas")
 				.map((doc) => ({
 					_id: doc._id,
@@ -294,8 +363,51 @@ export class RyzomeClient {
 			return { data: canvases };
 		} catch (error) {
 			if (error instanceof RyzomeApiError) throw error;
+			throw error;
+		}
+	}
+
+	async listDocuments(
+		opts?: ListDocumentsOptions,
+	): Promise<ListDocumentsResponse> {
+		const path = "/document";
+
+		try {
+			const { data, error, response } = await this.client.GET("/document", {
+				params: {
+					query: {
+						...(opts?.tag ? { tag: opts.tag } : {}),
+						...(opts?.favorite != null ? { isFavorite: opts.favorite } : {}),
+					},
+				},
+			});
+
+			if (!response.ok || !data) {
+				throw this.buildHttpError({
+					stage: "listDocuments",
+					method: "GET",
+					path,
+					response,
+					error,
+				});
+			}
+
+			const documents = data.filter((doc) => {
+				if (opts?.inLibraryOnly && !doc.inLibrary) return false;
+				if (
+					opts?.contentTypes?.length &&
+					!opts.contentTypes.includes(doc.content._type)
+				) {
+					return false;
+				}
+				return true;
+			});
+
+			return { data: documents };
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
 			throw this.buildNetworkError({
-				stage: "listCanvases",
+				stage: "listDocuments",
 				method: "GET",
 				path,
 				error,
@@ -333,6 +445,82 @@ export class RyzomeClient {
 				path,
 				error,
 				canvasId,
+			});
+		}
+	}
+
+	async patchDocument(
+		documentId: string,
+		req: PatchDocumentRequest,
+	): Promise<void> {
+		const path = `/document/${documentId}`;
+
+		try {
+			const { error, response } = await this.client.PATCH(
+				"/document/{document_id}",
+				{
+					params: { path: { document_id: documentId } },
+					body: req,
+				},
+			);
+
+			if (!response.ok) {
+				throw this.buildHttpError({
+					stage: "patchDocument",
+					method: "PATCH",
+					path,
+					response,
+					error,
+					documentId,
+				});
+			}
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			throw this.buildNetworkError({
+				stage: "patchDocument",
+				method: "PATCH",
+				path,
+				error,
+				documentId,
+			});
+		}
+	}
+
+	async updateDocumentMetadata(
+		documentId: string,
+		req: UpdateDocumentMetadataRequest,
+	): Promise<UpdateDocumentMetadataResponse> {
+		const path = `/document/${documentId}/metadata`;
+
+		try {
+			const { data, error, response } = await this.client.PUT(
+				"/document/{document_id}/metadata",
+				{
+					params: { path: { document_id: documentId } },
+					body: req,
+				},
+			);
+
+			if (!response.ok || !data) {
+				throw this.buildHttpError({
+					stage: "updateDocumentMetadata",
+					method: "PUT",
+					path,
+					response,
+					error,
+					documentId,
+				});
+			}
+
+			return data;
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			throw this.buildNetworkError({
+				stage: "updateDocumentMetadata",
+				method: "PUT",
+				path,
+				error,
+				documentId,
 			});
 		}
 	}

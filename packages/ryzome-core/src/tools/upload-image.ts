@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { ObjectId } from "bson";
+import { buildCanvasAppUrl } from "../lib/app-url.js";
 import {
 	RyzomeClient,
 	type RyzomeClientConfig,
@@ -145,8 +146,7 @@ export async function executeUploadImage(
 		}),
 	);
 
-	const appBase = clientConfig.appUrl.replace(/\/+$/, "");
-	const canvasUrl = `${appBase}/canvas/${params.canvas_id}`;
+	const canvasUrl = buildCanvasAppUrl(clientConfig.appUrl, params.canvas_id);
 
 	return {
 		content: [
