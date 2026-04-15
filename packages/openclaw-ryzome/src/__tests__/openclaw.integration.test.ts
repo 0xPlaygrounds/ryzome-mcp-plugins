@@ -46,21 +46,90 @@ const pluginRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"../..",
 );
+const workspaceRoot = path.resolve(pluginRoot, "../..");
 const coreRoot = path.resolve(pluginRoot, "..", "ryzome-core");
 const openclawRoot = path.join(pluginRoot, "node_modules", "openclaw");
 const openclawCliPath = path.join(openclawRoot, "openclaw.mjs");
+const pluginNodeModulesRoot = path.join(pluginRoot, "node_modules");
+const workspaceNodeModulesRoot = path.join(workspaceRoot, "node_modules");
 const liveSmokeEnabled = process.env.RYZOME_ENABLE_LIVE_SMOKE === "1";
 const liveSmokeApiKey = process.env.RYZOME_LIVE_SMOKE_API_KEY?.trim();
 const liveSmokeApiUrl = process.env.RYZOME_LIVE_SMOKE_API_URL?.trim();
 const liveSmokeAppUrl = process.env.RYZOME_LIVE_SMOKE_APP_URL?.trim();
 
 const tempRoots = new Set<string>();
+const createdRuntimeLinks = new Set<string>();
+let runtimeLinksPrepared = false;
 
 function getPnpmCommand() {
 	return process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 }
 
-function runOpenClaw(args: string[], stateDir: string): string {
+async function pathExists(targetPath: string) {
+	try {
+		await fs.lstat(targetPath);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+async function linkMissingNodeModules(sourceDir: string, targetDir: string) {
+	const entries = await fs.readdir(sourceDir, { withFileTypes: true });
+
+	for (const entry of entries) {
+		if (entry.name === ".bin") continue;
+
+		const sourcePath = path.join(sourceDir, entry.name);
+		const targetPath = path.join(targetDir, entry.name);
+
+		if (entry.name.startsWith("@") && entry.isDirectory()) {
+			if (!(await pathExists(targetPath))) {
+				await fs.symlink(sourcePath, targetPath, "dir");
+				createdRuntimeLinks.add(targetPath);
+				continue;
+			}
+
+			const scopeEntries = await fs.readdir(sourcePath, { withFileTypes: true });
+			for (const scopeEntry of scopeEntries) {
+				const scopedSourcePath = path.join(sourcePath, scopeEntry.name);
+				const scopedTargetPath = path.join(targetPath, scopeEntry.name);
+
+				if (await pathExists(scopedTargetPath)) continue;
+
+				await fs.symlink(
+					scopedSourcePath,
+					scopedTargetPath,
+					scopeEntry.isDirectory() ? "dir" : "file",
+				);
+				createdRuntimeLinks.add(scopedTargetPath);
+			}
+			continue;
+		}
+
+		if (await pathExists(targetPath)) continue;
+
+		await fs.symlink(
+			sourcePath,
+			targetPath,
+			entry.isDirectory() ? "dir" : "file",
+		);
+		createdRuntimeLinks.add(targetPath);
+	}
+}
+
+async function ensureOpenClawRuntimeLinks() {
+	if (runtimeLinksPrepared) return;
+
+	// OpenClaw resolves some imports from real .pnpm store paths. Mirror the
+	// package-local node_modules at the repo root so those bare imports remain
+	// visible during CLI startup in this workspace layout.
+	await linkMissingNodeModules(pluginNodeModulesRoot, workspaceNodeModulesRoot);
+	runtimeLinksPrepared = true;
+}
+
+async function runOpenClaw(args: string[], stateDir: string): Promise<string> {
+	await ensureOpenClawRuntimeLinks();
 	const configPath = path.join(stateDir, "openclaw.json");
 	return execFileSync(process.execPath, [openclawCliPath, ...args], {
 		cwd: pluginRoot,
@@ -104,7 +173,7 @@ async function setPluginConfig(
 	stateDir: string,
 	params: { apiKey: string; apiUrl: string; appUrl: string },
 ) {
-	runOpenClaw(
+	await runOpenClaw(
 		[
 			"config",
 			"set",
@@ -114,7 +183,7 @@ async function setPluginConfig(
 		],
 		stateDir,
 	);
-	runOpenClaw(
+	await runOpenClaw(
 		[
 			"config",
 			"set",
@@ -124,7 +193,7 @@ async function setPluginConfig(
 		],
 		stateDir,
 	);
-	runOpenClaw(
+	await runOpenClaw(
 		[
 			"config",
 			"set",
@@ -334,6 +403,10 @@ async function startStubServer() {
 }
 
 async function packCoreTarball(tempDir: string) {
+	execFileSync(getPnpmCommand(), ["build"], {
+		cwd: coreRoot,
+		encoding: "utf8",
+	});
 	execFileSync(getPnpmCommand(), ["pack", "--pack-destination", tempDir], {
 		cwd: coreRoot,
 		encoding: "utf8",
@@ -369,7 +442,7 @@ async function installPackagedPlugin(stateDir: string) {
 	const repackedTarball = path.join(packDir, "repacked-plugin.tgz");
 	execFileSync("tar", ["-czf", repackedTarball, "-C", unpackDir, "package"]);
 
-	const installOutput = runOpenClaw(
+	const installOutput = await runOpenClaw(
 		["plugins", "install", repackedTarball],
 		stateDir,
 	);
@@ -383,6 +456,15 @@ afterEach(async () => {
 			tempRoots.delete(dir);
 		}),
 	);
+	await Promise.all(
+		[...createdRuntimeLinks]
+			.reverse()
+			.map(async (linkPath) => {
+				await fs.rm(linkPath, { recursive: true, force: true });
+				createdRuntimeLinks.delete(linkPath);
+			}),
+	);
+	runtimeLinksPrepared = false;
 });
 
 describe("OpenClaw integration", () => {
@@ -401,7 +483,10 @@ describe("OpenClaw integration", () => {
 				configAfterInstall.plugins?.installs?.["openclaw-ryzome"],
 			).toBeTruthy();
 
-			const statusBeforeConfig = runOpenClaw(["ryzome", "status"], stateDir);
+			const statusBeforeConfig = await runOpenClaw(
+				["ryzome", "status"],
+				stateDir,
+			);
 			expect(statusBeforeConfig).toContain("No bound thread detected");
 
 			await setPluginConfig(stateDir, {
@@ -410,7 +495,10 @@ describe("OpenClaw integration", () => {
 				appUrl: stub.appUrl,
 			});
 
-			const statusAfterConfig = runOpenClaw(["ryzome", "status"], stateDir);
+			const statusAfterConfig = await runOpenClaw(
+				["ryzome", "status"],
+				stateDir,
+			);
 			expect(statusAfterConfig).toContain("Ryzome in circuit.");
 
 			const configuredConfig = await readConfig(stateDir);
@@ -480,7 +568,10 @@ describe("OpenClaw integration", () => {
 				appUrl,
 			});
 
-			const statusAfterConfig = runOpenClaw(["ryzome", "status"], stateDir);
+			const statusAfterConfig = await runOpenClaw(
+				["ryzome", "status"],
+				stateDir,
+			);
 			expect(statusAfterConfig).toContain("Ryzome in circuit.");
 
 			const configuredConfig = await readConfig(stateDir);
