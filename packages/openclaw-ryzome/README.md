@@ -7,7 +7,7 @@
 ## Requirements
 
 - [OpenClaw](https://docs.openclaw.ai/plugin)
-- A Ryzome API key — [get one here](https://ryzome.ai/api-key)
+- A Ryzome API key — [get one here](https://ryzome.ai/workspace#settings/api-keys)
 
 ## Install
 
