@@ -208,6 +208,13 @@ export class RyzomeClient {
 						{
 							title: req.name,
 							description: req.description,
+							content: {
+								_type: "Canvas",
+								_content: {
+									nodes: [],
+									edges: [],
+								},
+							},
 						},
 					],
 				},
@@ -224,6 +231,27 @@ export class RyzomeClient {
 			}
 
 			const doc = data.documents[0];
+			if (!doc) {
+				throw new RyzomeApiError({
+					stage: "createCanvas",
+					method: "POST",
+					path: "/document",
+					status: response.status,
+					body: "Canvas creation returned no documents",
+					retryable: false,
+				});
+			}
+			if (doc.content._type !== "Canvas") {
+				throw new RyzomeApiError({
+					stage: "createCanvas",
+					method: "POST",
+					path: "/document",
+					status: response.status,
+					body: `Canvas creation returned a ${doc.content._type} document`,
+					retryable: false,
+					documentId: doc._id.$oid,
+				});
+			}
 			return { canvas_id: doc._id };
 		} catch (error) {
 			if (error instanceof RyzomeApiError) throw error;
