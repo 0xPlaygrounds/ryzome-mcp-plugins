@@ -1,5 +1,11 @@
 # @ryzome-ai/ryzome-core
 
+## 0.2.1
+
+### Patch Changes
+
+- 2e42f57: Fix canvas creation to send explicit Canvas content through the document API and reject non-canvas responses before returning a canvas URL.
+
 ## 0.2.0
 
 ### Minor Changes
