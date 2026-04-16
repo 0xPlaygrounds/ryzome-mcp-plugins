@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	McpServer,
 	ResourceTemplate,
@@ -12,11 +15,21 @@ import {
 	toolRegistry,
 	formatCanvasAsMarkdown,
 } from "@ryzome-ai/ryzome-core";
-import type {
-	CanvasEditorView,
-	DocumentView,
-	RyzomeClientConfig,
-} from "@ryzome-ai/ryzome-core";
+import type { RyzomeClientConfig } from "@ryzome-ai/ryzome-core";
+
+function resourceIdToString(id: string | string[]): string {
+	return Array.isArray(id) ? (id[0] ?? "") : id;
+}
+
+// Resolved from the package manifest so the advertised MCP server version
+// tracks package.json without a manual string edit at each release.
+const packageJsonPath = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"../package.json",
+);
+const { version: SERVER_VERSION } = JSON.parse(
+	readFileSync(packageJsonPath, "utf8"),
+) as { version: string };
 
 function resolveClientConfig(): RyzomeClientConfig | null {
 	const cfg = parseConfig({});
@@ -39,7 +52,7 @@ function notConfiguredError() {
 export function createRyzomeMcpServer(): McpServer {
 	const server = new McpServer({
 		name: "ryzome",
-		version: "0.2.0",
+		version: SERVER_VERSION,
 	});
 
 	const clientConfig = resolveClientConfig();
@@ -75,7 +88,6 @@ export function createRyzomeMcpServer(): McpServer {
 
 	// ── Resources ──────────────────────────────────────────
 
-	// Static resource: list all canvases
 	server.resource(
 		"canvas-list",
 		"ryzome://canvases",
@@ -120,7 +132,6 @@ export function createRyzomeMcpServer(): McpServer {
 		},
 	);
 
-	// Static resource: list all documents
 	server.resource(
 		"document-list",
 		"ryzome://documents",
@@ -167,7 +178,6 @@ export function createRyzomeMcpServer(): McpServer {
 		},
 	);
 
-	// Dynamic resource template: get a single canvas as markdown
 	server.resource(
 		"canvas",
 		new ResourceTemplate("ryzome://canvas/{id}", {
@@ -209,8 +219,8 @@ export function createRyzomeMcpServer(): McpServer {
 			}
 
 			const client = new RyzomeClient(clientConfig);
-			const canvas = await client.getCanvas(id as string);
-			const markdown = formatCanvasAsMarkdown(canvas as CanvasEditorView, {
+			const canvas = await client.getCanvas(resourceIdToString(id));
+			const markdown = formatCanvasAsMarkdown(canvas, {
 				appUrl: clientConfig.appUrl,
 			});
 
@@ -226,7 +236,6 @@ export function createRyzomeMcpServer(): McpServer {
 		},
 	);
 
-	// Dynamic resource template: get a single document as markdown
 	server.resource(
 		"document",
 		new ResourceTemplate("ryzome://document/{id}", {
@@ -268,8 +277,8 @@ export function createRyzomeMcpServer(): McpServer {
 			}
 
 			const client = new RyzomeClient(clientConfig);
-			const document = await client.getDocument(id as string);
-			const markdown = formatDocumentAsMarkdown(document as DocumentView, {
+			const document = await client.getDocument(resourceIdToString(id));
+			const markdown = formatDocumentAsMarkdown(document, {
 				appUrl: clientConfig.appUrl,
 			});
 

@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { buildDocumentViewAppUrl } from "../lib/app-url.js";
 import {
-	RyzomeApiError,
 	RyzomeClient,
 	type RyzomeClientConfig,
 } from "../lib/ryzome-client.js";
@@ -21,34 +20,29 @@ export async function executeGetDocument(
 	const params = getDocumentParamsSchema.parse(rawParams);
 	const client = new RyzomeClient(clientConfig);
 
-	try {
-		const document = await client.getDocument(params.document_id);
-		const url = buildDocumentViewAppUrl(clientConfig.appUrl, document);
+	const document = await client.getDocument(params.document_id);
+	const url = buildDocumentViewAppUrl(clientConfig.appUrl, document);
 
-		return {
-			content: [
-				{
-					type: "text",
-					text: JSON.stringify(
-						{
-							id: document._id.$oid,
-							title: document.title ?? "Untitled",
-							description: document.description,
-							contentType: document.content._type,
-							inLibrary: document.inLibrary ?? false,
-							isFavorite: document.isFavorite ?? false,
-							tags: document.tags ?? [],
-							url,
-							content: document.content,
-						},
-						null,
-						2,
-					),
-				},
-			],
-		};
-	} catch (error) {
-		if (error instanceof RyzomeApiError) throw error;
-		throw error;
-	}
+	return {
+		content: [
+			{
+				type: "text",
+				text: JSON.stringify(
+					{
+						id: document._id.$oid,
+						title: document.title ?? "Untitled",
+						description: document.description,
+						contentType: document.content._type,
+						inLibrary: document.inLibrary ?? false,
+						isFavorite: document.isFavorite ?? false,
+						tags: document.tags ?? [],
+						url,
+						content: document.content,
+					},
+					null,
+					2,
+				),
+			},
+		],
+	};
 }

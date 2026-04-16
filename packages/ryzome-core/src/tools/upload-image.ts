@@ -2,6 +2,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { ObjectId } from "bson";
 import { buildCanvasAppUrl } from "../lib/app-url.js";
+import type { PatchOperation } from "../lib/client/index.js";
 import {
 	RyzomeClient,
 	type RyzomeClientConfig,
@@ -64,7 +65,6 @@ export async function executeUploadImage(
 	const params = uploadImageParamsSchema.parse(rawParams);
 	const client = new RyzomeClient(clientConfig);
 
-	// Fetch image from URL
 	const imageResponse = await fetch(params.image_url);
 	if (!imageResponse.ok) {
 		return {
@@ -88,7 +88,6 @@ export async function executeUploadImage(
 	const ext = inferExtension(contentType);
 	const s3Key = `canvas/${params.canvas_id}/images/${randomUUID()}.${ext}`;
 
-	// Request presigned upload URL and upload to S3
 	const uploadUrl = await retryStage(() => client.requestUploadUrl(s3Key));
 
 	await retryStage(() =>
@@ -100,9 +99,8 @@ export async function executeUploadImage(
 		),
 	);
 
-	// Create image node on canvas
 	const nodeId = new ObjectId().toString();
-	const operations: Array<Record<string, unknown>> = [
+	const operations: PatchOperation[] = [
 		{
 			_type: "createNode",
 			id: nodeId,
@@ -139,11 +137,7 @@ export async function executeUploadImage(
 	}
 
 	await retryStage(() =>
-		client.patchCanvas(params.canvas_id, {
-			operations: operations as Parameters<
-				RyzomeClient["patchCanvas"]
-			>[1]["operations"],
-		}),
+		client.patchCanvas(params.canvas_id, { operations }),
 	);
 
 	const canvasUrl = buildCanvasAppUrl(clientConfig.appUrl, params.canvas_id);

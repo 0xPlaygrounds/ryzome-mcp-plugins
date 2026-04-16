@@ -17,9 +17,6 @@ importers:
       '@ryzome-ai/ryzome-core':
         specifier: workspace:*
         version: link:../ryzome-core
-      '@sinclair/typebox':
-        specifier: ^0.34.48
-        version: 0.34.48
       chalk:
         specifier: ^5.6.2
         version: 5.6.2
@@ -30,6 +27,9 @@ importers:
       '@biomejs/biome':
         specifier: ^2.4.6
         version: 2.4.6
+      '@sinclair/typebox':
+        specifier: ^0.34.48
+        version: 0.34.48
       '@types/node':
         specifier: ^25.4.0
         version: 25.4.0

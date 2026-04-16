@@ -1,6 +1,5 @@
 import { z } from "zod";
 import {
-	RyzomeApiError,
 	RyzomeClient,
 	type RyzomeClientConfig,
 } from "../lib/ryzome-client.js";
@@ -20,34 +19,29 @@ export async function executeGetCanvas(
 	const params = getCanvasParamsSchema.parse(rawParams);
 	const client = new RyzomeClient(clientConfig);
 
-	try {
-		const canvas = await client.getCanvas(params.canvas_id);
+	const canvas = await client.getCanvas(params.canvas_id);
 
-		const nodeCount = canvas.nodes.length;
-		const edgeCount = canvas.edges.length;
+	const nodeCount = canvas.nodes.length;
+	const edgeCount = canvas.edges.length;
 
-		return {
-			content: [
-				{
-					type: "text",
-					text: JSON.stringify(
-						{
-							id: canvas._id.$oid,
-							name: canvas.name,
-							description: canvas.description,
-							nodeCount,
-							edgeCount,
-							nodes: canvas.nodes,
-							edges: canvas.edges,
-						},
-						null,
-						2,
-					),
-				},
-			],
-		};
-	} catch (error) {
-		if (error instanceof RyzomeApiError) throw error;
-		throw error;
-	}
+	return {
+		content: [
+			{
+				type: "text",
+				text: JSON.stringify(
+					{
+						id: canvas._id.$oid,
+						name: canvas.name,
+						description: canvas.description,
+						nodeCount,
+						edgeCount,
+						nodes: canvas.nodes,
+						edges: canvas.edges,
+					},
+					null,
+					2,
+				),
+			},
+		],
+	};
 }

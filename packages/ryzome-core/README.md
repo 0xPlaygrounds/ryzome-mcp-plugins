@@ -1,8 +1,8 @@
 # @ryzome-ai/ryzome-core
 
-Shared logic for Ryzome canvas integrations: API client, 6 canvas tools, graph builder, layout engine, and markdown formatter.
+Shared logic for Ryzome canvas integrations: API client, 11 tools, graph builder, layout engine, and markdown formatter.
 
-This package powers [`@ryzome-ai/ryzome-mcp`](../ryzome-mcp) and [`@ryzome-ai/openclaw-ryzome`](../openclaw-ryzome).
+This package powers [`@ryzome-ai/ryzome-mcp`](../ryzome-mcp), [`@ryzome-ai/openclaw-ryzome`](../openclaw-ryzome), and [`@ryzome-ai/hermes-ryzome`](../hermes-ryzome).
 
 ## Install
 
@@ -21,15 +21,20 @@ npm install @ryzome-ai/ryzome-core
 
 ## Tools
 
-The `toolRegistry` array contains 6 ready-to-register tools:
+The `toolRegistry` array contains 11 ready-to-register tools:
 
 | Tool name | Description |
 |-----------|-------------|
+| `create_ryzome_document` | Create a standalone Ryzome document that appears in the library |
 | `create_ryzome_canvas` | Create a canvas with explicitly defined nodes and edges |
+| `get_ryzome_document` | Retrieve a standalone Ryzome document by its ID |
 | `create_ryzome_plan` | Create a canvas from a plan — steps auto-chain in order, with optional branching via `dependsOn` |
 | `create_ryzome_research` | Create a canvas displaying research findings branching from a root topic |
 | `get_ryzome_canvas` | Retrieve a canvas by ID, including all nodes and edges |
+| `list_ryzome_documents` | List standalone Ryzome documents, optionally filtered by library visibility, favorites, tags, or content type |
 | `list_ryzome_canvases` | List all canvases accessible to the current user |
+| `update_ryzome_document` | Update a standalone Ryzome document using document operations and metadata changes |
+| `save_ryzome_node_to_library` | Promote an existing canvas node's backing document into the library |
 | `upload_ryzome_image` | Upload an image from a URL to an existing canvas as an image node |
 
 Each tool entry has `name`, `description`, `paramsSchema` (Zod), and an `execute` function.
@@ -43,8 +48,14 @@ import { parseConfig, RyzomeClient, toolRegistry } from "@ryzome-ai/ryzome-core"
 const config = parseConfig({});
 
 // Use tools directly
-const result = await toolRegistry[0].execute(
-  { title: "My canvas", nodes: [], edges: [] },
+const createCanvasTool = toolRegistry.find(
+  (tool) => tool.name === "create_ryzome_canvas"
+)!;
+const result = await createCanvasTool.execute(
+  {
+    title: "My canvas",
+    nodes: [{ id: "start", title: "Start", description: "Kick off the flow" }],
+  },
   { apiKey: config.apiKey!, apiUrl: config.apiUrl, appUrl: config.appUrl }
 );
 

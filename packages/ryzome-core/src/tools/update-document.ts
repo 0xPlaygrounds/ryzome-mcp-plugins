@@ -5,7 +5,6 @@ import {
 	toDocumentContentView,
 } from "../lib/document-content.js";
 import {
-	RyzomeApiError,
 	RyzomeClient,
 	type RyzomeClientConfig,
 } from "../lib/ryzome-client.js";
@@ -97,33 +96,28 @@ export async function executeUpdateDocument(
 		throw new Error("No document updates provided.");
 	}
 
-	try {
-		if (operations.length > 0) {
-			await client.patchDocument(params.document_id, { operations });
-		}
-
-		if (Object.keys(metadata).length > 0) {
-			await client.updateDocumentMetadata(params.document_id, metadata);
-		}
-
-		const document = await client.getDocument(params.document_id);
-		const url = buildDocumentViewAppUrl(clientConfig.appUrl, document);
-
-		return {
-			content: [
-				{
-					type: "text",
-					text: [
-						`Document updated: **${document.title ?? "Untitled"}**`,
-						`Type: ${document.content._type}`,
-						`ID: ${document._id.$oid}`,
-						`View: ${url}`,
-					].join("\n"),
-				},
-			],
-		};
-	} catch (error) {
-		if (error instanceof RyzomeApiError) throw error;
-		throw error;
+	if (operations.length > 0) {
+		await client.patchDocument(params.document_id, { operations });
 	}
+
+	if (Object.keys(metadata).length > 0) {
+		await client.updateDocumentMetadata(params.document_id, metadata);
+	}
+
+	const document = await client.getDocument(params.document_id);
+	const url = buildDocumentViewAppUrl(clientConfig.appUrl, document);
+
+	return {
+		content: [
+			{
+				type: "text",
+				text: [
+					`Document updated: **${document.title ?? "Untitled"}**`,
+					`Type: ${document.content._type}`,
+					`ID: ${document._id.$oid}`,
+					`View: ${url}`,
+				].join("\n"),
+			},
+		],
+	};
 }

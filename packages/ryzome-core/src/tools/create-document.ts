@@ -5,7 +5,6 @@ import {
 	toDocumentContentView,
 } from "../lib/document-content.js";
 import {
-	RyzomeApiError,
 	RyzomeClient,
 	type RyzomeClientConfig,
 } from "../lib/ryzome-client.js";
@@ -30,33 +29,28 @@ export async function executeCreateDocument(
 	const params = createDocumentParamsSchema.parse(rawParams);
 	const client = new RyzomeClient(clientConfig);
 
-	try {
-		const document = await client.createDocument({
-			title: params.title,
-			description: params.description,
-			tags: params.tags,
-			content: params.content
-				? toDocumentContentView(params.content)
-				: undefined,
-		});
+	const document = await client.createDocument({
+		title: params.title,
+		description: params.description,
+		tags: params.tags,
+		content: params.content
+			? toDocumentContentView(params.content)
+			: undefined,
+	});
 
-		const documentUrl = buildDocumentViewAppUrl(clientConfig.appUrl, document);
+	const documentUrl = buildDocumentViewAppUrl(clientConfig.appUrl, document);
 
-		return {
-			content: [
-				{
-					type: "text",
-					text: [
-						`Document created: **${document.title ?? "Untitled"}**`,
-						`Type: ${document.content._type}`,
-						`ID: ${document._id.$oid}`,
-						`View: ${documentUrl}`,
-					].join("\n"),
-				},
-			],
-		};
-	} catch (error) {
-		if (error instanceof RyzomeApiError) throw error;
-		throw error;
-	}
+	return {
+		content: [
+			{
+				type: "text",
+				text: [
+					`Document created: **${document.title ?? "Untitled"}**`,
+					`Type: ${document.content._type}`,
+					`ID: ${document._id.$oid}`,
+					`View: ${documentUrl}`,
+				].join("\n"),
+			},
+		],
+	};
 }

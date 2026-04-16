@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { buildDocumentViewAppUrl } from "../lib/app-url.js";
 import {
-	RyzomeApiError,
 	RyzomeClient,
 	type RyzomeClientConfig,
 } from "../lib/ryzome-client.js";
@@ -22,54 +21,51 @@ export async function executeSaveNodeToLibrary(
 	const params = saveNodeToLibraryParamsSchema.parse(rawParams);
 	const client = new RyzomeClient(clientConfig);
 
-	try {
-		const canvas = await client.getCanvas(params.canvas_id);
-		const node = canvas.nodes.find((candidate) => candidate._id.$oid === params.node_id);
+	const canvas = await client.getCanvas(params.canvas_id);
+	const node = canvas.nodes.find(
+		(candidate) => candidate._id.$oid === params.node_id,
+	);
 
-		if (!node) {
-			throw new Error(
-				`Node ${params.node_id} was not found on canvas ${params.canvas_id}.`,
-			);
-		}
+	if (!node) {
+		throw new Error(
+			`Node ${params.node_id} was not found on canvas ${params.canvas_id}.`,
+		);
+	}
 
-		if (node.data._type !== "Document") {
-			throw new Error("Only document-backed nodes can be saved to the library.");
-		}
+	if (node.data._type !== "Document") {
+		throw new Error("Only document-backed nodes can be saved to the library.");
+	}
 
-		const document = node.data;
-		if (document.inLibrary) {
-			return {
-				content: [
-					{
-						type: "text",
-						text: [
-							`Document already in library: **${document.title ?? "Untitled"}**`,
-							`ID: ${document._id.$oid}`,
-							`View: ${buildDocumentViewAppUrl(clientConfig.appUrl, document)}`,
-						].join("\n"),
-					},
-				],
-			};
-		}
-
-		await client.updateDocumentMetadata(document._id.$oid, {
-			inLibrary: true,
-		});
-
+	const document = node.data;
+	if (document.inLibrary) {
 		return {
 			content: [
 				{
 					type: "text",
 					text: [
-						`Saved node document to library: **${document.title ?? "Untitled"}**`,
-						`Document ID: ${document._id.$oid}`,
+						`Document already in library: **${document.title ?? "Untitled"}**`,
+						`ID: ${document._id.$oid}`,
 						`View: ${buildDocumentViewAppUrl(clientConfig.appUrl, document)}`,
 					].join("\n"),
 				},
 			],
 		};
-	} catch (error) {
-		if (error instanceof RyzomeApiError) throw error;
-		throw error;
 	}
+
+	await client.updateDocumentMetadata(document._id.$oid, {
+		inLibrary: true,
+	});
+
+	return {
+		content: [
+			{
+				type: "text",
+				text: [
+					`Saved node document to library: **${document.title ?? "Untitled"}**`,
+					`Document ID: ${document._id.$oid}`,
+					`View: ${buildDocumentViewAppUrl(clientConfig.appUrl, document)}`,
+				].join("\n"),
+			},
+		],
+	};
 }

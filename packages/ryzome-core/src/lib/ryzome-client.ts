@@ -1,4 +1,5 @@
 import {
+	type CanvasEditorView,
 	createApiClient,
 	type CreateCanvasRequest,
 	type CreateCanvasResponse,
@@ -341,58 +342,46 @@ export class RyzomeClient {
 		}
 	}
 
-	async getCanvas(canvasId: string) {
-		try {
-			const data = await this.getDocument(canvasId);
+	async getCanvas(canvasId: string): Promise<CanvasEditorView> {
+		const data = await this.getDocument(canvasId);
 
-			// Transform DocumentView to CanvasEditorView shape
-			const nodes =
-				data.content._type === "Canvas" ? data.content._content.nodes : [];
-			const edges =
-				data.content._type === "Canvas" ? data.content._content.edges : [];
+		const nodes: CanvasEditorView["nodes"] =
+			data.content._type === "Canvas" ? data.content._content.nodes : [];
+		const edges: CanvasEditorView["edges"] =
+			data.content._type === "Canvas" ? data.content._content.edges : [];
 
-			return {
-				_id: data._id,
-				name: data.title ?? "Untitled",
-				description: data.description,
-				nodes,
-				edges,
-				isTemplate: false,
-				ownerId: data.ownerId,
-			};
-		} catch (error) {
-			if (error instanceof RyzomeApiError) throw error;
-			throw error;
-		}
+		return {
+			_id: data._id,
+			name: data.title ?? "Untitled",
+			description: data.description,
+			nodes,
+			edges,
+			isTemplate: false,
+			ownerId: data.ownerId,
+		};
 	}
 
 	async listCanvases(opts?: {
 		pinned?: boolean;
 	}): Promise<ListCanvasesResponse> {
-		try {
-			const result = await this.listDocuments({
-				favorite: opts?.pinned,
-				contentTypes: ["Canvas"],
-				inLibraryOnly: false,
-			});
+		const result = await this.listDocuments({
+			favorite: opts?.pinned,
+			contentTypes: ["Canvas"],
+			inLibraryOnly: false,
+		});
 
-			// Filter for canvas-type documents and transform to CanvasSummaryView
-			const canvases = result.data
-				.filter((doc) => doc.content._type === "Canvas")
-				.map((doc) => ({
-					_id: doc._id,
-					name: doc.title ?? "Untitled",
-					description: doc.description,
-					isTemplate: false,
-					pinned: doc.isFavorite ?? false,
-					updatedAt: doc.updatedAt,
-				}));
+		const canvases = result.data
+			.filter((doc) => doc.content._type === "Canvas")
+			.map((doc) => ({
+				_id: doc._id,
+				name: doc.title ?? "Untitled",
+				description: doc.description,
+				isTemplate: false,
+				pinned: doc.isFavorite ?? false,
+				updatedAt: doc.updatedAt,
+			}));
 
-			return { data: canvases };
-		} catch (error) {
-			if (error instanceof RyzomeApiError) throw error;
-			throw error;
-		}
+		return { data: canvases };
 	}
 
 	async listDocuments(
