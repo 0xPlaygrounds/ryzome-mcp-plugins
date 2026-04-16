@@ -1,6 +1,6 @@
 {
 	"name": "@ryzome-ai/ryzome-mcp",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Ryzome MCP server — expose Ryzome canvas tools to Claude Code and other MCP clients",
 	"license": "MIT",
 	"type": "module",
