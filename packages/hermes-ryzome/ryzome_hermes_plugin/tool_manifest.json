@@ -1,0 +1,1030 @@
+[
+  {
+    "name": "create_ryzome_document",
+    "description": "Create a standalone Ryzome document that appears in the library.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "title": {
+          "description": "Document title",
+          "type": "string"
+        },
+        "description": {
+          "description": "Document description",
+          "type": "string"
+        },
+        "tags": {
+          "description": "Document tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "content": {
+          "description": "Initial document content",
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "_type": {
+                  "type": "string",
+                  "const": "Text"
+                },
+                "_content": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "origin": {
+                      "type": "object",
+                      "properties": {
+                        "conversationId": {
+                          "type": "object",
+                          "properties": {
+                            "$oid": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "$oid"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "messageId": {
+                          "type": "object",
+                          "properties": {
+                            "$oid": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "$oid"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "conversationId",
+                        "messageId"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "agentConfig": {
+                      "type": "object",
+                      "properties": {
+                        "prompt": {
+                          "type": "string"
+                        },
+                        "apiKeyId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "prompt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "_type",
+                "_content"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "_type": {
+                  "type": "string",
+                  "const": "File"
+                },
+                "_content": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "_type": {
+                          "type": "string",
+                          "const": "s3Object"
+                        },
+                        "key": {
+                          "type": "string"
+                        },
+                        "file_type": {
+                          "type": "string"
+                        },
+                        "download_url": {
+                          "default": "",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "_type",
+                        "key",
+                        "file_type",
+                        "download_url"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "_type": {
+                          "type": "string",
+                          "const": "googleDriveObject"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "file_type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "_type",
+                        "id",
+                        "file_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "_type",
+                "_content"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "_type": {
+                  "type": "string",
+                  "const": "Youtube"
+                },
+                "_content": {
+                  "type": "object",
+                  "properties": {
+                    "videoId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "videoId"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "_type",
+                "_content"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "_type": {
+                  "type": "string",
+                  "const": "Website"
+                },
+                "_content": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "_type",
+                "_content"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "_type": {
+                  "type": "string",
+                  "const": "Canvas"
+                },
+                "_content": {
+                  "type": "object",
+                  "properties": {
+                    "nodes": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "edges": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  },
+                  "required": [
+                    "nodes",
+                    "edges"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "_type",
+                "_content"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "create_ryzome_canvas",
+    "description": "Create a Ryzome canvas with explicitly defined nodes and edges.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Canvas title"
+        },
+        "description": {
+          "description": "Canvas description",
+          "type": "string"
+        },
+        "nodes": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique node identifier"
+              },
+              "title": {
+                "type": "string",
+                "description": "Node title"
+              },
+              "description": {
+                "type": "string",
+                "description": "Node content"
+              },
+              "color": {
+                "description": "Node color as hex (e.g. '#FF6B6B')",
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "group": {
+                "description": "ID of the group this node belongs to",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "description"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Nodes to place on the canvas"
+        },
+        "edges": {
+          "description": "Edges connecting nodes",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "description": "Source node id"
+              },
+              "to": {
+                "type": "string",
+                "description": "Target node id"
+              },
+              "label": {
+                "description": "Edge label",
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "groups": {
+          "description": "Groups that visually contain nodes. Nodes reference a group by its id.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique group identifier"
+              },
+              "title": {
+                "description": "Group label displayed on the frame",
+                "type": "string"
+              },
+              "color": {
+                "description": "Group color as hex (e.g. '#4ECDC4')",
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "title",
+        "nodes"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_ryzome_document",
+    "description": "Retrieve a standalone Ryzome document by its ID.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "The ID of the document to retrieve"
+        }
+      },
+      "required": [
+        "document_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_ryzome_canvas",
+    "description": "Retrieve a Ryzome canvas by its ID, including all nodes and edges.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "canvas_id": {
+          "type": "string",
+          "description": "The ID of the canvas to retrieve"
+        }
+      },
+      "required": [
+        "canvas_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_ryzome_documents",
+    "description": "List standalone Ryzome documents, optionally filtered by library visibility, favorites, tags, or content type.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "tag": {
+          "description": "Filter to documents containing this tag",
+          "type": "string"
+        },
+        "favorite": {
+          "description": "Filter to favorite documents if true",
+          "type": "boolean"
+        },
+        "in_library_only": {
+          "description": "Only return documents visible in the library (defaults to true)",
+          "type": "boolean"
+        },
+        "content_types": {
+          "description": "Filter to these document content types",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Text",
+              "File",
+              "Youtube",
+              "Website",
+              "Canvas"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_ryzome_canvases",
+    "description": "List all Ryzome canvases accessible to the current user. Returns canvas names, IDs, and descriptions.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "pinned": {
+          "description": "Filter to only pinned canvases if true",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "create_ryzome_plan",
+    "description": "Create a Ryzome canvas from a plan. Steps are auto-chained in order by default; optionally set id and dependsOn to express branching or merging.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Canvas title"
+        },
+        "description": {
+          "description": "Canvas description",
+          "type": "string"
+        },
+        "steps": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "Step identifier (defaults to step-{index})",
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "description": "Step title"
+              },
+              "description": {
+                "type": "string",
+                "description": "Step description / content"
+              },
+              "dependsOn": {
+                "description": "IDs of steps this step depends on (defaults to previous step)",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "color": {
+                "description": "Step color as hex (e.g. '#FF6B6B')",
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "group": {
+                "description": "ID of the group this step belongs to",
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "description"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Steps to chain into a plan"
+        },
+        "groups": {
+          "description": "Groups that visually contain steps",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique group identifier"
+              },
+              "title": {
+                "description": "Group label displayed on the frame",
+                "type": "string"
+              },
+              "color": {
+                "description": "Group color as hex (e.g. '#4ECDC4')",
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "title",
+        "steps"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "create_ryzome_research",
+    "description": "Create a Ryzome canvas displaying research findings. Control layout by setting dependsOn on findings (reference 'topic' for the root node or other finding ids).",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Canvas title"
+        },
+        "description": {
+          "description": "Canvas description",
+          "type": "string"
+        },
+        "topic": {
+          "type": "string",
+          "description": "Root node title (auto-assigned id 'topic')"
+        },
+        "topicColor": {
+          "description": "Root node color as hex (e.g. '#FF6B6B')",
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "findings": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique finding identifier"
+              },
+              "title": {
+                "type": "string",
+                "description": "Finding title"
+              },
+              "description": {
+                "type": "string",
+                "description": "Finding content"
+              },
+              "dependsOn": {
+                "description": "IDs of nodes this finding depends on (use 'topic' to connect to root)",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "color": {
+                "description": "Finding color as hex (e.g. '#FF6B6B')",
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "group": {
+                "description": "ID of the group this finding belongs to",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "description"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Research findings"
+        },
+        "groups": {
+          "description": "Groups that visually contain findings",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique group identifier"
+              },
+              "title": {
+                "description": "Group label displayed on the frame",
+                "type": "string"
+              },
+              "color": {
+                "description": "Group color as hex (e.g. '#4ECDC4')",
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "title",
+        "topic",
+        "findings"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "update_ryzome_document",
+    "description": "Update a standalone Ryzome document using document operations and metadata changes.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "The ID of the document to update"
+        },
+        "title": {
+          "description": "Replace the document title",
+          "type": "string"
+        },
+        "favorite": {
+          "description": "Set the document favorite state",
+          "type": "boolean"
+        },
+        "content": {
+          "description": "Replace the full document content",
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "_type": {
+                  "type": "string",
+                  "const": "Text"
+                },
+                "_content": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "origin": {
+                      "type": "object",
+                      "properties": {
+                        "conversationId": {
+                          "type": "object",
+                          "properties": {
+                            "$oid": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "$oid"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "messageId": {
+                          "type": "object",
+                          "properties": {
+                            "$oid": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "$oid"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "conversationId",
+                        "messageId"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "agentConfig": {
+                      "type": "object",
+                      "properties": {
+                        "prompt": {
+                          "type": "string"
+                        },
+                        "apiKeyId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "prompt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "_type",
+                "_content"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "_type": {
+                  "type": "string",
+                  "const": "File"
+                },
+                "_content": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "_type": {
+                          "type": "string",
+                          "const": "s3Object"
+                        },
+                        "key": {
+                          "type": "string"
+                        },
+                        "file_type": {
+                          "type": "string"
+                        },
+                        "download_url": {
+                          "default": "",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "_type",
+                        "key",
+                        "file_type",
+                        "download_url"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "_type": {
+                          "type": "string",
+                          "const": "googleDriveObject"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "file_type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "_type",
+                        "id",
+                        "file_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "_type",
+                "_content"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "_type": {
+                  "type": "string",
+                  "const": "Youtube"
+                },
+                "_content": {
+                  "type": "object",
+                  "properties": {
+                    "videoId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "videoId"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "_type",
+                "_content"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "_type": {
+                  "type": "string",
+                  "const": "Website"
+                },
+                "_content": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "_type",
+                "_content"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "_type": {
+                  "type": "string",
+                  "const": "Canvas"
+                },
+                "_content": {
+                  "type": "object",
+                  "properties": {
+                    "nodes": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "edges": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  },
+                  "required": [
+                    "nodes",
+                    "edges"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "_type",
+                "_content"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "append_text": {
+          "description": "Append text to a Text document",
+          "type": "string"
+        },
+        "description": {
+          "description": "Update the document description",
+          "type": "string"
+        },
+        "tags": {
+          "description": "Replace the document tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "in_library": {
+          "description": "Control whether the document appears in the library",
+          "type": "boolean"
+        },
+        "archived": {
+          "description": "Archive or unarchive the document",
+          "type": "boolean"
+        },
+        "thumbnail_s3_key": {
+          "description": "Set the thumbnail S3 key for the document",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "save_ryzome_node_to_library",
+    "description": "Promote an existing canvas node's backing document into the library.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "canvas_id": {
+          "type": "string",
+          "description": "The ID of the canvas containing the node"
+        },
+        "node_id": {
+          "type": "string",
+          "description": "The ID of the node to save to the library"
+        }
+      },
+      "required": [
+        "canvas_id",
+        "node_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "upload_ryzome_image",
+    "description": "Upload an image from a URL to an existing Ryzome canvas. Fetches the image, uploads it to storage, and creates an image node on the canvas.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "canvas_id": {
+          "type": "string",
+          "description": "The ID of the canvas to add the image to"
+        },
+        "image_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Public URL of the image to upload"
+        },
+        "title": {
+          "description": "Title for the image node",
+          "type": "string"
+        },
+        "x": {
+          "description": "X position on canvas (defaults to 0)",
+          "type": "number"
+        },
+        "y": {
+          "description": "Y position on canvas (defaults to 0)",
+          "type": "number"
+        },
+        "width": {
+          "description": "Node width in pixels (defaults to 320)",
+          "type": "number"
+        },
+        "height": {
+          "description": "Node height in pixels (defaults to 240)",
+          "type": "number"
+        },
+        "color": {
+          "description": "Node color as hex (e.g. '#FF6B6B')",
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        }
+      },
+      "required": [
+        "canvas_id",
+        "image_url"
+      ],
+      "additionalProperties": false
+    }
+  }
+]

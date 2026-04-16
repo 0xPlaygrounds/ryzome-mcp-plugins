@@ -1,13 +1,14 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents working in this repository (Claude Code, Cursor, Codex, and other tools that honor `AGENTS.md`).
 
 ## What This Is
 
 A pnpm monorepo providing Ryzome canvas tools for AI agents via multiple integration surfaces:
 
-- `packages/ryzome-core` (`@ryzome-ai/ryzome-core`) — Shared logic: API client, 6 tools, graph builder, layout, canvas markdown formatter
+- `packages/ryzome-core` (`@ryzome-ai/ryzome-core`) — Shared logic: API client, 11 tools, graph builder, layout, canvas markdown formatter
 - `packages/openclaw-ryzome` (`@ryzome-ai/openclaw-ryzome`) — OpenClaw plugin adapter (thin wrapper over core)
+- `packages/hermes-ryzome` (`@ryzome-ai/hermes-ryzome`) — Hermes plugin adapter (Python plugin surface + Node runner over core)
 - `packages/ryzome-mcp` (`@ryzome-ai/ryzome-mcp`) — MCP server with tools + resources for Claude Code / any MCP client
 - `packages/ryzome-claude-plugin` (`@ryzome-ai/ryzome-claude-plugin`) — Claude Code plugin (skills, agent, hooks)
 
@@ -16,14 +17,14 @@ Code for the full Ryzome app is under a collocated monorepo at `../ryzome-monore
 ## Commands
 
 ```bash
-pnpm -r build              # Build all packages (core → mcp)
+pnpm -r build              # Build all packages
 pnpm -r test               # Unit tests across all packages
 pnpm -r --if-present typecheck  # tsc --noEmit in each package
 pnpm -r --if-present lint       # biome lint + typecheck
 pnpm format                # biome format --write (root)
 pnpm format:check          # biome format check (CI mode)
 pnpm changeset             # Create a changeset for version bumps
-pnpm version-packages      # Apply changesets + sync plugin manifest
+pnpm version-packages      # Apply changesets + sync adapter metadata
 pnpm release               # Build + publish all changed packages
 
 # Per-package
@@ -45,15 +46,18 @@ Integration tests hit the live Ryzome API and are gated by env vars: `RYZOME_ENA
 - `packages/ryzome-core/src/lib/canvas-executor.ts` — Orchestrates create → build graph → patch → return URL.
 - `packages/ryzome-core/src/lib/format-canvas-markdown.ts` — Converts `CanvasEditorView` to LLM-readable markdown. Used by MCP resources.
 - `packages/ryzome-core/src/lib/retry.ts` — Max 2 retries with exponential backoff (250ms base).
-- `packages/ryzome-core/src/tools/` — 6 tools: `create-canvas`, `plan-canvas`, `research-canvas`, `get-canvas`, `list-canvases`, `upload-image`. Zod schemas + execute functions.
+- `packages/ryzome-core/src/tools/` — 11 tools spanning canvas creation, document CRUD, library promotion, and image upload. Zod schemas + execute functions.
 
 **`ryzome-mcp`** — MCP server (`packages/ryzome-mcp/src/server.ts`):
 
 - Registers all tools from `toolRegistry`
-- Static resource `ryzome://canvases` — JSON list of canvas summaries
-- Dynamic resource `ryzome://canvas/{id}` — single canvas as markdown (via `ResourceTemplate` with `list` callback)
+- Static resources `ryzome://canvases` and `ryzome://documents` — JSON list of canvas / document summaries
+- Dynamic resources `ryzome://canvas/{id}` and `ryzome://document/{id}` — single canvas / document as markdown (via `ResourceTemplate` with `list` callback)
+- Advertised MCP server version is read from `packages/ryzome-mcp/package.json` at startup
 
 **`openclaw-ryzome`** — OpenClaw plugin adapter (`packages/openclaw-ryzome/src/index.ts`): thin wrapper registering core tools + CLI commands.
+
+**`hermes-ryzome`** — Hermes plugin adapter (`packages/hermes-ryzome`): Python `register(ctx)` plugin surface plus a Node runner that executes the same `toolRegistry` entries as OpenClaw.
 
 **`ryzome-claude-plugin`** — Claude Code plugin (no build step): `.claude-plugin/plugin.json` manifest, `.mcp.json` bundled server, skills (`/plan`, `/research`, `/ryzome-status`), `ryzome-context` agent.
 
@@ -100,3 +104,4 @@ GitHub Actions runs lint, typecheck, and tests on every push to main and on PRs.
 - On push to main, `changesets/action` either creates a "Version Packages" PR (if pending changesets exist) or publishes stable releases (if a version PR was just merged)
 - Dev snapshots are published on every main push under the `dev` npm tag when there are pending changesets
 - `scripts/sync-plugin-version.mjs` keeps `openclaw.plugin.json` version in sync with the `openclaw-ryzome` package version
+- `scripts/sync-hermes-plugin-version.mjs` keeps `packages/hermes-ryzome/plugin.yaml`, `pyproject.toml`, and `__version__` in sync with the `hermes-ryzome` package version

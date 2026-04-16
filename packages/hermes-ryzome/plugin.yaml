@@ -1,0 +1,17 @@
+name: ryzome
+version: 0.0.0
+description: Ryzome canvas and document tools for Hermes Agent
+author: 0xPlaygrounds
+provides_tools:
+  - create_ryzome_document
+  - create_ryzome_canvas
+  - get_ryzome_document
+  - get_ryzome_canvas
+  - list_ryzome_documents
+  - list_ryzome_canvases
+  - create_ryzome_plan
+  - create_ryzome_research
+  - update_ryzome_document
+  - save_ryzome_node_to_library
+  - upload_ryzome_image
+provides_hooks: []

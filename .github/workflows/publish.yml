@@ -204,7 +204,14 @@ jobs:
 
       - name: Publish dev snapshot
         if: steps.check.outputs.has_changesets == 'true'
-        run: pnpm changeset version --snapshot dev && pnpm changeset publish --tag dev
+        # Mirrors `pnpm version-packages` so dev tarballs do not ship with stale
+        # openclaw.plugin.json or Hermes plugin metadata relative to package.json.
+        run: |
+          pnpm changeset version --snapshot dev
+          node scripts/sync-plugin-version.mjs
+          node scripts/sync-hermes-plugin-version.mjs
+          pnpm --filter @ryzome-ai/hermes-ryzome build
+          pnpm changeset publish --tag dev
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"

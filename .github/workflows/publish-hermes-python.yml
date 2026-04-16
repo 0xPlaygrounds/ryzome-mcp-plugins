@@ -1,0 +1,58 @@
+name: Publish Hermes Python Plugin
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-hermes-python-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Build and publish Hermes Python plugin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.31.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Regenerates ryzome_hermes_plugin/tool_manifest.json from toolRegistry so the
+      # shipped Python sdist/wheel carries schemas matching the current code.
+      - name: Build Hermes plugin (regenerate tool manifest)
+        run: pnpm --filter @ryzome-ai/hermes-ryzome build
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build backend
+        run: python -m pip install --upgrade build
+
+      - name: Build Python distribution
+        run: python -m build packages/hermes-ryzome --outdir dist/hermes-python
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/hermes-python

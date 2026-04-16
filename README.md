@@ -10,9 +10,10 @@ This monorepo provides Ryzome canvas tools for AI agents across multiple integra
 
 | Package | Description | npm |
 |---------|-------------|-----|
-| [`@ryzome-ai/ryzome-core`](packages/ryzome-core) | Shared logic: API client, tools, graph builder, layout | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-core)](https://www.npmjs.com/package/@ryzome-ai/ryzome-core) |
+| [`@ryzome-ai/ryzome-core`](packages/ryzome-core) | Shared logic: API client, 11 tools, graph builder, layout | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-core)](https://www.npmjs.com/package/@ryzome-ai/ryzome-core) |
 | [`@ryzome-ai/ryzome-mcp`](packages/ryzome-mcp) | MCP server with tools + resources for Claude Code and other MCP clients | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-mcp)](https://www.npmjs.com/package/@ryzome-ai/ryzome-mcp) |
 | [`@ryzome-ai/openclaw-ryzome`](packages/openclaw-ryzome) | OpenClaw plugin adapter | [![npm](https://img.shields.io/npm/v/@ryzome-ai/openclaw-ryzome)](https://www.npmjs.com/package/@ryzome-ai/openclaw-ryzome) |
+| [`@ryzome-ai/hermes-ryzome`](packages/hermes-ryzome) | Hermes plugin runner plus Python plugin assets | [![npm](https://img.shields.io/npm/v/@ryzome-ai/hermes-ryzome)](https://www.npmjs.com/package/@ryzome-ai/hermes-ryzome) |
 | [`@ryzome-ai/ryzome-claude-plugin`](packages/ryzome-claude-plugin) | Claude Code plugin with skills, agents, and hooks | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-claude-plugin)](https://www.npmjs.com/package/@ryzome-ai/ryzome-claude-plugin) |
 
 ## Architecture
@@ -24,22 +25,39 @@ ryzome-claude-plugin (Claude Code plugin)
 
 openclaw-ryzome (OpenClaw plugin)
   └── ryzome-core (shared logic)
+
+hermes-ryzome (Hermes plugin)
+  ├── Python Hermes plugin surface
+  └── ryzome-core (shared logic via Node runner)
 ```
 
-`ryzome-core` contains the API client, 6 canvas tools, graph builder, layout engine, and markdown formatter. The MCP server and OpenClaw plugin are thin adapters that register those tools into their respective frameworks.
+`ryzome-core` contains the API client, 11 tools, graph builder, layout engine, and markdown formatter. The MCP server, OpenClaw plugin, and Hermes plugin all reuse that shared tool implementation.
 
 ## Getting Started
 
 - **Claude Code users**: See [`@ryzome-ai/ryzome-claude-plugin`](packages/ryzome-claude-plugin) for one-command install
 - **MCP client users**: See [`@ryzome-ai/ryzome-mcp`](packages/ryzome-mcp) for `npx` quick start
 - **OpenClaw users**: See [`@ryzome-ai/openclaw-ryzome`](packages/openclaw-ryzome) for plugin install
+- **Hermes users**: Build this repo, link `packages/hermes-ryzome` into `~/.hermes/plugins/ryzome`, then run `hermes ryzome setup --key rz_...`
 - **Building integrations**: See [`@ryzome-ai/ryzome-core`](packages/ryzome-core) for the shared library
+
+### Hermes Plugin
+
+For a local rollout from this repository:
+
+```bash
+pnpm build
+ln -s "$PWD/packages/hermes-ryzome" ~/.hermes/plugins/ryzome
+hermes ryzome setup --key rz_...
+```
+
+The Python plugin falls back to the published npm runner `@ryzome-ai/hermes-ryzome`, so public installs need Node.js and `npx` available even when the plugin itself is installed from PyPI.
 
 ## Development
 
 ```bash
 pnpm install                        # Install all dependencies
-pnpm build                          # Build all packages (core -> mcp)
+pnpm build                          # Build all packages
 pnpm test                           # Run unit tests across all packages
 pnpm typecheck                      # tsc --noEmit in each package
 pnpm lint                           # Biome lint + typecheck
@@ -65,6 +83,8 @@ This repo uses [Changesets](https://github.com/changesets/changesets) for versio
 5. Merging that PR bumps versions, updates changelogs, and publishes to npm
 
 Dev snapshots are published on every push to `main` under the `dev` tag.
+
+The Hermes Python plugin is packaged from `packages/hermes-ryzome` and published separately via the manual `Publish Hermes Python Plugin` workflow. Its runtime Node runner is versioned and published through the existing Changesets/npm flow as `@ryzome-ai/hermes-ryzome`.
 
 ## License
 
