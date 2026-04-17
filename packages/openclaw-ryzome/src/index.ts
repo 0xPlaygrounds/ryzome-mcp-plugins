@@ -1,43 +1,31 @@
+import {
+	parseConfig,
+	type RyzomeClientConfig,
+	toolRegistry,
+} from "@ryzome-ai/ryzome-core";
+import {
+	definePluginEntry,
+	type OpenClawPluginApi,
+} from "openclaw/plugin-sdk/plugin-entry";
 import { z } from "zod";
-import { parseConfig, toolRegistry } from "@ryzome-ai/ryzome-core";
-import type { RyzomeClientConfig } from "@ryzome-ai/ryzome-core";
 import { registerCliSetup } from "./cli.js";
 
 const RYZOME_SETUP_GUIDE_URL = "https://ryzome.ai/claw";
 const RYZOME_API_KEY_URL = "https://ryzome.ai/api-key";
 
-interface PluginApi {
-	pluginConfig?: Record<string, unknown>;
-	runtime: {
-		config: {
-			loadConfig: () => unknown;
-			writeConfigFile: (config: unknown) => Promise<void> | void;
-		};
+function tryResolveConfig(api: OpenClawPluginApi): RyzomeClientConfig | null {
+	const cfg = parseConfig(api.pluginConfig);
+	if (!cfg.apiKey) {
+		return null;
+	}
+	return {
+		apiKey: cfg.apiKey,
+		apiUrl: cfg.apiUrl,
+		appUrl: cfg.appUrl,
 	};
-	logger: {
-		info: (...args: unknown[]) => void;
-		error: (...args: unknown[]) => void;
-		warn?: (...args: unknown[]) => void;
-	};
-	registerCli: (
-		registrar: (context: { program: unknown }) => void,
-		opts?: { commands?: string[] },
-	) => void;
-	registerTool: (
-		def: {
-			name: string;
-			description: string;
-			parameters: unknown;
-			execute: (
-				id: string,
-				params: Record<string, unknown>,
-			) => Promise<{ content: Array<{ type: string; text: string }> }>;
-		},
-		opts?: { optional?: boolean },
-	) => void;
 }
 
-function logSetupHint(api: PluginApi) {
+function logSetupHint(api: OpenClawPluginApi): void {
 	api.logger.info(
 		"[ryzome] context engine detected, but the thread is still unbound.",
 	);
@@ -47,48 +35,54 @@ function logSetupHint(api: PluginApi) {
 	api.logger.info("[ryzome] env fallback: RYZOME_OPENCLAW_API_KEY");
 }
 
-function resolveConfig(api: PluginApi): RyzomeClientConfig {
-	const cfg = parseConfig(api.pluginConfig);
-	if (!cfg.apiKey) {
-		throw new Error(
-			`Ryzome plugin: apiKey is required. Run: openclaw ryzome setup --key <api-key>  (guide: ${RYZOME_SETUP_GUIDE_URL})`,
-		);
-	}
-	return {
-		apiKey: cfg.apiKey,
-		apiUrl: cfg.apiUrl,
-		appUrl: cfg.appUrl,
-	};
+function toolLabel(name: string): string {
+	return name
+		.split("_")
+		.map((part) => (part.length > 0 ? part[0].toUpperCase() + part.slice(1) : part))
+		.join(" ");
 }
 
-export default function register(api: PluginApi) {
-	registerCliSetup(api);
-	api.logger.info("[ryzome] plugin loaded");
+function missingApiKeyError(): Error {
+	return new Error(
+		`Ryzome plugin: apiKey is not configured. Run: openclaw ryzome setup --key <api-key>  (guide: ${RYZOME_SETUP_GUIDE_URL})`,
+	);
+}
 
-	let clientConfig: RyzomeClientConfig;
-	try {
-		clientConfig = resolveConfig(api);
-	} catch (err) {
-		logSetupHint(api);
-		if (err instanceof Error) {
-			api.logger.info(`[ryzome] ${err.message}`);
+export default definePluginEntry({
+	id: "openclaw-ryzome",
+	name: "Ryzome Canvas OpenClaw Plugin",
+	description: "Create Ryzome canvases from plans and research",
+	register(api) {
+		registerCliSetup(api);
+		api.logger.info("[ryzome] plugin loaded");
+
+		if (!tryResolveConfig(api)) {
+			logSetupHint(api);
 		}
-		return;
-	}
 
-	const toolNames: string[] = [];
+		const toolNames: string[] = [];
 
-	for (const tool of toolRegistry) {
-		api.registerTool({
-			name: tool.name,
-			description: tool.description,
-			parameters: z.toJSONSchema(tool.paramsSchema),
-			async execute(_id, params) {
-				return tool.execute(params, clientConfig);
-			},
-		});
-		toolNames.push(tool.name);
-	}
+		for (const tool of toolRegistry) {
+			api.registerTool({
+				name: tool.name,
+				label: toolLabel(tool.name),
+				description: tool.description,
+				parameters: z.toJSONSchema(tool.paramsSchema),
+				async execute(_toolCallId, params) {
+					const clientConfig = tryResolveConfig(api);
+					if (!clientConfig) {
+						throw missingApiKeyError();
+					}
+					const result = await tool.execute(
+						params as Record<string, unknown>,
+						clientConfig,
+					);
+					return { ...result, details: undefined };
+				},
+			});
+			toolNames.push(tool.name);
+		}
 
-	api.logger.info(`[ryzome] registered tools: ${toolNames.join(", ")}`);
-}
+		api.logger.info(`[ryzome] registered tools: ${toolNames.join(", ")}`);
+	},
+});

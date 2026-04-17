@@ -24,7 +24,15 @@
 	"openclaw": {
 		"extensions": [
 			"./src/index.ts"
-		]
+		],
+		"compat": {
+			"pluginApi": ">=2026.4.14",
+			"minGatewayVersion": "2026.4.14"
+		},
+		"build": {
+			"openclawVersion": "2026.4.14",
+			"pluginSdkVersion": "2026.4.14"
+		}
 	},
 	"exports": {
 		".": "./src/index.ts"
@@ -50,7 +58,7 @@
 		"@biomejs/biome": "^2.4.6",
 		"@sinclair/typebox": "^0.34.48",
 		"@types/node": "^25.4.0",
-		"openclaw": "^2026.3.8",
+		"openclaw": "^2026.4.14",
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.18"
 	},

@@ -57,6 +57,13 @@ Integration tests hit the live Ryzome API and are gated by env vars: `RYZOME_ENA
 
 **`openclaw-ryzome`** — OpenClaw plugin adapter (`packages/openclaw-ryzome/src/index.ts`): thin wrapper registering core tools + CLI commands.
 
+Onboarding invariants (to avoid re-debugging the same phantom):
+
+- Entry uses `definePluginEntry` from `openclaw/plugin-sdk/plugin-entry`; no hand-rolled `PluginApi` type.
+- Tools register **unconditionally** regardless of whether the API key is set. The api-key check is lazy: each tool's `execute` resolves config at call time and throws a setup-hint error if missing. Do not reintroduce an early return in `register()` — that's what made the plugin appear "broken" with no tools visible.
+- The manifest declares `contracts.tools` (all 11 tool names) and `activation.onCommands: ["ryzome"]`. `contracts.tools` is what makes OpenClaw auto-allowlist `openclaw-ryzome` into `plugins.allow` once a config entry exists — agents should **not** "fix" missing tools by writing to `plugins.allow` from the plugin CLI.
+- Onboarding path is `openclaw ryzome setup --key <api-key>` (and `openclaw ryzome status` to verify). The global `openclaw setup` wizard does not have a tool-plugin step today; upstream request tracked at [openclaw/openclaw#68115](https://github.com/openclaw/openclaw/issues/68115).
+
 **`hermes-ryzome`** — Hermes plugin adapter (`packages/hermes-ryzome`): Python `register(ctx)` plugin surface plus a Node runner that executes the same `toolRegistry` entries as OpenClaw.
 
 **`ryzome-claude-plugin`** — Claude Code plugin (no build step): `.claude-plugin/plugin.json` manifest, `.mcp.json` bundled server, skills (`/plan`, `/research`, `/ryzome-status`), `ryzome-context` agent.

@@ -5,6 +5,10 @@ import {
 	parseConfig,
 	RYZOME_API_KEY_ENV_VARS,
 } from "@ryzome-ai/ryzome-core";
+import type {
+	OpenClawConfig,
+	OpenClawPluginApi,
+} from "openclaw/plugin-sdk/plugin-entry";
 import {
 	accent,
 	bold,
@@ -19,36 +23,6 @@ import { printDemoHints, promptDemoCanvas } from "./onboarding.js";
 type RyzomePluginEntry = {
 	enabled?: boolean;
 	config?: Record<string, unknown>;
-};
-
-type OpenClawLikeConfig = {
-	plugins?: {
-		entries?: Record<string, RyzomePluginEntry | undefined>;
-	};
-};
-
-type CliCommand = {
-	command(name: string): CliCommand;
-	description(text: string): CliCommand;
-	option(flags: string, description?: string): CliCommand;
-	action(
-		handler: (options: Record<string, string>) => void | Promise<void>,
-	): CliCommand;
-	name(): string;
-	commands?: CliCommand[];
-};
-
-type PluginApi = {
-	runtime: {
-		config: {
-			loadConfig: () => unknown;
-			writeConfigFile: (config: unknown) => Promise<void> | void;
-		};
-	};
-	registerCli: (
-		registrar: (context: { program: unknown }) => void,
-		opts?: { commands?: string[] },
-	) => void;
 };
 
 function maskSecret(value: string): string {
@@ -75,12 +49,13 @@ function createPrompt() {
 	};
 }
 
-function asOpenClawLikeConfig(value: unknown): OpenClawLikeConfig {
-	if (value && typeof value === "object" && !Array.isArray(value)) {
-		return value as OpenClawLikeConfig;
-	}
-
-	return {};
+function readRyzomeEntry(
+	config: OpenClawConfig,
+): RyzomePluginEntry | undefined {
+	const entries = config.plugins?.entries as
+		| Record<string, RyzomePluginEntry | undefined>
+		| undefined;
+	return entries?.["openclaw-ryzome"];
 }
 
 function resolveApiKeyStatus(entry: RyzomePluginEntry | undefined): {
@@ -203,11 +178,10 @@ function printStatusHeader() {
 	console.log(lines.join("\n"));
 }
 
-export function registerCliSetup(api: PluginApi): void {
+export function registerCliSetup(api: OpenClawPluginApi): void {
 	api.registerCli(
 		({ program }) => {
-			const cliProgram = program as CliCommand;
-			const cmd = cliProgram
+			const cmd = program
 				.command("ryzome")
 				.description("Ryzome canvas plugin commands");
 
@@ -276,10 +250,11 @@ export function registerCliSetup(api: PluginApi): void {
 										)
 									).trim();
 
-						const current = asOpenClawLikeConfig(
-							api.runtime.config.loadConfig(),
-						);
-						const entries = current.plugins?.entries ?? {};
+						const current = api.runtime.config.loadConfig();
+						const entries = (current.plugins?.entries ?? {}) as Record<
+							string,
+							RyzomePluginEntry | undefined
+						>;
 						const existingEntry = entries["openclaw-ryzome"] ?? {};
 						const nextEntry: RyzomePluginEntry = {
 							...existingEntry,
@@ -292,7 +267,7 @@ export function registerCliSetup(api: PluginApi): void {
 							},
 						};
 
-						const nextConfig: OpenClawLikeConfig = {
+						const nextConfig: OpenClawConfig = {
 							...current,
 							plugins: {
 								...current.plugins,
@@ -325,8 +300,8 @@ export function registerCliSetup(api: PluginApi): void {
 				.command("status")
 				.description("Show the current Ryzome plugin configuration status")
 				.action(() => {
-					const current = asOpenClawLikeConfig(api.runtime.config.loadConfig());
-					const entry = current.plugins?.entries?.["openclaw-ryzome"];
+					const current = api.runtime.config.loadConfig();
+					const entry = readRyzomeEntry(current);
 					const resolved = parseConfig(entry?.config);
 					const apiKeyStatus = resolveApiKeyStatus(entry);
 
