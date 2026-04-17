@@ -2,9 +2,11 @@
 	"id": "openclaw-ryzome",
 	"name": "Ryzome Canvas OpenClaw Plugin",
 	"description": "Create Ryzome canvases from plans and research",
-	"version": "0.4.2",
+	"version": "0.5.0",
 	"activation": {
-		"onCommands": ["ryzome"]
+		"onCommands": [
+			"ryzome"
+		]
 	},
 	"contracts": {
 		"tools": [

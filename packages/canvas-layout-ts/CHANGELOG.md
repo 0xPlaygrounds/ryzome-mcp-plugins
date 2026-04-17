@@ -1,8 +1,8 @@
-# @ryzome-ai/ryzome-core
+# @ryzome-ai/canvas-layout-ts
 
-## 0.2.3
+## 0.1.0
 
-### Patch Changes
+### Minor Changes
 
 - ba13c7d: feat(canvas-layout-ts): new compound-graph layout package powered by elkjs
 
@@ -28,45 +28,3 @@
   - The old depth-grid heuristic (`computeLayout` / `computeGroupBounds`) is removed from the primary path. `estimateNodeHeight` is retained and used as the default `measureNode` so visual density matches the previous output until real-measurement is wired in.
   - A `RYZOME_LAYOUT_ENGINE=legacy` env flag reinstates the former depth-grid placement via the preserved `computeLegacyLayoutRects` for emergency rollback. Intended as a short-lived safety valve — remove once the elk path has been exercised in production.
   - Coordinate-based tests are replaced with invariant-based tests (no overlap, groups contain members, layer ordering), plus smoke fixtures for 50-node DAGs, multi-group research canvases, disconnected roots, and cycles.
-
-- d0c8867: fix(upload-image): use SHA-256 content hash as S3 key
-
-  The `upload_ryzome_image` tool previously generated S3 keys of the form
-  `canvas/{canvas_id}/images/{uuid}.{ext}`, which diverged from the canvas
-  app convention (`apps/canvas/src/lib/s3/s3-client.ts` → `createFileHash`)
-  where the S3 key is the SHA-256 hex digest of the file contents.
-  Downstream features (share/publish/clone, file deduplication, workspace
-  size accounting) rely on that convention, so images uploaded via the
-  plugin were not correctly handled by those flows. The tool now produces
-  the same hash-based key as the rest of the product.
-
-- Updated dependencies [ba13c7d]
-  - @ryzome-ai/canvas-layout-ts@0.1.0
-
-## 0.2.2
-
-### Patch Changes
-
-- 2c39852: Internal cleanup and code quality pass across the plugin monorepo.
-
-  - `ryzome-core`: tighten `RyzomeClient.getCanvas` / `listCanvases` return types and drop redundant `try/catch` wrappers in tool executors so `RyzomeApiError` propagates directly.
-  - `ryzome-mcp`: advertise the server version from `package.json` (no more hardcoded `0.2.0`), share a `resourceIdToString` helper, and clean up stale inline comments.
-  - `openclaw-ryzome`: move `@sinclair/typebox` to `devDependencies` (it is only used for type generation at build time) and sync README tool/command tables with the current tool surface.
-
-## 0.2.1
-
-### Patch Changes
-
-- 2e42f57: Fix canvas creation to send explicit Canvas content through the document API and reject non-canvas responses before returning a canvas URL.
-
-## 0.2.0
-
-### Minor Changes
-
-- 2925ea2: Add document create, update, list, and save-to-library support across the plugin and MCP surfaces. Normalize canvas and document workspace URLs so clients open the correct views.
-
-## 0.1.1
-
-### Patch Changes
-
-- 9e348db: Fix documentation drift in sub-package READMEs and remove stale upload_ryzome_image unavailability guard now that the backend supports API key auth on the file-upload route.
