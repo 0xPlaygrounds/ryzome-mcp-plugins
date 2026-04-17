@@ -48,6 +48,7 @@ const pluginRoot = path.resolve(
 );
 const workspaceRoot = path.resolve(pluginRoot, "../..");
 const coreRoot = path.resolve(pluginRoot, "..", "ryzome-core");
+const canvasLayoutRoot = path.resolve(pluginRoot, "..", "canvas-layout-ts");
 const openclawRoot = path.join(pluginRoot, "node_modules", "openclaw");
 const openclawCliPath = path.join(openclawRoot, "openclaw.mjs");
 const pluginNodeModulesRoot = path.join(pluginRoot, "node_modules");
@@ -156,9 +157,11 @@ async function packPluginTarball(tempDir: string) {
 		encoding: "utf8",
 	});
 	const entries = await fs.readdir(tempDir);
-	const tarball = entries.find((entry) => entry.endsWith(".tgz"));
+	const tarball = entries.find(
+		(entry) => entry.endsWith(".tgz") && entry.includes("openclaw-ryzome"),
+	);
 	if (!tarball) {
-		throw new Error(`No packed tarball found in ${tempDir}`);
+		throw new Error(`No packed openclaw-ryzome tarball found in ${tempDir}`);
 	}
 	return path.join(tempDir, tarball);
 }
@@ -256,7 +259,14 @@ async function executeCreateCanvasTool(
 		error: (_message: string) => {},
 	};
 
-	await pluginModule.default({
+	const pluginEntry = pluginModule.default;
+	if (typeof pluginEntry?.register !== "function") {
+		throw new Error(
+			"Plugin default export is missing a register() function (definePluginEntry)",
+		);
+	}
+
+	await pluginEntry.register({
 		pluginConfig: config.plugins?.entries?.["openclaw-ryzome"]?.config ?? {},
 		runtime: {
 			config: {
@@ -402,45 +412,97 @@ async function startStubServer() {
 	};
 }
 
-async function packCoreTarball(tempDir: string) {
-	execFileSync(getPnpmCommand(), ["build"], {
-		cwd: coreRoot,
-		encoding: "utf8",
-	});
-	execFileSync(getPnpmCommand(), ["pack", "--pack-destination", tempDir], {
-		cwd: coreRoot,
-		encoding: "utf8",
-	});
-	const entries = await fs.readdir(tempDir);
+async function packWorkspaceTarball(params: {
+	cwd: string;
+	tempDir: string;
+	tarballMatches: string;
+	build?: boolean;
+}) {
+	if (params.build) {
+		execFileSync(getPnpmCommand(), ["build"], {
+			cwd: params.cwd,
+			encoding: "utf8",
+		});
+	}
+	execFileSync(
+		getPnpmCommand(),
+		["pack", "--pack-destination", params.tempDir],
+		{ cwd: params.cwd, encoding: "utf8" },
+	);
+	const entries = await fs.readdir(params.tempDir);
 	const tarball = entries.find(
-		(entry) => entry.endsWith(".tgz") && entry.includes("ryzome-core"),
+		(entry) => entry.endsWith(".tgz") && entry.includes(params.tarballMatches),
 	);
 	if (!tarball) {
-		throw new Error(`No ryzome-core tarball found in ${tempDir}`);
+		throw new Error(
+			`No ${params.tarballMatches} tarball found in ${params.tempDir}`,
+		);
 	}
-	return path.join(tempDir, tarball);
+	return path.join(params.tempDir, tarball);
+}
+
+async function rewriteWorkspaceDepsInTarball(params: {
+	tarballPath: string;
+	workDir: string;
+	outputTarball: string;
+	replacements: Record<string, string>;
+}) {
+	await fs.mkdir(params.workDir, { recursive: true });
+	execFileSync("tar", ["-xzf", params.tarballPath, "-C", params.workDir]);
+	const pkgJsonPath = path.join(params.workDir, "package", "package.json");
+	const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, "utf8"));
+	for (const [dep, spec] of Object.entries(params.replacements)) {
+		if (pkgJson.dependencies?.[dep]) {
+			pkgJson.dependencies[dep] = spec;
+		}
+	}
+	await fs.writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2));
+	execFileSync("tar", [
+		"-czf",
+		params.outputTarball,
+		"-C",
+		params.workDir,
+		"package",
+	]);
+	return params.outputTarball;
 }
 
 async function installPackagedPlugin(stateDir: string) {
 	const packDir = await createTempRoot("openclaw-ryzome-pack-");
 
-	// Pack ryzome-core first (openclaw-ryzome depends on it)
-	const coreTarball = await packCoreTarball(packDir);
+	// canvas-layout-ts is an unpublished workspace dep of ryzome-core; pack it
+	// and rewrite ryzome-core's dependency so npm install succeeds offline.
+	const canvasLayoutTarball = await packWorkspaceTarball({
+		cwd: canvasLayoutRoot,
+		tempDir: packDir,
+		tarballMatches: "canvas-layout-ts",
+		build: true,
+	});
+
+	const rawCoreTarball = await packWorkspaceTarball({
+		cwd: coreRoot,
+		tempDir: packDir,
+		tarballMatches: "ryzome-core",
+		build: true,
+	});
+	const coreTarball = await rewriteWorkspaceDepsInTarball({
+		tarballPath: rawCoreTarball,
+		workDir: path.join(packDir, "repack-core"),
+		outputTarball: path.join(packDir, "repacked-ryzome-core.tgz"),
+		replacements: {
+			"@ryzome-ai/canvas-layout-ts": `file:${canvasLayoutTarball}`,
+		},
+	});
 
 	const tarballPath = await packPluginTarball(packDir);
-
-	// Rewrite the plugin tarball so @ryzome-ai/ryzome-core resolves locally
-	const unpackDir = path.join(packDir, "repack");
-	await fs.mkdir(unpackDir, { recursive: true });
-	execFileSync("tar", ["-xzf", tarballPath, "-C", unpackDir]);
-	const pkgJsonPath = path.join(unpackDir, "package", "package.json");
-	const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, "utf8"));
-	if (pkgJson.dependencies?.["@ryzome-ai/ryzome-core"]) {
-		pkgJson.dependencies["@ryzome-ai/ryzome-core"] = `file:${coreTarball}`;
-	}
-	await fs.writeFile(pkgJsonPath, JSON.stringify(pkgJson, null, 2));
-	const repackedTarball = path.join(packDir, "repacked-plugin.tgz");
-	execFileSync("tar", ["-czf", repackedTarball, "-C", unpackDir, "package"]);
+	const repackedTarball = await rewriteWorkspaceDepsInTarball({
+		tarballPath,
+		workDir: path.join(packDir, "repack"),
+		outputTarball: path.join(packDir, "repacked-plugin.tgz"),
+		replacements: {
+			"@ryzome-ai/ryzome-core": `file:${coreTarball}`,
+		},
+	});
 
 	const installOutput = await runOpenClaw(
 		["plugins", "install", repackedTarball],

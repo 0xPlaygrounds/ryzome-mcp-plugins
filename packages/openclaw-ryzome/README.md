@@ -13,7 +13,10 @@
 
 ```bash
 openclaw plugins install @ryzome-ai/openclaw-ryzome
+openclaw ryzome setup --key <api-key>
 ```
+
+Restart OpenClaw and the tools become available. The plugin manifest declares its tools under `contracts.tools`, so once the config entry exists OpenClaw auto-adds `openclaw-ryzome` to `plugins.allow` — you do **not** need to edit `plugins.allow` by hand.
 
 For local development from a monorepo checkout:
 
@@ -26,11 +29,17 @@ openclaw plugins install -l packages/openclaw-ryzome
 
 ## Configure
 
+The canonical onboarding command is:
+
 ```bash
-openclaw ryzome setup
+openclaw ryzome setup --key <api-key>      # non-interactive
+openclaw ryzome setup                      # interactive prompt
+openclaw ryzome status                     # verify
 ```
 
-Then restart OpenClaw. You can also configure manually in `~/.openclaw/openclaw.json`:
+`openclaw setup` (the global wizard) does **not** currently have a step for tool-only plugins like Ryzome — that surface is today reserved for LLM / image-generation providers. Tracking upstream at [openclaw/openclaw#68115](https://github.com/openclaw/openclaw/issues/68115). Until that lands, use `openclaw ryzome setup`.
+
+You can also configure manually in `~/.openclaw/openclaw.json`:
 
 ```json
 {
@@ -156,10 +165,11 @@ Optional `pinned` boolean filter. Returns all accessible canvases with names, ID
 - Restart OpenClaw after installing or changing config
 - Run `openclaw ryzome setup` if not configured yet
 - Check `plugins.entries.openclaw-ryzome.enabled` is `true`
+- You do **not** need to add `openclaw-ryzome` to `plugins.allow` manually — the manifest's `contracts.tools` makes OpenClaw auto-allowlist the plugin whenever a `plugins.entries.openclaw-ryzome` entry exists. If `plugins.allow` is set to an explicit array that omits `openclaw-ryzome`, remove that override (or let OpenClaw regenerate it) rather than editing by hand.
 
-### `apiKey is required in config`
+### `Ryzome plugin: apiKey is not configured`
 
-- Run `openclaw ryzome setup`, or set `RYZOME_OPENCLAW_API_KEY`
+- Tools will register unconditionally but throw this error on call if no key is set. Run `openclaw ryzome setup --key <api-key>`, or export `RYZOME_OPENCLAW_API_KEY` / `RYZOME_API_KEY`.
 
 ### 401 or 403 errors
 
