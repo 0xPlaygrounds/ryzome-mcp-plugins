@@ -485,7 +485,7 @@ describe("Hermes runner integration", () => {
 		);
 
 		expect(uploadUrlRequest?.body).toMatchObject({
-			s3_key: expect.stringContaining(`canvas/${CANVAS_ID}/images/`),
+			s3_key: expect.stringMatching(/^[a-f0-9]{64}$/),
 		});
 		expect(typeof uploadRequest?.body).toBe("string");
 		expect(

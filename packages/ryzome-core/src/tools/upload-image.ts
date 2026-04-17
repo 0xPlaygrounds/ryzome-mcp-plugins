@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { ObjectId } from "bson";
 import { buildCanvasAppUrl } from "../lib/app-url.js";
 import type { PatchOperation } from "../lib/client/index.js";
@@ -47,17 +47,6 @@ function inferContentType(url: string): string {
 	return "image/png";
 }
 
-function inferExtension(contentType: string): string {
-	const map: Record<string, string> = {
-		"image/png": "png",
-		"image/jpeg": "jpg",
-		"image/gif": "gif",
-		"image/webp": "webp",
-		"image/svg+xml": "svg",
-	};
-	return map[contentType] ?? "png";
-}
-
 export async function executeUploadImage(
 	rawParams: unknown,
 	clientConfig: RyzomeClientConfig,
@@ -85,8 +74,11 @@ export async function executeUploadImage(
 		: inferContentType(params.image_url);
 
 	const imageBuffer = new Uint8Array(await imageResponse.arrayBuffer());
-	const ext = inferExtension(contentType);
-	const s3Key = `canvas/${params.canvas_id}/images/${randomUUID()}.${ext}`;
+	// The canvas app (apps/canvas/src/lib/s3/s3-client.ts `createFileHash`) uses
+	// the SHA-256 hex digest of the file contents as the S3 key. Downstream
+	// features (share/publish/clone, dedup, workspace size accounting) rely on
+	// that convention, so we match it here.
+	const s3Key = createHash("sha256").update(imageBuffer).digest("hex");
 
 	const uploadUrl = await retryStage(() => client.requestUploadUrl(s3Key));
 
