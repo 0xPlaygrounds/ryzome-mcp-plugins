@@ -1,5 +1,13 @@
 # @ryzome-ai/hermes-ryzome
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [ba13c7d]
+- Updated dependencies [d0c8867]
+  - @ryzome-ai/ryzome-core@0.2.3
+
 ## 0.1.0
 
 ### Minor Changes

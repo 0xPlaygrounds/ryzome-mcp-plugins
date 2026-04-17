@@ -7,7 +7,7 @@ from .runtime import handle_cli_command, is_configured, setup_cli_parser
 from .schemas import TOOL_SCHEMAS
 from .tools import create_tool_handler
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 LOGGER = logging.getLogger(__name__)
 
