@@ -24,7 +24,7 @@ export async function executeCanvasWithSteps(
 	});
 
 	const canvasId = canvas_id.$oid;
-	const graph = buildCanvasGraph(params.steps, canvasId, params.groups);
+	const graph = await buildCanvasGraph(params.steps, canvasId, params.groups);
 
 	await retryStage(() =>
 		client.patchCanvas(canvasId, { operations: graph.operations }),

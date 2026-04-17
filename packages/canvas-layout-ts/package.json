@@ -1,37 +1,44 @@
 {
-	"name": "@ryzome-ai/ryzome-core",
-	"version": "0.2.2",
-	"description": "Ryzome core library — shared client, graph builder, and tools",
+	"name": "@ryzome-ai/canvas-layout-ts",
+	"version": "0.0.0",
+	"description": "Ryzome canvas layout — compound-graph placement for nodes, edges, and groups via elkjs",
 	"license": "MIT",
 	"type": "module",
 	"packageManager": "pnpm@10.31.0",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/0xPlaygrounds/ryzome-mcp-plugins.git",
-		"directory": "packages/ryzome-core"
+		"directory": "packages/canvas-layout-ts"
 	},
-	"homepage": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/tree/main/packages/ryzome-core",
+	"homepage": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/tree/main/packages/canvas-layout-ts",
 	"bugs": {
 		"url": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/issues"
 	},
 	"keywords": [
 		"ryzome",
 		"canvas",
-		"api-client",
-		"graph",
-		"agent"
+		"layout",
+		"elkjs",
+		"graph"
 	],
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"exports": {
-		".": "./dist/index.js",
-		"./config": "./dist/config.js",
-		"./tools": "./dist/tools/index.js",
-		"./lib/ryzome-client": "./dist/lib/ryzome-client.js"
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
 	},
+	"files": [
+		"dist",
+		"src",
+		"README.md"
+	],
 	"publishConfig": {
 		"access": "public"
 	},
 	"scripts": {
-		"build": "tsc && cp src/lib/client/schema.d.ts dist/lib/client/schema.d.ts",
+		"build": "tsc",
 		"test": "vitest run",
 		"test:watch": "vitest watch",
 		"typecheck": "tsc --noEmit",
@@ -47,9 +54,6 @@
 		"vitest": "^4.0.18"
 	},
 	"dependencies": {
-		"@ryzome-ai/canvas-layout-ts": "workspace:*",
-		"bson": "^7.2.0",
-		"openapi-fetch": "^0.17.0",
-		"zod": "^4.3.6"
+		"elkjs": "^0.10.0"
 	}
 }

@@ -1,11 +1,15 @@
 import {
-	computeLayout,
-	computeGroupBounds,
+	computeCanvasLayout,
+	type LayoutInput,
+	type LayoutRect,
+} from "@ryzome-ai/canvas-layout-ts";
+import { ObjectId } from "bson";
+import type { PatchOperation } from "./client/index.js";
+import {
+	computeLegacyLayoutRects,
 	estimateNodeHeight,
 	NODE_WIDTH,
 } from "./layout.js";
-import type { PatchOperation } from "./client/index.js";
-import { ObjectId } from "bson";
 
 export interface StepInput {
 	id: string;
@@ -22,68 +26,58 @@ export interface GroupInput {
 	color?: string;
 }
 
-/**
- * Computes the depth of each step in the DAG via BFS from root nodes.
- */
-function computeDepths(steps: StepInput[]): Map<string, number> {
-	const depths = new Map<string, number>();
-	const dependents = new Map<string, string[]>();
-
-	for (const step of steps) {
-		dependents.set(step.id, []);
-	}
-
-	for (const step of steps) {
-		for (const dep of step.dependsOn ?? []) {
-			const list = dependents.get(dep);
-			if (list) list.push(step.id);
-		}
-	}
-
-	const roots = steps.filter((s) => !s.dependsOn?.length);
-	const queue: Array<{ id: string; depth: number }> = roots.map((r) => ({
-		id: r.id,
-		depth: 0,
-	}));
-
-	while (queue.length > 0) {
-		const next = queue.shift();
-		if (!next) break;
-
-		const { id, depth } = next;
-		const current = depths.get(id);
-		if (current !== undefined && current >= depth) continue;
-		depths.set(id, depth);
-		for (const child of dependents.get(id) ?? []) {
-			queue.push({ id: child, depth: depth + 1 });
-		}
-	}
-
-	for (const step of steps) {
-		if (!depths.has(step.id)) depths.set(step.id, 0);
-	}
-
-	return depths;
-}
-
 export interface CanvasPatchOperations {
 	operations: PatchOperation[];
 }
 
-export function buildCanvasGraph(
+type LayoutEngine = "elk" | "legacy";
+
+function resolveLayoutEngine(): LayoutEngine {
+	const raw = process.env.RYZOME_LAYOUT_ENGINE?.toLowerCase();
+	if (raw === "legacy") return "legacy";
+	return "elk";
+}
+
+async function computeRects(
+	steps: StepInput[],
+	groups: GroupInput[] | undefined,
+	engine: LayoutEngine,
+): Promise<{
+	nodeRects: Map<string, LayoutRect>;
+	groupRects: Map<string, LayoutRect>;
+}> {
+	if (engine === "legacy") {
+		return computeLegacyLayoutRects(steps, groups);
+	}
+
+	const layoutInput: LayoutInput = {
+		nodes: steps.map((s) => ({
+			id: s.id,
+			width: NODE_WIDTH,
+			height: estimateNodeHeight(s.description),
+			group: s.group,
+			dependsOn: s.dependsOn,
+		})),
+		groups: groups?.map((g) => ({ id: g.id, title: g.title })),
+	};
+
+	const result = await computeCanvasLayout(layoutInput);
+
+	return {
+		nodeRects: new Map(Object.entries(result.nodes)),
+		groupRects: new Map(Object.entries(result.groups)),
+	};
+}
+
+export async function buildCanvasGraph(
 	steps: StepInput[],
 	canvasId: string,
 	groups?: GroupInput[],
-): CanvasPatchOperations {
+): Promise<CanvasPatchOperations> {
 	void canvasId;
-	const depths = computeDepths(steps);
 
-	const layoutNodes = steps.map((s) => ({
-		id: s.id,
-		depth: depths.get(s.id) ?? 0,
-	}));
-
-	const positions = computeLayout(layoutNodes);
+	const engine = resolveLayoutEngine();
+	const { nodeRects, groupRects } = await computeRects(steps, groups, engine);
 
 	const nodeIdMap = new Map<string, string>();
 	for (const step of steps) {
@@ -92,20 +86,19 @@ export function buildCanvasGraph(
 
 	const nodeOperations: PatchOperation[] = steps.map((step) => {
 		const id = nodeIdMap.get(step.id);
-		const pos = positions.get(step.id);
-		const height = estimateNodeHeight(step.description);
+		const rect = nodeRects.get(step.id);
 
-		if (!id || !pos) {
-			throw new Error(`Missing graph metadata for step ${step.id}`);
+		if (!id || !rect) {
+			throw new Error(`Missing layout for step ${step.id}`);
 		}
 
 		return {
 			_type: "createNode" as const,
 			id,
-			height,
-			width: NODE_WIDTH,
-			x: pos.x,
-			y: pos.y,
+			height: rect.height,
+			width: rect.width,
+			x: rect.x,
+			y: rect.y,
 			data: {
 				_type: "NewDocument" as const,
 				_content: {
@@ -122,7 +115,6 @@ export function buildCanvasGraph(
 	});
 
 	const edgeOperations: PatchOperation[] = [];
-
 	for (const step of steps) {
 		for (const dep of step.dependsOn ?? []) {
 			const fromId = nodeIdMap.get(dep);
@@ -153,28 +145,18 @@ export function buildCanvasGraph(
 	const groupColorOperations: PatchOperation[] = [];
 
 	for (const group of groups ?? []) {
-		const memberSteps = steps.filter((s) => s.group === group.id);
-		if (memberSteps.length === 0) continue;
-
-		const children = memberSteps.map((s) => {
-			const pos = positions.get(s.id);
-			if (!pos) throw new Error(`Missing position for step ${s.id}`);
-			const height = estimateNodeHeight(s.description);
-			return { x: pos.x, y: pos.y, width: NODE_WIDTH, height };
-		});
-
-		const bounds = computeGroupBounds(children);
-		if (!bounds) continue;
+		const rect = groupRects.get(group.id);
+		if (!rect) continue;
 
 		const groupNodeId = new ObjectId().toString();
 
 		groupOperations.push({
 			_type: "createNode" as const,
 			id: groupNodeId,
-			x: bounds.x,
-			y: bounds.y,
-			width: bounds.width,
-			height: bounds.height,
+			x: rect.x,
+			y: rect.y,
+			width: rect.width,
+			height: rect.height,
 			data: {
 				_type: "Group" as const,
 				_content: { title: group.title ?? null },
