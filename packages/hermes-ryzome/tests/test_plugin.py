@@ -16,7 +16,13 @@ if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 
 from ryzome_hermes_plugin import register
-from ryzome_hermes_plugin.runtime import CONFIG_PATH_ENV_VAR, handle_cli_command
+from ryzome_hermes_plugin import runtime
+from ryzome_hermes_plugin.runtime import (
+    CONFIG_PATH_ENV_VAR,
+    RUNNER_ENV_VAR,
+    handle_cli_command,
+    resolve_runner_command,
+)
 from ryzome_hermes_plugin.schemas import TOOL_SCHEMAS
 from ryzome_hermes_plugin.tools import create_tool_handler
 
@@ -99,6 +105,61 @@ class HermesPluginTests(unittest.TestCase):
             self.assertEqual(saved["apiUrl"], "https://api.example.test")
             self.assertEqual(saved["appUrl"], "https://app.example.test")
             self.assertIn("Ryzome configured.", stdout.getvalue())
+
+
+class ResolveRunnerCommandTests(unittest.TestCase):
+    def _make_fake_package(self, tmp: Path) -> Path:
+        pkg_dir = tmp / "ryzome_hermes_plugin"
+        pkg_dir.mkdir()
+        fake_runtime = pkg_dir / "runtime.py"
+        fake_runtime.write_text("")
+        return fake_runtime
+
+    def test_env_override_wins(self) -> None:
+        with patch.dict(os.environ, {RUNNER_ENV_VAR: "custom-runner --flag"}):
+            self.assertEqual(
+                resolve_runner_command("1.0.0"),
+                ["custom-runner", "--flag"],
+            )
+
+    def test_prefers_bundled_runner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_runtime = self._make_fake_package(Path(tmp).resolve())
+            bundled = fake_runtime.parent / "_runner.js"
+            bundled.write_text("// bundled")
+
+            with patch.object(runtime, "__file__", str(fake_runtime)), patch.dict(os.environ, {}):
+                os.environ.pop(RUNNER_ENV_VAR, None)
+                self.assertEqual(
+                    resolve_runner_command("1.0.0"),
+                    ["node", str(bundled)],
+                )
+
+    def test_falls_back_to_dev_dist_runner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_resolved = Path(tmp).resolve()
+            fake_runtime = self._make_fake_package(tmp_resolved)
+            dev_runner = tmp_resolved / "dist" / "runner.js"
+            dev_runner.parent.mkdir()
+            dev_runner.write_text("// dev")
+
+            with patch.object(runtime, "__file__", str(fake_runtime)), patch.dict(os.environ, {}):
+                os.environ.pop(RUNNER_ENV_VAR, None)
+                self.assertEqual(
+                    resolve_runner_command("1.0.0"),
+                    ["node", str(dev_runner)],
+                )
+
+    def test_raises_when_no_runner_available(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fake_runtime = self._make_fake_package(Path(tmp).resolve())
+
+            with patch.object(runtime, "__file__", str(fake_runtime)), patch.dict(os.environ, {}):
+                os.environ.pop(RUNNER_ENV_VAR, None)
+                with self.assertRaises(RuntimeError) as ctx:
+                    resolve_runner_command("1.0.0")
+                self.assertIn(RUNNER_ENV_VAR, str(ctx.exception))
+                self.assertIn("build", str(ctx.exception))
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 Shared logic for Ryzome canvas integrations: API client, 11 tools, graph builder, layout engine, and markdown formatter.
 
-This package powers [`@ryzome-ai/ryzome-mcp`](../ryzome-mcp), [`@ryzome-ai/openclaw-ryzome`](../openclaw-ryzome), and [`@ryzome-ai/hermes-ryzome`](../hermes-ryzome).
+This package powers [`@ryzome-ai/ryzome-mcp`](../ryzome-mcp), [`@ryzome-ai/openclaw-ryzome`](../openclaw-ryzome), and the Hermes plugin in [`packages/hermes-ryzome`](../hermes-ryzome) (published to PyPI as `hermes-ryzome-plugin`).
 
 ## Install
 

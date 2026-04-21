@@ -8,7 +8,7 @@ A pnpm monorepo providing Ryzome canvas tools for AI agents via multiple integra
 
 - `packages/ryzome-core` (`@ryzome-ai/ryzome-core`) — Shared logic: API client, 11 tools, graph builder, layout, canvas markdown formatter
 - `packages/openclaw-ryzome` (`@ryzome-ai/openclaw-ryzome`) — OpenClaw plugin adapter (thin wrapper over core)
-- `packages/hermes-ryzome` (`@ryzome-ai/hermes-ryzome`) — Hermes plugin adapter (Python plugin surface + Node runner over core)
+- `packages/hermes-ryzome` (`hermes-ryzome-plugin` on PyPI) — Hermes plugin adapter. Python plugin that bundles a compiled Node runner invoking `ryzome-core` tools. Not published to npm (the internal npm name `@ryzome-ai/hermes-ryzome` is marked `private`).
 - `packages/ryzome-mcp` (`@ryzome-ai/ryzome-mcp`) — MCP server with tools + resources for Claude Code / any MCP client
 - `packages/ryzome-claude-plugin` (`@ryzome-ai/ryzome-claude-plugin`) — Claude Code plugin (skills, agent, hooks)
 

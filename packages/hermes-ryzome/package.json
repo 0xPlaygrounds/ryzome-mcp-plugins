@@ -1,6 +1,7 @@
 {
   "name": "@ryzome-ai/hermes-ryzome",
   "version": "0.1.2",
+  "private": true,
   "description": "Ryzome Hermes plugin runner and Python plugin assets",
   "license": "MIT",
   "type": "module",
@@ -21,21 +22,8 @@
     "canvas",
     "agent"
   ],
-  "bin": {
-    "ryzome-hermes-runner": "./dist/runner.js"
-  },
-  "files": [
-    "dist",
-    "plugin.yaml",
-    "__init__.py",
-    "pyproject.toml",
-    "ryzome_hermes_plugin"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
-    "build": "tsc && node dist/generate-tool-manifest.js",
+    "build": "tsc && node dist/generate-tool-manifest.js && node scripts/copy-runner.mjs",
     "test": "vitest run && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests",
     "test:watch": "vitest watch",
     "typecheck": "tsc --noEmit",

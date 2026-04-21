@@ -3,7 +3,7 @@ requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ryzome-hermes-plugin"
+name = "hermes-ryzome-plugin"
 version = "0.1.2"
 description = "Ryzome canvas and document tools for Hermes Agent"
 readme = { text = "Ryzome Hermes plugin for canvas and document tools.", content-type = "text/plain" }
@@ -26,4 +26,4 @@ include-package-data = true
 include = ["ryzome_hermes_plugin"]
 
 [tool.setuptools.package-data]
-ryzome_hermes_plugin = ["plugin.yaml", "tool_manifest.json"]
+ryzome_hermes_plugin = ["plugin.yaml", "tool_manifest.json", "_runner.js"]
