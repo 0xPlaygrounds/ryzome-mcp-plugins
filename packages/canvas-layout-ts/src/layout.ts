@@ -5,6 +5,8 @@ import type {
 	LayoutOptions as ElkLayoutOptions,
 } from "elkjs/lib/elk-api";
 import type {
+	LayoutAlgorithm,
+	LayoutDirection,
 	LayoutInput,
 	LayoutNodeInput,
 	LayoutOptions,
@@ -25,6 +27,38 @@ const DEFAULT_GROUP_PADDING = 40;
 const GROUP_HEADER_PADDING = 60;
 
 /**
+ * Build ELK layoutOptions for a given algorithm. `rectpacking` and `layered`
+ * share `elk.spacing.nodeNode` but otherwise take disjoint option keys — ELK
+ * silently ignores irrelevant keys but we keep the output narrow for clarity.
+ */
+function buildAlgorithmLayoutOptions(params: {
+	algorithm: LayoutAlgorithm;
+	direction: LayoutDirection;
+	spacing: { nodeNode: number; nodeNodeBetweenLayers: number; edgeNode: number };
+	aspectRatio?: number;
+	includeHierarchyHandling?: "INCLUDE_CHILDREN" | "SEPARATE_CHILDREN";
+}): ElkLayoutOptions {
+	const options: ElkLayoutOptions = {
+		"elk.algorithm": params.algorithm,
+		"elk.spacing.nodeNode": String(params.spacing.nodeNode),
+	};
+	if (params.algorithm === "layered") {
+		options["elk.direction"] = params.direction;
+		options["elk.layered.spacing.nodeNodeBetweenLayers"] = String(
+			params.spacing.nodeNodeBetweenLayers,
+		);
+		options["elk.spacing.edgeNode"] = String(params.spacing.edgeNode);
+	}
+	if (params.algorithm === "rectpacking" && params.aspectRatio !== undefined) {
+		options["elk.aspectRatio"] = String(params.aspectRatio);
+	}
+	if (params.includeHierarchyHandling) {
+		options["elk.hierarchyHandling"] = params.includeHierarchyHandling;
+	}
+	return options;
+}
+
+/**
  * Lay out a Ryzome canvas with elkjs. Groups become compound (parent) nodes so
  * members stay spatially clustered; the result includes both individual node
  * rects and group bounding boxes in canvas-absolute coordinates.
@@ -40,6 +74,7 @@ export async function computeCanvasLayout(
 
 	const spacing = { ...DEFAULT_SPACING, ...options.spacing };
 	const direction = options.direction ?? "DOWN";
+	const algorithm: LayoutAlgorithm = options.algorithm ?? "layered";
 	const groupPadding = options.groupPadding ?? DEFAULT_GROUP_PADDING;
 
 	const measureNode =
@@ -105,24 +140,24 @@ export async function computeCanvasLayout(
 
 		const pad = group.padding ?? groupPadding;
 		const groupDirection = group.direction ?? direction;
-		// When the group's direction differs from the root, the root's
-		// INCLUDE_CHILDREN hierarchy handling would otherwise let the parent
-		// direction dominate. Force SEPARATE_CHILDREN on the group so its own
-		// direction actually takes effect on its members.
-		const needsLocalLayout = groupDirection !== direction;
-		const groupLayoutOptions: ElkLayoutOptions = {
-			"elk.padding": `[top=${GROUP_HEADER_PADDING},left=${pad},bottom=${pad},right=${pad}]`,
-			// Still layer members inside the group.
-			"elk.algorithm": "layered",
-			"elk.direction": groupDirection,
-			"elk.layered.spacing.nodeNodeBetweenLayers": String(
-				spacing.nodeNodeBetweenLayers,
-			),
-			"elk.spacing.nodeNode": String(spacing.nodeNode),
-		};
-		if (needsLocalLayout) {
-			groupLayoutOptions["elk.hierarchyHandling"] = "SEPARATE_CHILDREN";
-		}
+		const groupAlgorithm = group.algorithm ?? algorithm;
+		// When the group's direction or algorithm differs from the root, the
+		// root's INCLUDE_CHILDREN hierarchy handling would otherwise let the
+		// parent layout dominate. Force SEPARATE_CHILDREN so the override
+		// actually takes effect on this group's members.
+		const needsLocalLayout =
+			groupDirection !== direction || groupAlgorithm !== algorithm;
+		const groupLayoutOptions = buildAlgorithmLayoutOptions({
+			algorithm: groupAlgorithm,
+			direction: groupDirection,
+			spacing,
+			aspectRatio: group.aspectRatio,
+			includeHierarchyHandling: needsLocalLayout
+				? "SEPARATE_CHILDREN"
+				: undefined,
+		});
+		groupLayoutOptions["elk.padding"] =
+			`[top=${GROUP_HEADER_PADDING},left=${pad},bottom=${pad},right=${pad}]`;
 		const groupNode: ElkNode = {
 			id: group.id,
 			children: members.map(makeLeafNode),
@@ -131,19 +166,20 @@ export async function computeCanvasLayout(
 		rootChildren.push(groupNode);
 	}
 
-	const rootLayoutOptions: ElkLayoutOptions = {
-		"elk.algorithm": "layered",
-		"elk.direction": direction,
-		"elk.layered.spacing.nodeNodeBetweenLayers": String(
-			spacing.nodeNodeBetweenLayers,
-		),
-		"elk.spacing.nodeNode": String(spacing.nodeNode),
-		"elk.spacing.edgeNode": String(spacing.edgeNode),
-		// Place disconnected components side-by-side instead of overlapping them at the origin.
-		"elk.separateConnectedComponents": "true",
+	const rootLayoutOptions = buildAlgorithmLayoutOptions({
+		algorithm,
+		direction,
+		spacing,
+		aspectRatio: options.aspectRatio,
 		// Consider node size when routing; hierarchical edges cross group boundaries.
-		"elk.hierarchyHandling": "INCLUDE_CHILDREN",
-	};
+		// Only meaningful for `layered`.
+		includeHierarchyHandling:
+			algorithm === "layered" ? "INCLUDE_CHILDREN" : undefined,
+	});
+	if (algorithm === "layered") {
+		// Place disconnected components side-by-side instead of overlapping at origin.
+		rootLayoutOptions["elk.separateConnectedComponents"] = "true";
+	}
 
 	const root: ElkNode = {
 		id: "__root__",

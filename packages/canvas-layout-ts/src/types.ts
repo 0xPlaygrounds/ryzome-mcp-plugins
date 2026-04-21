@@ -22,6 +22,16 @@ export interface LayoutGroupInput {
 	 * inside a horizontally-flowing outer graph).
 	 */
 	direction?: LayoutDirection;
+	/**
+	 * Override the algorithm used inside this group. Set to `"rectpacking"`
+	 * for edgeless clusters (moodboards) while the root stays `"layered"`.
+	 */
+	algorithm?: LayoutAlgorithm;
+	/**
+	 * Target aspect ratio (width / height) forwarded as `elk.aspectRatio`
+	 * when using `rectpacking`. Ignored for `layered`.
+	 */
+	aspectRatio?: number;
 }
 
 export interface LayoutInput {
@@ -44,6 +54,13 @@ export interface LayoutResult {
 
 export type LayoutDirection = "DOWN" | "RIGHT" | "UP" | "LEFT";
 
+/**
+ * Supported elkjs algorithms. `layered` is the default Sugiyama-style
+ * flow layout for DAGs. `rectpacking` packs edgeless or near-edgeless
+ * inputs into a rectangle — used for moodboard-style clusters.
+ */
+export type LayoutAlgorithm = "layered" | "rectpacking";
+
 export interface LayoutSpacing {
 	/** Space between sibling nodes in the same layer. */
 	nodeNode?: number;
@@ -65,4 +82,14 @@ export interface LayoutOptions {
 	spacing?: LayoutSpacing;
 	/** Padding applied around every group's members. Default 40 (60 on top for label room). */
 	groupPadding?: number;
+	/**
+	 * Root-level ELK algorithm. Default `"layered"`. Use `"rectpacking"` when
+	 * the input has no (or few) edges and should be packed into a rectangle.
+	 */
+	algorithm?: LayoutAlgorithm;
+	/**
+	 * Target aspect ratio (width / height) forwarded as `elk.aspectRatio` when
+	 * using `rectpacking`. Ignored for `layered`.
+	 */
+	aspectRatio?: number;
 }
