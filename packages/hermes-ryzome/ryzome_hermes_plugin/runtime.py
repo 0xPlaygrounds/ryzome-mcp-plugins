@@ -4,7 +4,6 @@ import argparse
 import json
 import os
 import shlex
-import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -21,7 +20,6 @@ RYZOME_API_KEY_ENV_VARS = (
 ALLOWED_KEYS = {"apiKey", "apiUrl", "appUrl"}
 RUNNER_ENV_VAR = "RYZOME_HERMES_RUNNER"
 CONFIG_PATH_ENV_VAR = "RYZOME_HERMES_CONFIG_PATH"
-RUNNER_NPM_PACKAGE = "@ryzome-ai/hermes-ryzome"
 
 
 @dataclass(frozen=True)
@@ -150,26 +148,24 @@ def _mask_secret(value: str) -> str:
 
 
 def resolve_runner_command(plugin_version: str) -> list[str]:
+    del plugin_version
+
     override = os.getenv(RUNNER_ENV_VAR)
     if override:
         return shlex.split(override)
 
-    package_root = Path(__file__).resolve().parents[1]
-    local_runner = package_root / "dist" / "runner.js"
-    if local_runner.exists():
-        return ["node", str(local_runner)]
+    bundled_runner = Path(__file__).resolve().parent / "_runner.js"
+    if bundled_runner.exists():
+        return ["node", str(bundled_runner)]
 
-    installed_runner = shutil.which("ryzome-hermes-runner")
-    if installed_runner:
-        return [installed_runner]
-
-    npx = shutil.which("npx")
-    if npx:
-        return [npx, "-y", f"{RUNNER_NPM_PACKAGE}@{plugin_version}"]
+    dev_runner = Path(__file__).resolve().parents[1] / "dist" / "runner.js"
+    if dev_runner.exists():
+        return ["node", str(dev_runner)]
 
     raise RuntimeError(
-        "Could not find a Ryzome Hermes runner. Build the local package, install "
-        "`ryzome-hermes-runner`, or set RYZOME_HERMES_RUNNER."
+        "Could not find a Ryzome Hermes runner. Run "
+        "`pnpm --filter @ryzome-ai/hermes-ryzome build` from the repo, or set "
+        "RYZOME_HERMES_RUNNER to a command that runs the runner."
     )
 
 

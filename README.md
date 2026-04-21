@@ -8,12 +8,12 @@ This monorepo provides Ryzome canvas tools for AI agents across multiple integra
 
 ## Packages
 
-| Package | Description | npm |
-|---------|-------------|-----|
+| Package | Description | Registry |
+|---------|-------------|----------|
 | [`@ryzome-ai/ryzome-core`](packages/ryzome-core) | Shared logic: API client, 11 tools, graph builder, layout | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-core)](https://www.npmjs.com/package/@ryzome-ai/ryzome-core) |
 | [`@ryzome-ai/ryzome-mcp`](packages/ryzome-mcp) | MCP server with tools + resources for Claude Code and other MCP clients | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-mcp)](https://www.npmjs.com/package/@ryzome-ai/ryzome-mcp) |
 | [`@ryzome-ai/openclaw-ryzome`](packages/openclaw-ryzome) | OpenClaw plugin adapter | [![npm](https://img.shields.io/npm/v/@ryzome-ai/openclaw-ryzome)](https://www.npmjs.com/package/@ryzome-ai/openclaw-ryzome) |
-| [`@ryzome-ai/hermes-ryzome`](packages/hermes-ryzome) | Hermes plugin runner plus Python plugin assets | [![npm](https://img.shields.io/npm/v/@ryzome-ai/hermes-ryzome)](https://www.npmjs.com/package/@ryzome-ai/hermes-ryzome) |
+| [`ryzome-hermes-plugin`](packages/hermes-ryzome) | Hermes Agent plugin (Python package, bundles a Node runner over `ryzome-core`) | [![PyPI](https://img.shields.io/pypi/v/ryzome-hermes-plugin)](https://pypi.org/project/ryzome-hermes-plugin/) |
 | [`@ryzome-ai/ryzome-claude-plugin`](packages/ryzome-claude-plugin) | Claude Code plugin with skills, agents, and hooks | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-claude-plugin)](https://www.npmjs.com/package/@ryzome-ai/ryzome-claude-plugin) |
 
 ## Architecture
@@ -51,7 +51,7 @@ ln -s "$PWD/packages/hermes-ryzome" ~/.hermes/plugins/ryzome
 hermes ryzome setup --key rz_...
 ```
 
-The Python plugin falls back to the published npm runner `@ryzome-ai/hermes-ryzome`, so public installs need Node.js and `npx` available even when the plugin itself is installed from PyPI.
+The Python wheel bundles the Node runner (`_runner.js`) alongside the plugin, so public installs only need Node.js on `PATH`. To override the runner command, set `RYZOME_HERMES_RUNNER`.
 
 ## Development
 
@@ -84,7 +84,7 @@ This repo uses [Changesets](https://github.com/changesets/changesets) for versio
 
 Dev snapshots are published on every push to `main` under the `dev` tag.
 
-The Hermes Python plugin is packaged from `packages/hermes-ryzome` and published separately via the manual `Publish Hermes Python Plugin` workflow. Its runtime Node runner is versioned and published through the existing Changesets/npm flow as `@ryzome-ai/hermes-ryzome`.
+The Hermes plugin is a Python package published to PyPI as `ryzome-hermes-plugin` via the manual `Publish Hermes Python Plugin` workflow. The wheel bundles the compiled Node runner produced by `pnpm --filter @ryzome-ai/hermes-ryzome build`, so it is not published to npm. Changesets still version-bumps it so the `package.json` / `pyproject.toml` / `plugin.yaml` versions stay in sync.
 
 ## License
 

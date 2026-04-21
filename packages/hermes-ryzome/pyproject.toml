@@ -26,4 +26,4 @@ include-package-data = true
 include = ["ryzome_hermes_plugin"]
 
 [tool.setuptools.package-data]
-ryzome_hermes_plugin = ["plugin.yaml", "tool_manifest.json"]
+ryzome_hermes_plugin = ["plugin.yaml", "tool_manifest.json", "_runner.js"]
