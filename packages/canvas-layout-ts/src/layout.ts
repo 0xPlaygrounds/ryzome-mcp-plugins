@@ -1,5 +1,9 @@
 import ELK from "elkjs/lib/elk.bundled.js";
-import type { ElkNode, ElkExtendedEdge, LayoutOptions as ElkLayoutOptions } from "elkjs/lib/elk-api";
+import type {
+	ElkNode,
+	ElkExtendedEdge,
+	LayoutOptions as ElkLayoutOptions,
+} from "elkjs/lib/elk-api";
 import type {
 	LayoutInput,
 	LayoutNodeInput,
@@ -100,19 +104,29 @@ export async function computeCanvasLayout(
 		if (members.length === 0) continue;
 
 		const pad = group.padding ?? groupPadding;
+		const groupDirection = group.direction ?? direction;
+		// When the group's direction differs from the root, the root's
+		// INCLUDE_CHILDREN hierarchy handling would otherwise let the parent
+		// direction dominate. Force SEPARATE_CHILDREN on the group so its own
+		// direction actually takes effect on its members.
+		const needsLocalLayout = groupDirection !== direction;
+		const groupLayoutOptions: ElkLayoutOptions = {
+			"elk.padding": `[top=${GROUP_HEADER_PADDING},left=${pad},bottom=${pad},right=${pad}]`,
+			// Still layer members inside the group.
+			"elk.algorithm": "layered",
+			"elk.direction": groupDirection,
+			"elk.layered.spacing.nodeNodeBetweenLayers": String(
+				spacing.nodeNodeBetweenLayers,
+			),
+			"elk.spacing.nodeNode": String(spacing.nodeNode),
+		};
+		if (needsLocalLayout) {
+			groupLayoutOptions["elk.hierarchyHandling"] = "SEPARATE_CHILDREN";
+		}
 		const groupNode: ElkNode = {
 			id: group.id,
 			children: members.map(makeLeafNode),
-			layoutOptions: {
-				"elk.padding": `[top=${GROUP_HEADER_PADDING},left=${pad},bottom=${pad},right=${pad}]`,
-				// Still layer members inside the group.
-				"elk.algorithm": "layered",
-				"elk.direction": direction,
-				"elk.layered.spacing.nodeNodeBetweenLayers": String(
-					spacing.nodeNodeBetweenLayers,
-				),
-				"elk.spacing.nodeNode": String(spacing.nodeNode),
-			},
+			layoutOptions: groupLayoutOptions,
 		};
 		rootChildren.push(groupNode);
 	}

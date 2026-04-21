@@ -15,6 +15,13 @@ export interface LayoutGroupInput {
 	id: string;
 	title?: string;
 	padding?: number;
+	/**
+	 * Override the layout direction for this group's members only. When omitted,
+	 * the group inherits the root layout direction. Useful for canvases whose
+	 * subgraphs want different orientations (e.g., a vertical pipeline nested
+	 * inside a horizontally-flowing outer graph).
+	 */
+	direction?: LayoutDirection;
 }
 
 export interface LayoutInput {

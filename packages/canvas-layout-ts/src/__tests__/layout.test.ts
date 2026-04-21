@@ -204,6 +204,28 @@ describe("computeCanvasLayout", () => {
 		expect(result.nodes.a.y).toBeLessThan(result.nodes.b.y);
 	});
 
+	it("lays out a group's members along its direction override", async () => {
+		// Horizontal root direction, but g1 asks for DOWN internally.
+		const result = await computeCanvasLayout(
+			{
+				nodes: [
+					{ id: "a", group: "g1" },
+					{ id: "b", group: "g1", dependsOn: ["a"] },
+					{ id: "c", group: "g1", dependsOn: ["b"] },
+				],
+				groups: [{ id: "g1", direction: "DOWN" }],
+			},
+			{ direction: "RIGHT" },
+		);
+
+		const { a, b, c } = result.nodes;
+		// DOWN inside g1 -> successor y strictly greater, x roughly equal.
+		expect(a.y).toBeLessThan(b.y);
+		expect(b.y).toBeLessThan(c.y);
+		expect(Math.abs(a.x - b.x)).toBeLessThan(10);
+		expect(Math.abs(b.x - c.x)).toBeLessThan(10);
+	});
+
 	it("handles a 50-node DAG with groups without overlaps", async () => {
 		const nodes = Array.from({ length: 50 }, (_, i) => ({
 			id: `n${i}`,
