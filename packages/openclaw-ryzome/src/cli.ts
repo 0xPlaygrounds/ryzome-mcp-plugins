@@ -251,6 +251,10 @@ export function registerCliSetup(api: OpenClawPluginApi): void {
 									).trim();
 
 						const current = api.runtime.config.loadConfig();
+						const allow = current.plugins?.allow ?? [];
+						const nextAllow = allow.includes("openclaw-ryzome")
+							? allow
+							: [...allow, "openclaw-ryzome"];
 						const entries = (current.plugins?.entries ?? {}) as Record<
 							string,
 							RyzomePluginEntry | undefined
@@ -271,6 +275,7 @@ export function registerCliSetup(api: OpenClawPluginApi): void {
 							...current,
 							plugins: {
 								...current.plugins,
+								allow: nextAllow,
 								entries: {
 									...entries,
 									"openclaw-ryzome": nextEntry,
