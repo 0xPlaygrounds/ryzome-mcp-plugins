@@ -320,29 +320,18 @@ export function registerCliSetup(api: OpenClawPluginApi): void {
 						return;
 					}
 
-					const isAllowlisted = current.plugins?.allow?.includes("openclaw-ryzome");
-
 					console.log(
 						success(" 🫚 Ryzome in circuit.") +
 							dim(` (key from ${apiKeyStatus.source})`),
 					);
 					console.log("");
-					console.log(accent("  Key:          ") + maskSecret(apiKeyStatus.apiKey));
+					console.log(accent("  Key:     ") + maskSecret(apiKeyStatus.apiKey));
 					console.log(
-						accent("  Enabled:      ") +
+						accent("  Enabled: ") +
 							((entry?.enabled ?? true) ? success("yes") : dim("no")),
 					);
-					console.log(
-						accent("  Agent access: ") +
-							(isAllowlisted
-								? success("allowlisted")
-								: dim("✗ not allowlisted") +
-									" (run " +
-									dim("openclaw plugins allow openclaw-ryzome") +
-									")"),
-					);
-					console.log(accent("  API:          ") + resolved.apiUrl);
-					console.log(accent("  App:          ") + resolved.appUrl);
+					console.log(accent("  API:     ") + resolved.apiUrl);
+					console.log(accent("  App:     ") + resolved.appUrl);
 					console.log("");
 					console.log(
 						dim("  Your context is mapped. Outputs land closer to intent."),

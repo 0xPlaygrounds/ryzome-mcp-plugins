@@ -22,9 +22,6 @@
 		"agent"
 	],
 	"openclaw": {
-		"contracts": {
-			"tools": ["*"]
-		},
 		"extensions": [
 			"./src/index.ts"
 		],
