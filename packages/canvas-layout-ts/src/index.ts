@@ -1,5 +1,6 @@
 export { computeCanvasLayout } from "./layout.js";
 export type {
+	LayoutAlgorithm,
 	LayoutDirection,
 	LayoutEdgeInput,
 	LayoutGroupInput,

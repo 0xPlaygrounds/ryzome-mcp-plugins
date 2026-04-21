@@ -204,6 +204,85 @@ describe("computeCanvasLayout", () => {
 		expect(result.nodes.a.y).toBeLessThan(result.nodes.b.y);
 	});
 
+	it("lays out a group's members along its direction override", async () => {
+		// Horizontal root direction, but g1 asks for DOWN internally.
+		const result = await computeCanvasLayout(
+			{
+				nodes: [
+					{ id: "a", group: "g1" },
+					{ id: "b", group: "g1", dependsOn: ["a"] },
+					{ id: "c", group: "g1", dependsOn: ["b"] },
+				],
+				groups: [{ id: "g1", direction: "DOWN" }],
+			},
+			{ direction: "RIGHT" },
+		);
+
+		const { a, b, c } = result.nodes;
+		// DOWN inside g1 -> successor y strictly greater, x roughly equal.
+		expect(a.y).toBeLessThan(b.y);
+		expect(b.y).toBeLessThan(c.y);
+		expect(Math.abs(a.x - b.x)).toBeLessThan(10);
+		expect(Math.abs(b.x - c.x)).toBeLessThan(10);
+	});
+
+	it("packs edgeless nodes into a rectangle when algorithm is rectpacking", async () => {
+		const nodes = Array.from({ length: 30 }, (_, i) => ({ id: `n${i}` }));
+		const result = await computeCanvasLayout(
+			{ nodes },
+			{ algorithm: "rectpacking", aspectRatio: 1.6 },
+		);
+
+		const rects = Object.values(result.nodes);
+		expect(rects).toHaveLength(30);
+		// No overlaps.
+		for (let i = 0; i < rects.length; i++) {
+			for (let j = i + 1; j < rects.length; j++) {
+				expect(rectsOverlap(rects[i], rects[j])).toBe(false);
+			}
+		}
+		// With 30 identical 320x180 nodes and aspectRatio 1.6, rectpacking
+		// should produce a rough rectangle — nowhere near a single row or
+		// single column. Bounding-box width and height should both be
+		// meaningfully non-zero.
+		const minX = Math.min(...rects.map((r) => r.x));
+		const maxX = Math.max(...rects.map((r) => r.x + r.width));
+		const minY = Math.min(...rects.map((r) => r.y));
+		const maxY = Math.max(...rects.map((r) => r.y + r.height));
+		const boxWidth = maxX - minX;
+		const boxHeight = maxY - minY;
+		expect(boxWidth).toBeGreaterThan(500);
+		expect(boxHeight).toBeGreaterThan(500);
+	});
+
+	it("packs a group's edgeless members with rectpacking while the root stays layered", async () => {
+		// 12 edgeless members inside g1 (rectpacking), plus a free node outside.
+		const members = Array.from({ length: 12 }, (_, i) => ({
+			id: `m${i}`,
+			group: "g1",
+		}));
+		const result = await computeCanvasLayout({
+			nodes: [...members, { id: "free" }],
+			groups: [{ id: "g1", algorithm: "rectpacking", aspectRatio: 1.6 }],
+		});
+
+		const memberRects = members.map((m) => result.nodes[m.id]);
+		// Every member nested inside g1's rect.
+		for (const rect of memberRects) {
+			expect(rectContains(result.groups.g1, rect, 1)).toBe(true);
+		}
+		// Members packed into a rectangle — both dimensions should be
+		// substantially > the width of a single node.
+		const minX = Math.min(...memberRects.map((r) => r.x));
+		const maxX = Math.max(...memberRects.map((r) => r.x + r.width));
+		const minY = Math.min(...memberRects.map((r) => r.y));
+		const maxY = Math.max(...memberRects.map((r) => r.y + r.height));
+		expect(maxX - minX).toBeGreaterThan(400);
+		expect(maxY - minY).toBeGreaterThan(200);
+		// Free node must not overlap g1.
+		expect(rectsOverlap(result.groups.g1, result.nodes.free, 1)).toBe(false);
+	});
+
 	it("handles a 50-node DAG with groups without overlaps", async () => {
 		const nodes = Array.from({ length: 50 }, (_, i) => ({
 			id: `n${i}`,
