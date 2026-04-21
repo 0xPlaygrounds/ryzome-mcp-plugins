@@ -1,6 +1,6 @@
 {
 	"name": "@ryzome-ai/canvas-layout-ts",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "Ryzome canvas layout — compound-graph placement for nodes, edges, and groups via elkjs",
 	"license": "MIT",
 	"type": "module",

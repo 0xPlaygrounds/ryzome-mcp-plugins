@@ -1,5 +1,12 @@
 # @ryzome-ai/ryzome-core
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [bce4c87]
+  - @ryzome-ai/canvas-layout-ts@0.3.0
+
 ## 0.2.3
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @ryzome-ai/openclaw-ryzome
 
+## 0.5.1
+
+### Patch Changes
+
+- @ryzome-ai/ryzome-core@0.2.4
+
 ## 0.5.0
 
 ### Minor Changes
