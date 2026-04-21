@@ -1,6 +1,6 @@
 {
 	"name": "@ryzome-ai/ryzome-core",
-	"version": "0.2.3",
+	"version": "0.2.4",
 	"description": "Ryzome core library — shared client, graph builder, and tools",
 	"license": "MIT",
 	"type": "module",

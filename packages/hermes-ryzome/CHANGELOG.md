@@ -1,5 +1,11 @@
 # @ryzome-ai/hermes-ryzome
 
+## 0.1.2
+
+### Patch Changes
+
+- @ryzome-ai/ryzome-core@0.2.4
+
 ## 0.1.1
 
 ### Patch Changes

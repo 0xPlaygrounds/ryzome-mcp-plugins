@@ -1,5 +1,5 @@
 name: ryzome
-version: 0.1.1
+version: 0.1.2
 description: Ryzome canvas and document tools for Hermes Agent
 author: 0xPlaygrounds
 provides_tools:

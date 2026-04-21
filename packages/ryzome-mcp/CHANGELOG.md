@@ -1,5 +1,11 @@
 # @ryzome-ai/ryzome-mcp
 
+## 0.2.4
+
+### Patch Changes
+
+- @ryzome-ai/ryzome-core@0.2.4
+
 ## 0.2.3
 
 ### Patch Changes
