@@ -39,7 +39,7 @@ jobs:
       # Regenerates ryzome_hermes_plugin/tool_manifest.json from toolRegistry so the
       # shipped Python sdist/wheel carries schemas matching the current code.
       - name: Build Hermes plugin (regenerate tool manifest)
-        run: pnpm --filter @ryzome-ai/hermes-ryzome build
+        run: pnpm --filter @ryzome-ai/hermes-ryzome... build
 
       - name: Set up Python
         uses: actions/setup-python@v5
