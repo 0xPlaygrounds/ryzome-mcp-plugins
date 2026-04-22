@@ -1,10 +1,14 @@
 {
-  "hooks": {
-    "SessionStart": [
-      {
-        "command": "echo '[ryzome] canvas and document library active — use /plan, /research, or /ryzome-status'",
-        "description": "Display Ryzome plugin status on session start"
-      }
-    ]
-  }
+	"hooks": {
+		"SessionStart": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo '[ryzome] canvas and document library active — use /plan, /research, or /ryzome-status'"
+					}
+				]
+			}
+		]
+	}
 }

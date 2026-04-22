@@ -1,0 +1,15 @@
+{
+	"name": "ryzome",
+	"owner": {
+		"name": "Ryzome AI",
+		"url": "https://ryzome.ai"
+	},
+	"plugins": [
+		{
+			"name": "claude-ryzome",
+			"source": "./packages/ryzome-claude-plugin",
+			"description": "Ryzome canvas and document tools for Claude Code",
+			"version": "1.0.0"
+		}
+	]
+}
