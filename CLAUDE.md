@@ -66,7 +66,17 @@ Onboarding invariants (to avoid re-debugging the same phantom):
 
 **`hermes-ryzome`** — Hermes plugin adapter (`packages/hermes-ryzome`): Python `register(ctx)` plugin surface plus a Node runner that executes the same `toolRegistry` entries as OpenClaw.
 
-**`ryzome-claude-plugin`** — Claude Code plugin (no build step): `.claude-plugin/plugin.json` manifest, `.mcp.json` bundled server, skills (`/plan`, `/research`, `/ryzome-status`), `ryzome-context` agent.
+**`ryzome-claude-plugin`** — Claude Code plugin (no build step): `.claude-plugin/plugin.json` manifest, `.mcp.json` bundled server, skills (`/plan`, `/research`, `/ryzome-status`), `ryzome-context` agent. Install flow: `/plugin marketplace add 0xPlaygrounds/ryzome-mcp-plugins` then `/plugin install claude-ryzome`.
+
+Onboarding invariants (to avoid re-debugging the same phantom):
+
+- `.mcp.json` injects `userConfig` values via `${user_config.<key>}`. **Not** `${PLUGIN_USER_CONFIG_<KEY>}` — that syntax is treated as a literal parent-shell env var lookup and silently substitutes to empty string. `/doctor` will flag "Missing environment variables: PLUGIN_USER_CONFIG_<KEY>" which is the tell.
+- `hooks/hooks.json` must use the nested shape `{ hooks: { SessionStart: [{ hooks: [{ type: "command", command: "..." }] }] } }`. The flat `{ command, description }` form that works in `~/.claude/settings.json` will fail plugin validation with a Zod error.
+- `.claude-plugin/plugin.json` has no `scopes` field — don't reintroduce one. Hooks/skills/agents are auto-discovered from `hooks/`, `skills/`, `agents/` subdirectories; `.mcp.json` is auto-loaded from the plugin root.
+- `userConfig.<key>` entries require both `type` and `title`. `sensitive: true` routes storage to the OS keychain.
+- `/reload-plugins` re-reads manifests (you'll see hook count update) but does **not** restart running MCP subprocesses. Env changes require a full Claude Code restart.
+- The marketplace name (`.claude-plugin/marketplace.json` → `name: "ryzome"`) is a brand identifier; the plugin name (`.claude-plugin/plugin.json` → `name: "claude-ryzome"`) is the install identifier used in `/plugin install <name>`. These are independent — the `supermemoryai/claude-supermemory` convention is brand/marketplace-name + `claude-<brand>` plugin-name.
+- Version sync: `scripts/sync-claude-plugin-version.mjs` runs during `pnpm version-packages` to keep `plugin.json` and the root `marketplace.json` entry in lockstep with `package.json`.
 
 **Data flow for canvas creation:**
 ```
