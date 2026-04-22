@@ -4,7 +4,7 @@
       "command": "npx",
       "args": ["-y", "@ryzome-ai/ryzome-mcp"],
       "env": {
-        "RYZOME_API_KEY": "${PLUGIN_USER_CONFIG_API_KEY}"
+        "RYZOME_API_KEY": "${user_config.api_key}"
       }
     }
   }

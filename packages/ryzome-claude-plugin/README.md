@@ -7,10 +7,11 @@
 In Claude Code:
 
 ```
-/install-plugin @ryzome-ai/ryzome-claude-plugin
+/plugin marketplace add 0xPlaygrounds/ryzome-mcp-plugins
+/plugin install claude-ryzome
 ```
 
-You'll be prompted for your Ryzome API key (stored securely in your system keychain). Get one at [ryzome.ai/api-key](https://ryzome.ai/api-key).
+The first command registers this repo as a plugin marketplace; the second installs the plugin from it. You'll then be prompted for your Ryzome API key (stored securely in your system keychain). Get one at [ryzome.ai/workspace#settings/api-keys](https://ryzome.ai/workspace#settings/api-keys).
 
 ## What's Included
 
@@ -59,12 +60,12 @@ You'll be prompted for your Ryzome API key (stored securely in your system keych
 
 The plugin uses Claude Code's `userConfig` system:
 
-1. On install, you're prompted for `api_key` (marked as sensitive, stored in keychain)
-2. Claude Code sets `PLUGIN_USER_CONFIG_API_KEY` in the MCP server's environment
-3. The bundled MCP server (`@ryzome-ai/ryzome-mcp`) reads it via `RYZOME_API_KEY`
+1. On install (or via `/plugin`), you're prompted for `api_key` (marked as sensitive, stored in keychain)
+2. `.mcp.json` injects the value via `${user_config.api_key}` substitution into `RYZOME_API_KEY`
+3. The bundled MCP server (`@ryzome-ai/ryzome-mcp`) reads `RYZOME_API_KEY`
 
 ```
-userConfig.api_key → PLUGIN_USER_CONFIG_API_KEY env var → ryzome-mcp server
+userConfig.api_key → ${user_config.api_key} → RYZOME_API_KEY → ryzome-mcp server
 ```
 
 ## Architecture
