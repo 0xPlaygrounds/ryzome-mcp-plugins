@@ -12,7 +12,7 @@
 		"format:check": "pnpm -r --if-present format:check",
 		"build": "pnpm -r --if-present build",
 		"changeset": "changeset",
-		"version-packages": "changeset version && node scripts/sync-plugin-version.mjs && node scripts/sync-hermes-plugin-version.mjs",
+		"version-packages": "changeset version && node scripts/sync-plugin-version.mjs && node scripts/sync-hermes-plugin-version.mjs && node scripts/sync-claude-plugin-version.mjs",
 		"release": "pnpm build && changeset publish"
 	},
 	"devDependencies": {
