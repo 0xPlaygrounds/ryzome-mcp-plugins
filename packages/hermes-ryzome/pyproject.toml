@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hermes-ryzome-plugin"
-version = "0.1.2"
+version = "1.0.0"
 description = "Ryzome canvas and document tools for Hermes Agent"
 readme = { text = "Ryzome Hermes plugin for canvas and document tools.", content-type = "text/plain" }
 requires-python = ">=3.10"

@@ -1,6 +1,6 @@
 {
   "name": "@ryzome-ai/hermes-ryzome",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "private": true,
   "description": "Ryzome Hermes plugin runner and Python plugin assets",
   "license": "MIT",
