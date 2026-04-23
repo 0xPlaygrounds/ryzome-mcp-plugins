@@ -2,6 +2,9 @@ name: Publish Hermes Python Plugin
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -15,6 +18,12 @@ jobs:
   publish:
     name: Build and publish Hermes Python plugin
     runs-on: ubuntu-latest
+    # Auto-publish only on the "Version Packages" commit created by
+    # changesets/action when that PR merges — same gate publish.yml uses
+    # (inverted) for dev snapshots. Manual dispatch is always allowed.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.head_commit.message, 'Version Packages')
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
