@@ -19,6 +19,29 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      # Fail fast with a clear message if the version in pyproject.toml has
+      # already been uploaded to PyPI. PyPI rejects file-name reuse with a
+      # 400 buried at the tail of a long log; surface the mistake up front so
+      # the fix (bump the version via changeset, merge, re-dispatch) is obvious.
+      - name: Preflight — check PyPI version availability
+        run: |
+          set -euo pipefail
+          version=$(grep -E '^version = "[^"]+"' packages/hermes-ryzome/pyproject.toml | head -1 | sed -E 's/version = "([^"]+)"/\1/')
+          if [ -z "$version" ]; then
+            echo "::error::Could not read version from packages/hermes-ryzome/pyproject.toml"
+            exit 1
+          fi
+          echo "Checking hermes-ryzome-plugin==$version against PyPI"
+          status=$(curl -s -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/hermes-ryzome-plugin/$version/json")
+          if [ "$status" = "200" ]; then
+            echo "::error::hermes-ryzome-plugin $version is already on PyPI. Bump the version via 'pnpm changeset', merge the Version Packages PR, then re-run this workflow."
+            exit 1
+          fi
+          if [ "$status" != "404" ]; then
+            echo "::warning::Unexpected PyPI response $status while checking version availability — continuing."
+          fi
+          echo "Version $version not yet on PyPI; proceeding."
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
