@@ -9,7 +9,7 @@
 			"name": "claude-ryzome",
 			"source": "./packages/ryzome-claude-plugin",
 			"description": "Ryzome canvas and document tools for Claude Code",
-			"version": "1.0.0"
+			"version": "1.0.1"
 		}
 	]
 }

@@ -1,6 +1,6 @@
 {
 	"name": "claude-ryzome",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Ryzome — AI context library. Create, retrieve, and manage canvases and documents for externalizing agent working memory.",
 	"author": {
 		"name": "Ryzome AI",
