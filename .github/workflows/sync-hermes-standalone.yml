@@ -1,0 +1,65 @@
+name: Sync Hermes Standalone Repo
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/hermes-ryzome/**'
+      - 'packages/ryzome-core/**'
+      - '.github/workflows/sync-hermes-standalone.yml'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Sync to 0xPlaygrounds/hermes-ryzome-plugin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.31.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm --filter @ryzome-ai/hermes-ryzome... build
+
+      - name: Prepare standalone metadata
+        run: |
+          CORE_VER=$(jq -r .version packages/ryzome-core/package.json)
+          jq ".dependencies[\"@ryzome-ai/ryzome-core\"] = \"^$CORE_VER\" | \
+              .repository.url = \"git+https://github.com/0xPlaygrounds/hermes-ryzome-plugin.git\" | \
+              del(.repository.directory) | \
+              .homepage = \"https://github.com/0xPlaygrounds/hermes-ryzome-plugin\" | \
+              .bugs.url = \"https://github.com/0xPlaygrounds/hermes-ryzome-plugin/issues\"" \
+              packages/hermes-ryzome/package.json > packages/hermes-ryzome/package.json.tmp
+          mv packages/hermes-ryzome/package.json.tmp packages/hermes-ryzome/package.json
+
+      - name: Push to standalone repository
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.SYNC_GITHUB_TOKEN }}
+        with:
+          source-directory: 'packages/hermes-ryzome'
+          destination-github-username: '0xPlaygrounds'
+          destination-repository-name: 'hermes-ryzome-plugin'
+          user-email: 'bot@playgrounds.network'
+          user-name: 'Playgrounds Bot'
+          target-branch: main
+          commit-message: 'chore: sync hermes-ryzome from monorepo'
