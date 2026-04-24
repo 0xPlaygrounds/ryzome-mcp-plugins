@@ -43,11 +43,11 @@ export type RunnerOutput = RunnerSuccess | RunnerFailure;
 function notConfiguredError(): RunnerFailure {
 	return {
 		ok: false,
-		error: {
-			name: "ConfigError",
-			message:
-				"Ryzome API key not configured. Run `hermes ryzome setup --key <api-key>` or set `RYZOME_API_KEY`.",
-		},
+			error: {
+				name: "ConfigError",
+				message:
+					"Ryzome API key not configured. Set `RYZOME_API_KEY` or create `~/.hermes/ryzome.json`.",
+			},
 	};
 }
 

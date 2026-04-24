@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from .runtime import handle_cli_command, is_configured, setup_cli_parser
+from .runtime import describe_configuration, is_configured
 from .schemas import TOOL_SCHEMAS
 from .tools import create_tool_handler
 
@@ -12,11 +12,36 @@ __version__ = "1.0.1"
 LOGGER = logging.getLogger(__name__)
 
 
+def _handle_status(_raw_args: str) -> str:
+    info = describe_configuration()
+    if info.get("error"):
+        return (
+            f"Ryzome configuration error: {info['error']}\n"
+            f"Config path: {info['config_path']}"
+        )
+
+    if not info.get("configured"):
+        return (
+            "Ryzome is not configured.\n"
+            "Set `RYZOME_API_KEY` (recommended) or create `~/.hermes/ryzome.json`.\n"
+            f"Config path: {info['config_path']}"
+        )
+
+    source = info.get("api_key_source") or "unknown source"
+    return (
+        f"Ryzome is configured ({source}).\n"
+        f"Config path: {info['config_path']}\n"
+        f"Key: {info['masked_api_key']}\n"
+        f"API: {info['api_url']}\n"
+        f"App: {info['app_url']}"
+    )
+
+
 def register(ctx: Any) -> None:
     if not is_configured():
         LOGGER.info(
-            "Ryzome Hermes plugin loaded without an API key. Run `hermes ryzome setup` "
-            "or set `RYZOME_API_KEY` to enable tools."
+            "Ryzome Hermes plugin loaded without an API key. Set `RYZOME_API_KEY` "
+            "or create `~/.hermes/ryzome.json` to enable tools."
         )
 
     for schema in TOOL_SCHEMAS:
@@ -26,11 +51,11 @@ def register(ctx: Any) -> None:
             schema=schema,
             handler=create_tool_handler(schema["name"], __version__),
             check_fn=is_configured,
+            requires_env=["RYZOME_API_KEY"],
         )
 
-    ctx.register_cli_command(
-        name="ryzome",
-        help="Configure and inspect the Ryzome Hermes plugin",
-        setup_fn=setup_cli_parser,
-        handler_fn=handle_cli_command,
+    ctx.register_command(
+        "ryzome-status",
+        handler=_handle_status,
+        description="Show Ryzome plugin configuration status.",
     )

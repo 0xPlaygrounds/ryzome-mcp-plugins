@@ -38,7 +38,7 @@ hermes-ryzome (Hermes plugin)
 - **Claude Code users**: See [`@ryzome-ai/ryzome-claude-plugin`](packages/ryzome-claude-plugin) for one-command install
 - **MCP client users**: See [`@ryzome-ai/ryzome-mcp`](packages/ryzome-mcp) for `npx` quick start
 - **OpenClaw users**: See [`@ryzome-ai/openclaw-ryzome`](packages/openclaw-ryzome) for plugin install
-- **Hermes users**: Install the standalone repo with `hermes plugins install 0xPlaygrounds/hermes-ryzome-plugin --enable`, then run `hermes ryzome setup --key rz_...`
+- **Hermes users**: Install the standalone repo with `hermes plugins install 0xPlaygrounds/hermes-ryzome-plugin --enable`. Hermes prompts for `RYZOME_API_KEY` during install and saves it to `~/.hermes/.env`.
 - **Building integrations**: See [`@ryzome-ai/ryzome-core`](packages/ryzome-core) for the shared library
 
 ### Hermes Plugin
@@ -47,8 +47,11 @@ Standard Hermes install path:
 
 ```bash
 hermes plugins install 0xPlaygrounds/hermes-ryzome-plugin --enable
-hermes ryzome setup --key rz_...
 ```
+
+Hermes prompts for `RYZOME_API_KEY` during install because the plugin declares it in `plugin.yaml` via `requires_env`. The value is saved to `~/.hermes/.env`.
+
+Inside a Hermes session, the plugin exposes `/ryzome-status` for diagnostics.
 
 The standalone install repo exists because Hermes git installs expect `plugin.yaml` and `__init__.py` at the repository root. The broader shared development surface remains in this monorepo under [`packages/hermes-ryzome`](packages/hermes-ryzome).
 
@@ -57,7 +60,7 @@ For local development from this monorepo:
 ```bash
 pnpm build
 ln -s "$PWD/packages/hermes-ryzome" ~/.hermes/plugins/ryzome
-hermes ryzome setup --key rz_...
+export RYZOME_API_KEY=rz_...
 ```
 
 The Python wheel bundles the Node runner (`_runner.js`) alongside the plugin, so public installs only need Node.js on `PATH`. To override the runner command, set `RYZOME_HERMES_RUNNER`.

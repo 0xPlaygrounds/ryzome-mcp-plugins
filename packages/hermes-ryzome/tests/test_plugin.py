@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import argparse
-import io
 import json
 import os
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -17,12 +14,7 @@ if str(PACKAGE_ROOT) not in sys.path:
 
 from ryzome_hermes_plugin import register
 from ryzome_hermes_plugin import runtime
-from ryzome_hermes_plugin.runtime import (
-    CONFIG_PATH_ENV_VAR,
-    RUNNER_ENV_VAR,
-    handle_cli_command,
-    resolve_runner_command,
-)
+from ryzome_hermes_plugin.runtime import RUNNER_ENV_VAR, parse_config, resolve_runner_command
 from ryzome_hermes_plugin.schemas import TOOL_SCHEMAS
 from ryzome_hermes_plugin.tools import create_tool_handler
 
@@ -30,13 +22,29 @@ from ryzome_hermes_plugin.tools import create_tool_handler
 class FakeContext:
     def __init__(self) -> None:
         self.tools: list[dict[str, object]] = []
-        self.cli_commands: list[dict[str, object]] = []
+        self.commands: list[dict[str, object]] = []
 
     def register_tool(self, **kwargs: object) -> None:
         self.tools.append(kwargs)
 
-    def register_cli_command(self, **kwargs: object) -> None:
-        self.cli_commands.append(kwargs)
+    def register_cli_command(self, **kwargs: object) -> None:  # pragma: no cover
+        raise AssertionError("Hermes Ryzome plugin should not register a CLI command")
+
+    def register_command(
+        self,
+        name: str,
+        handler: object,
+        description: str = "",
+        args_hint: str = "",
+    ) -> None:
+        self.commands.append(
+            {
+                "name": name,
+                "handler": handler,
+                "description": description,
+                "args_hint": args_hint,
+            }
+        )
 
 
 class HermesPluginTests(unittest.TestCase):
@@ -51,8 +59,67 @@ class HermesPluginTests(unittest.TestCase):
             [tool["name"] for tool in context.tools],
             [schema["name"] for schema in TOOL_SCHEMAS],
         )
-        self.assertEqual(len(context.cli_commands), 1)
-        self.assertEqual(context.cli_commands[0]["name"], "ryzome")
+        for tool in context.tools:
+            self.assertEqual(tool["requires_env"], ["RYZOME_API_KEY"])
+        self.assertEqual(len(context.commands), 1)
+        self.assertEqual(context.commands[0]["name"], "ryzome-status")
+
+    def test_registered_status_command_reports_configuration(self) -> None:
+        context = FakeContext()
+        register(context)
+
+        with patch(
+            "ryzome_hermes_plugin.describe_configuration",
+            return_value={
+                "configured": True,
+                "config_path": "/tmp/ryzome.json",
+                "api_key_source": "environment (RYZOME_API_KEY)",
+                "masked_api_key": "rz_t...1234",
+                "api_url": "https://api.ryzome.ai",
+                "app_url": "https://ryzome.ai",
+            },
+        ):
+            status = context.commands[0]["handler"]("")
+
+        self.assertIn("Ryzome is configured", status)
+        self.assertIn("rz_t...1234", status)
+
+    def test_parse_config_prefers_environment_variable(self) -> None:
+        with patch.dict(os.environ, {"RYZOME_API_KEY": "rz_env_key"}, clear=False):
+            resolved = parse_config({})
+
+        self.assertEqual(resolved.api_key, "rz_env_key")
+        self.assertEqual(resolved.api_url, "https://api.ryzome.ai")
+        self.assertEqual(resolved.app_url, "https://ryzome.ai")
+
+    def test_parse_config_reads_json_style_user_config(self) -> None:
+        resolved = parse_config(
+            {
+                "apiKey": "rz_config_key",
+                "apiUrl": "https://api.example.test",
+                "appUrl": "https://app.example.test",
+            }
+        )
+
+        self.assertEqual(resolved.api_key, "rz_config_key")
+        self.assertEqual(resolved.api_url, "https://api.example.test")
+        self.assertEqual(resolved.app_url, "https://app.example.test")
+
+    def test_parse_config_supports_env_placeholders_in_json_style_user_config(self) -> None:
+        with patch.dict(os.environ, {"RYZOME_SECRET": "rz_placeholder_key"}, clear=False):
+            resolved = parse_config({"apiKey": "${RYZOME_SECRET}"})
+
+        self.assertEqual(resolved.api_key, "rz_placeholder_key")
+
+    def test_parse_config_ignores_unset_placeholder_and_falls_back_to_env(self) -> None:
+        with patch.dict(os.environ, {"RYZOME_API_KEY": "rz_env_fallback"}, clear=False):
+            resolved = parse_config({"apiKey": "${MISSING_VAR}"})
+
+        self.assertEqual(resolved.api_key, "rz_env_fallback")
+
+    def test_parse_config_rejects_unknown_keys(self) -> None:
+        with self.assertRaises(ValueError):
+            parse_config({"unexpected": True})
 
     def test_tool_handler_promotes_json_text_into_data(self) -> None:
         handler = create_tool_handler("list_ryzome_documents", "0.0.0")
@@ -84,27 +151,6 @@ class HermesPluginTests(unittest.TestCase):
 
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["message"], "Canvas created: **Plan**")
-
-    def test_setup_cli_writes_json_config(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            config_path = Path(temp_dir) / "ryzome.json"
-            args = argparse.Namespace(
-                ryzome_command="setup",
-                key="rz_test_key",
-                api_url="https://api.example.test",
-                app_url="https://app.example.test",
-            )
-
-            stdout = io.StringIO()
-            with patch.dict(os.environ, {CONFIG_PATH_ENV_VAR: str(config_path)}):
-                with redirect_stdout(stdout):
-                    handle_cli_command(args)
-
-            saved = json.loads(config_path.read_text(encoding="utf8"))
-            self.assertEqual(saved["apiKey"], "rz_test_key")
-            self.assertEqual(saved["apiUrl"], "https://api.example.test")
-            self.assertEqual(saved["appUrl"], "https://app.example.test")
-            self.assertIn("Ryzome configured.", stdout.getvalue())
 
 
 class ResolveRunnerCommandTests(unittest.TestCase):

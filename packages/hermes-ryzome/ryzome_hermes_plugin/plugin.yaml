@@ -2,6 +2,11 @@ name: ryzome
 version: 1.0.1
 description: Ryzome canvas and document tools for Hermes Agent
 author: 0xPlaygrounds
+requires_env:
+  - name: RYZOME_API_KEY
+    description: "Ryzome API key"
+    url: "https://ryzome.ai/workspace#settings/api-keys"
+    secret: true
 provides_tools:
   - create_ryzome_document
   - create_ryzome_canvas

@@ -300,7 +300,7 @@ describe("Hermes runner integration", () => {
 
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.error.message).toContain("hermes ryzome setup");
+			expect(result.error.message).toContain("RYZOME_API_KEY");
 		}
 	});
 

@@ -12,20 +12,33 @@
 
 ```bash
 pip install hermes-ryzome-plugin
-hermes ryzome setup --key <api-key>
+hermes plugins enable ryzome
+export RYZOME_API_KEY=<api-key>
 ```
+
+Hermes disables discovered plugins by default, including pip-installed ones, so `hermes plugins enable ryzome` is required after `pip install`.
+
+For git installs via Hermes:
+
+```bash
+hermes plugins install 0xPlaygrounds/hermes-ryzome-plugin --enable
+```
+
+During `hermes plugins install`, Hermes prompts for `RYZOME_API_KEY` from `plugin.yaml` and saves it to `~/.hermes/.env` automatically.
 
 The wheel bundles the Node runner (`ryzome_hermes_plugin/_runner.js`) — no separate npm install is required.
 
 ## Configure
 
+Hermes-native auth for general plugins is `requires_env` in `plugin.yaml`, which `hermes plugins install` prompts for and saves to `~/.hermes/.env`.
+
+You can also configure the plugin manually with either:
+
 ```bash
-hermes ryzome setup --key <api-key>      # non-interactive
-hermes ryzome setup                      # interactive prompt
-hermes ryzome status                     # verify
+export RYZOME_API_KEY=<api-key>
 ```
 
-Config is written to `~/.hermes/ryzome.json`:
+or a config file at `~/.hermes/ryzome.json`:
 
 ```json
 {
@@ -61,12 +74,15 @@ Environment variables `RYZOME_API_KEY`, `RYZOME_OPENCLAW_API_KEY`, or `PLUGIN_US
 | `save_ryzome_node_to_library` | Promote an existing canvas node's backing document into the library |
 | `upload_ryzome_image` | Upload an image from a URL to an existing canvas as an image node |
 
-## CLI Commands
+## Slash Commands
 
 | Command | Description |
 |---------|-------------|
-| `hermes ryzome setup` | Interactive API key configuration (or pass `--key` for non-interactive) |
-| `hermes ryzome status` | Show the current plugin configuration status |
+| `/ryzome-status` | Show Ryzome plugin configuration status inside a Hermes session |
+
+This matches how Hermes general plugins work in practice today: tools + optional slash commands, with auth handled through `requires_env` and `~/.hermes/.env`.
+
+There is no separate plugin auth step inside `hermes setup` for general plugins.
 
 ## Environment Variables
 
@@ -82,7 +98,7 @@ Environment variables `RYZOME_API_KEY`, `RYZOME_OPENCLAW_API_KEY`, or `PLUGIN_US
 
 ### `Ryzome API key not configured`
 
-Tools register unconditionally but throw this error on call if no key is set. Run `hermes ryzome setup --key <api-key>`, or export `RYZOME_API_KEY`.
+Tools register unconditionally but throw this error on call if no key is set. The standard fix is to reinstall or enable the plugin through Hermes so `requires_env` prompts for `RYZOME_API_KEY`, or set `RYZOME_API_KEY` manually.
 
 ### `Could not find a Ryzome Hermes runner`
 
