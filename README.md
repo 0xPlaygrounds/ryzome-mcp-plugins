@@ -13,7 +13,7 @@ This monorepo provides Ryzome canvas tools for AI agents across multiple integra
 | [`@ryzome-ai/ryzome-core`](packages/ryzome-core) | Shared logic: API client, 11 tools, graph builder, layout | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-core)](https://www.npmjs.com/package/@ryzome-ai/ryzome-core) |
 | [`@ryzome-ai/ryzome-mcp`](packages/ryzome-mcp) | MCP server with tools + resources for Claude Code and other MCP clients | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-mcp)](https://www.npmjs.com/package/@ryzome-ai/ryzome-mcp) |
 | [`@ryzome-ai/openclaw-ryzome`](packages/openclaw-ryzome) | OpenClaw plugin adapter | [![npm](https://img.shields.io/npm/v/@ryzome-ai/openclaw-ryzome)](https://www.npmjs.com/package/@ryzome-ai/openclaw-ryzome) |
-| [`hermes-ryzome-plugin`](packages/hermes-ryzome) | Hermes Agent plugin source package. Standard Hermes install repo: [`mateobelanger/hermes-ryzome-plugin`](https://github.com/mateobelanger/hermes-ryzome-plugin) | [![PyPI](https://img.shields.io/pypi/v/hermes-ryzome-plugin)](https://pypi.org/project/hermes-ryzome-plugin/) |
+| [`hermes-ryzome-plugin`](packages/hermes-ryzome) | Hermes Agent plugin source package. Standard Hermes install repo: [`0xPlaygrounds/hermes-ryzome-plugin`](https://github.com/0xPlaygrounds/hermes-ryzome-plugin) | [![PyPI](https://img.shields.io/pypi/v/hermes-ryzome-plugin)](https://pypi.org/project/hermes-ryzome-plugin/) |
 | [`@ryzome-ai/ryzome-claude-plugin`](packages/ryzome-claude-plugin) | Claude Code plugin with skills, agents, and hooks | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-claude-plugin)](https://www.npmjs.com/package/@ryzome-ai/ryzome-claude-plugin) |
 
 ## Architecture
@@ -38,7 +38,7 @@ hermes-ryzome (Hermes plugin)
 - **Claude Code users**: See [`@ryzome-ai/ryzome-claude-plugin`](packages/ryzome-claude-plugin) for one-command install
 - **MCP client users**: See [`@ryzome-ai/ryzome-mcp`](packages/ryzome-mcp) for `npx` quick start
 - **OpenClaw users**: See [`@ryzome-ai/openclaw-ryzome`](packages/openclaw-ryzome) for plugin install
-- **Hermes users**: Install the standalone repo with `hermes plugins install mateobelanger/hermes-ryzome-plugin --enable`, then run `hermes ryzome setup --key rz_...`
+- **Hermes users**: Install the standalone repo with `hermes plugins install 0xPlaygrounds/hermes-ryzome-plugin --enable`, then run `hermes ryzome setup --key rz_...`
 - **Building integrations**: See [`@ryzome-ai/ryzome-core`](packages/ryzome-core) for the shared library
 
 ### Hermes Plugin
@@ -46,7 +46,7 @@ hermes-ryzome (Hermes plugin)
 Standard Hermes install path:
 
 ```bash
-hermes plugins install mateobelanger/hermes-ryzome-plugin --enable
+hermes plugins install 0xPlaygrounds/hermes-ryzome-plugin --enable
 hermes ryzome setup --key rz_...
 ```
 
