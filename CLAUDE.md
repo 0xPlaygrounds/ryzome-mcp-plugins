@@ -8,7 +8,7 @@ A pnpm monorepo providing Ryzome canvas tools for AI agents via multiple integra
 
 - `packages/ryzome-core` (`@ryzome-ai/ryzome-core`) — Shared logic: API client, 11 tools, graph builder, layout, canvas markdown formatter
 - `packages/openclaw-ryzome` (`@ryzome-ai/openclaw-ryzome`) — OpenClaw plugin adapter (thin wrapper over core)
-- `packages/hermes-ryzome` (`hermes-ryzome-plugin` on PyPI) — Hermes plugin adapter. Python plugin that bundles a compiled Node runner invoking `ryzome-core` tools. Not published to npm (the internal npm name `@ryzome-ai/hermes-ryzome` is marked `private`).
+- `packages/hermes-ryzome` (`hermes-ryzome-plugin` on PyPI) — Hermes plugin source package. Standard Hermes install repo: `mateobelanger/hermes-ryzome-plugin`. This monorepo copy stays tied to the shared `ryzome-core` development flow.
 - `packages/ryzome-mcp` (`@ryzome-ai/ryzome-mcp`) — MCP server with tools + resources for Claude Code / any MCP client
 - `packages/ryzome-claude-plugin` (`@ryzome-ai/ryzome-claude-plugin`) — Claude Code plugin (skills, agent, hooks)
 
@@ -64,7 +64,7 @@ Onboarding invariants (to avoid re-debugging the same phantom):
 - The manifest declares `contracts.tools` (all 11 tool names) and `activation.onCommands: ["ryzome"]`. `contracts.tools` is what makes OpenClaw auto-allowlist `openclaw-ryzome` into `plugins.allow` once a config entry exists — agents should **not** "fix" missing tools by writing to `plugins.allow` from the plugin CLI.
 - Onboarding path is `openclaw ryzome setup --key <api-key>` (and `openclaw ryzome status` to verify). The global `openclaw setup` wizard does not have a tool-plugin step today; upstream request tracked at [openclaw/openclaw#68115](https://github.com/openclaw/openclaw/issues/68115).
 
-**`hermes-ryzome`** — Hermes plugin adapter (`packages/hermes-ryzome`): Python `register(ctx)` plugin surface plus a Node runner that executes the same `toolRegistry` entries as OpenClaw.
+**`hermes-ryzome`** — Hermes plugin source package (`packages/hermes-ryzome`). Standard user install path is the standalone repo `mateobelanger/hermes-ryzome-plugin` via `hermes plugins install mateobelanger/hermes-ryzome-plugin --enable`. Do not tell users to symlink `packages/hermes-ryzome` unless they are developing against this monorepo.
 
 **`ryzome-claude-plugin`** — Claude Code plugin (no build step): `.claude-plugin/plugin.json` manifest, `.mcp.json` bundled server, skills (`/plan`, `/research`, `/ryzome-status`), `ryzome-context` agent. Install flow: `/plugin marketplace add 0xPlaygrounds/ryzome-mcp-plugins` then `/plugin install claude-ryzome`.
 
