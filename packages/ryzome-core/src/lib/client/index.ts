@@ -35,7 +35,8 @@ export type DocumentView = CanvasSchemas["DocumentView"];
 export type DocumentMetadataView = CanvasSchemas["DocumentMetadataView"];
 export type DocumentContentView = CanvasSchemas["DocumentContentView"];
 export type DocumentOperation = CanvasSchemas["DocumentOperation"];
-export type ListDocumentsResponse = { data: DocumentView[] };
+export type DocumentListEntry = DocumentView | DocumentMetadataView;
+export type ListDocumentsResponse = { data: DocumentListEntry[] };
 
 // Canvas view types (used by downstream consumers)
 export type CanvasEditorView = CanvasSchemas["CanvasEditorView"];

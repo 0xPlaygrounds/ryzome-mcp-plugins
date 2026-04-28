@@ -20,6 +20,11 @@ describe("RyzomeClient", () => {
 		return JSON.parse(init.body);
 	}
 
+	function requestUrl(call: unknown[]) {
+		const [request] = call;
+		return request instanceof Request ? request.url : String(request);
+	}
+
 	it("should surface stage-aware HTTP failures from the generated canvas client", async () => {
 		const fetchMock = vi.fn().mockResolvedValue(
 			new Response("duplicate key", {
@@ -195,6 +200,57 @@ describe("RyzomeClient", () => {
 		});
 	});
 
+	it("falls back to the canvas endpoint when document canvas lookup misses", async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				new Response("Document not found", {
+					status: 404,
+					statusText: "Not Found",
+					headers: { "Content-Type": "text/plain" },
+				}),
+			)
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						_id: { $oid: "canvas123" },
+						name: "Legacy Canvas",
+						description: "Created before document-backed reads",
+						nodes: [],
+						edges: [],
+						isTemplate: false,
+						ownerId: "owner1",
+					}),
+					{
+						status: 200,
+						headers: { "Content-Type": "application/json" },
+					},
+				),
+			);
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new RyzomeClient({
+			apiKey: "secret-key",
+			apiUrl: "https://api.ryzome.ai",
+			appUrl: "https://ryzome.ai",
+		});
+
+		const result = await client.getCanvas("canvas123");
+
+		expect(result).toMatchObject({
+			_id: { $oid: "canvas123" },
+			name: "Legacy Canvas",
+			ownerId: "owner1",
+		});
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		expect(requestUrl(fetchMock.mock.calls[0])).toBe(
+			"https://api.ryzome.ai/v1/document/canvas123",
+		);
+		expect(requestUrl(fetchMock.mock.calls[1])).toBe(
+			"https://api.ryzome.ai/v1/canvas/canvas123",
+		);
+	});
+
 	it("creates a standalone document through the document endpoint", async () => {
 		const fetchMock = vi.fn().mockResolvedValue(
 			new Response(
@@ -244,40 +300,40 @@ describe("RyzomeClient", () => {
 	it("filters documents client-side for library visibility and content type", async () => {
 		const fetchMock = vi.fn().mockResolvedValue(
 			new Response(
-				JSON.stringify([
-					{
-						_id: { $oid: "doc123" },
-						title: "Specs",
-						description: "Draft spec",
-						content: {
-							_type: "Text",
-							_content: { text: "Hello world" },
+				JSON.stringify({
+					documents: [
+						{
+							_id: { $oid: "doc123" },
+							title: "Specs",
+							description: "Draft spec",
+							content: {
+								_type: "Text",
+							},
+							generated: false,
+							inLibrary: true,
+							isFavorite: false,
+							ownerId: "owner1",
+							tags: [],
+							createdAt: "2026-01-01T00:00:00Z",
+							updatedAt: "2026-01-01T00:00:00Z",
 						},
-						generated: false,
-						inLibrary: true,
-						isFavorite: false,
-						ownerId: "owner1",
-						tags: [],
-						createdAt: "2026-01-01T00:00:00Z",
-						updatedAt: "2026-01-01T00:00:00Z",
-					},
-					{
-						_id: { $oid: "doc456" },
-						title: "Private note",
-						description: null,
-						content: {
-							_type: "Website",
-							_content: { url: "https://example.com" },
+						{
+							_id: { $oid: "doc456" },
+							title: "Private note",
+							description: null,
+							content: {
+								_type: "Website",
+							},
+							generated: false,
+							inLibrary: false,
+							isFavorite: false,
+							ownerId: "owner1",
+							tags: [],
+							createdAt: "2026-01-01T00:00:00Z",
+							updatedAt: "2026-01-01T00:00:00Z",
 						},
-						generated: false,
-						inLibrary: false,
-						isFavorite: false,
-						ownerId: "owner1",
-						tags: [],
-						createdAt: "2026-01-01T00:00:00Z",
-						updatedAt: "2026-01-01T00:00:00Z",
-					},
-				]),
+					],
+				}),
 				{
 					status: 200,
 					headers: { "Content-Type": "application/json" },
@@ -299,6 +355,67 @@ describe("RyzomeClient", () => {
 
 		expect(result.data).toHaveLength(1);
 		expect(result.data[0]?._id.$oid).toBe("doc123");
+	});
+
+	it("lists canvases from the canonical document list envelope", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					documents: [
+						{
+							_id: { $oid: "canvas123" },
+							title: "Research Canvas",
+							description: "AI research notes",
+							content: { _type: "Canvas" },
+							generated: false,
+							inLibrary: true,
+							isFavorite: true,
+							ownerId: "owner1",
+							tags: [],
+							createdAt: "2026-01-01T00:00:00Z",
+							updatedAt: "2026-01-02T00:00:00Z",
+						},
+						{
+							_id: { $oid: "doc123" },
+							title: "Specs",
+							description: null,
+							content: { _type: "Text" },
+							generated: false,
+							inLibrary: true,
+							isFavorite: false,
+							ownerId: "owner1",
+							tags: [],
+							createdAt: "2026-01-01T00:00:00Z",
+							updatedAt: "2026-01-01T00:00:00Z",
+						},
+					],
+				}),
+				{
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				},
+			),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new RyzomeClient({
+			apiKey: "secret-key",
+			apiUrl: "https://api.ryzome.ai",
+			appUrl: "https://ryzome.ai",
+		});
+
+		const result = await client.listCanvases();
+
+		expect(result.data).toEqual([
+			{
+				_id: { $oid: "canvas123" },
+				name: "Research Canvas",
+				description: "AI research notes",
+				isTemplate: false,
+				pinned: true,
+				updatedAt: "2026-01-02T00:00:00Z",
+			},
+		]);
 	});
 
 	it("surfaces stage-aware metadata update failures for documents", async () => {

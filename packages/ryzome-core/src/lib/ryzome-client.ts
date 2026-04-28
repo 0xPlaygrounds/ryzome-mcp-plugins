@@ -1,10 +1,10 @@
 import {
 	type CanvasEditorView,
-	createApiClient,
 	type CreateCanvasRequest,
 	type CreateCanvasResponse,
 	type CreateDocumentRequestDocument,
-	type DocumentContentView,
+	createApiClient,
+	type DocumentListEntry,
 	type DocumentView,
 	type GetUploadUrlResponse,
 	type ListCanvasesResponse,
@@ -39,7 +39,7 @@ export interface ListDocumentsOptions {
 	tag?: string;
 	favorite?: boolean;
 	inLibraryOnly?: boolean;
-	contentTypes?: DocumentContentView["_type"][];
+	contentTypes?: DocumentListEntry["content"]["_type"][];
 }
 
 function isRetryableStatus(status: number): boolean {
@@ -265,7 +265,9 @@ export class RyzomeClient {
 		}
 	}
 
-	async createDocument(req: CreateDocumentRequestDocument): Promise<DocumentView> {
+	async createDocument(
+		req: CreateDocumentRequestDocument,
+	): Promise<DocumentView> {
 		try {
 			const { data, error, response } = await this.client.POST("/document", {
 				body: {
@@ -343,12 +345,37 @@ export class RyzomeClient {
 	}
 
 	async getCanvas(canvasId: string): Promise<CanvasEditorView> {
-		const data = await this.getDocument(canvasId);
+		try {
+			return this.canvasFromDocument(await this.getDocument(canvasId));
+		} catch (error) {
+			if (
+				error instanceof RyzomeApiError &&
+				(error.status === 401 || error.status === 404)
+			) {
+				return this.getCanvasFromCanvasEndpoint(canvasId);
+			}
 
+			throw error;
+		}
+	}
+
+	private canvasFromDocument(data: DocumentView): CanvasEditorView {
 		const nodes: CanvasEditorView["nodes"] =
 			data.content._type === "Canvas" ? data.content._content.nodes : [];
 		const edges: CanvasEditorView["edges"] =
 			data.content._type === "Canvas" ? data.content._content.edges : [];
+
+		if (data.content._type !== "Canvas") {
+			throw new RyzomeApiError({
+				stage: "getCanvas",
+				method: "GET",
+				path: `/document/${data._id.$oid}`,
+				status: 200,
+				body: `Expected a Canvas document, got ${data.content._type}`,
+				retryable: false,
+				canvasId: data._id.$oid,
+			});
+		}
 
 		return {
 			_id: data._id,
@@ -359,6 +386,52 @@ export class RyzomeClient {
 			isTemplate: false,
 			ownerId: data.ownerId,
 		};
+	}
+
+	private async getCanvasFromCanvasEndpoint(
+		canvasId: string,
+	): Promise<CanvasEditorView> {
+		const path = `/canvas/${canvasId}`;
+
+		try {
+			const { data, error, response } = await this.client.GET(
+				"/canvas/{canvas_id}",
+				{
+					params: { path: { canvas_id: canvasId } },
+				},
+			);
+
+			if (!response.ok || !data) {
+				throw this.buildHttpError({
+					stage: "getCanvas",
+					method: "GET",
+					path,
+					response,
+					error,
+					canvasId,
+				});
+			}
+
+			const responseData = data as unknown;
+			if (
+				typeof responseData === "object" &&
+				responseData !== null &&
+				"content" in responseData
+			) {
+				return this.canvasFromDocument(responseData as DocumentView);
+			}
+
+			return data as CanvasEditorView;
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			throw this.buildNetworkError({
+				stage: "getCanvas",
+				method: "GET",
+				path,
+				error,
+				canvasId,
+			});
+		}
 	}
 
 	async listCanvases(opts?: {
@@ -409,7 +482,25 @@ export class RyzomeClient {
 				});
 			}
 
-			const documents = data.filter((doc) => {
+			const responseData = data as unknown as
+				| DocumentListEntry[]
+				| { documents: DocumentListEntry[] };
+			const unfilteredDocuments = Array.isArray(responseData)
+				? responseData
+				: responseData.documents;
+
+			if (!unfilteredDocuments) {
+				throw new RyzomeApiError({
+					stage: "listDocuments",
+					method: "GET",
+					path,
+					status: response.status,
+					body: "Document list returned an unexpected response shape",
+					retryable: false,
+				});
+			}
+
+			const documents = unfilteredDocuments.filter((doc) => {
 				if (opts?.inLibraryOnly && !doc.inLibrary) return false;
 				if (
 					opts?.contentTypes?.length &&

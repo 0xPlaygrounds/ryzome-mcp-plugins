@@ -83,13 +83,29 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		get?: never;
+		get: operations["get_canvas"];
 		put?: never;
 		post?: never;
 		delete?: never;
 		options?: never;
 		head?: never;
 		patch: operations["patch_canvas"];
+		trace?: never;
+	};
+	"/canvas/{canvas_id}/metadata": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get: operations["get_canvas_metadata"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
 		trace?: never;
 	};
 }
@@ -208,6 +224,31 @@ export interface components {
 					/** @enum {string} */
 					_type: "Canvas";
 			  };
+		ContentMetadata:
+			| {
+					/** @enum {string} */
+					_type: "Canvas";
+			  }
+			| {
+					/** @enum {string} */
+					_type: "Text";
+			  }
+			| (components["schemas"]["FileStoreMetadata"] & {
+					/** @enum {string} */
+					_type: "File";
+			  })
+			| {
+					/** @enum {string} */
+					_type: "Youtube";
+			  }
+			| {
+					/** @enum {string} */
+					_type: "Website";
+			  }
+			| {
+					/** @enum {string} */
+					_type: "Bundle";
+			  };
 		DocumentView: {
 			_id: components["schemas"]["ObjectId"];
 			archived?: boolean;
@@ -228,10 +269,14 @@ export interface components {
 		DocumentMetadataView: {
 			_id: components["schemas"]["ObjectId"];
 			archived?: boolean;
+			content: components["schemas"]["ContentMetadata"];
 			createdAt: string;
 			description?: string | null;
+			deletedAt?: string | null;
 			inLibrary?: boolean;
 			isFavorite?: boolean;
+			permissions?: components["schemas"]["PermissionView"] | null;
+			sharingConfig?: components["schemas"]["SharingConfig"] | null;
 			tags?: string[];
 			thumbnail?: null | components["schemas"]["S3ObjectView"];
 			title?: string | null;
@@ -274,12 +319,26 @@ export interface components {
 					/** @enum {string} */
 					_type: "googleDriveObject";
 			  });
+		FileMetadata: {
+			file_type: string;
+		};
+		FileStoreMetadata:
+			| {
+					s3Object: components["schemas"]["FileMetadata"];
+			  }
+			| {
+					googleDrive: components["schemas"]["FileMetadata"];
+			  };
 		GoogleDriveObject: {
 			file_type: string;
 			id: string;
 		};
 		Group: {
 			title?: string | null;
+		};
+		Invite: {
+			email: string;
+			permission: components["schemas"]["Permission"];
 		};
 		MessageRef: {
 			conversationId: components["schemas"]["ObjectId"];
@@ -353,6 +412,8 @@ export interface components {
 		ObjectId: {
 			$oid: string;
 		};
+		Permission: "Read" | "Comment" | "Edit";
+		PermissionView: "owner" | "read" | "comment" | "edit";
 		Operation:
 			| (components["schemas"]["SetNameParams"] & {
 					/** @enum {string} */
@@ -473,6 +534,10 @@ export interface components {
 		SetTitleParams: {
 			title: string;
 		};
+		SharingConfig: {
+			invites: components["schemas"]["Invite"][];
+			urlPermission?: components["schemas"]["Permission"] | null;
+		};
 		Website: {
 			url: string;
 		};
@@ -491,6 +556,9 @@ export interface components {
 		/** @description Client-facing type for canvas list response. Built from document list response filtered to canvas type. */
 		"api.get_canvases.Response": {
 			data: components["schemas"]["CanvasSummaryView"][];
+		};
+		"api.get_all_documents.Response": {
+			documents: components["schemas"]["DocumentMetadataView"][];
 		};
 		"api.patch_document.Request": {
 			operations: components["schemas"]["DocumentOperation"][];
@@ -545,6 +613,80 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+	get_canvas: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				/** @description The ID of the canvas to retrieve */
+				canvas_id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Canvas retrieved successfully */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["CanvasEditorView"];
+				};
+			};
+			/** @description Canvas not found */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Internal server error */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
+	get_canvas_metadata: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				/** @description The ID of the canvas to retrieve */
+				canvas_id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Canvas retrieved successfully */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["DocumentMetadataView"];
+				};
+			};
+			/** @description Canvas not found */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Internal server error */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+		};
+	};
 	get_all_documents: {
 		parameters: {
 			query?: {
@@ -565,7 +707,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					"application/json": components["schemas"]["DocumentView"][];
+					"application/json": components["schemas"]["api.get_all_documents.Response"];
 				};
 			};
 			/** @description Internal server error */
