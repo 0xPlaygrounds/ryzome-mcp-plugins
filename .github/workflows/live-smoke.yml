@@ -17,6 +17,7 @@ jobs:
     env:
       RYZOME_ENABLE_LIVE_SMOKE: "1"
       RYZOME_LIVE_SMOKE_API_KEY: ${{ secrets.RYZOME_LIVE_SMOKE_API_KEY }}
+      RYZOME_LIVE_SMOKE_API_URL: ${{ vars.RYZOME_LIVE_SMOKE_API_URL }}
       RYZOME_LIVE_SMOKE_APP_URL: ${{ vars.RYZOME_LIVE_SMOKE_APP_URL }}
     steps:
       - name: Check out repository
