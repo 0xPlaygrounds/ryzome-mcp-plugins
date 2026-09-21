@@ -36,8 +36,15 @@ import {
 	type UpdateDocumentMetadataResponse,
 } from "./client/index.js";
 
+export type RyzomeClientAuthMode = "apiKey" | "bearer";
+
 export interface RyzomeClientConfig {
-	apiKey: string;
+	/** API key, sent as `x-api-key`. Required unless `accessToken` is set. */
+	apiKey?: string;
+	/** Bearer token, sent as `Authorization: Bearer <token>` in bearer mode. */
+	accessToken?: string;
+	/** Defaults to "bearer" when only `accessToken` is present, otherwise "apiKey". */
+	authMode?: RyzomeClientAuthMode;
 	apiUrl: string;
 	appUrl: string;
 }
@@ -150,11 +157,30 @@ export class RyzomeApiError extends Error {
 
 type CanvasApiClient = ReturnType<typeof createApiClient>;
 
-function makeApiKeyMiddleware(apiKey: string) {
+export function resolveAuthMode(
+	config: Pick<RyzomeClientConfig, "apiKey" | "accessToken" | "authMode">,
+): RyzomeClientAuthMode {
+	if (config.authMode) return config.authMode;
+	return !config.apiKey && config.accessToken ? "bearer" : "apiKey";
+}
+
+function makeAuthMiddleware(config: RyzomeClientConfig) {
+	const mode = resolveAuthMode(config);
+	if (mode === "bearer" && !config.accessToken) {
+		throw new Error("RyzomeClient: bearer auth mode requires accessToken");
+	}
+	if (mode === "apiKey" && !config.apiKey) {
+		throw new Error("RyzomeClient: apiKey auth mode requires apiKey");
+	}
+
 	return {
 		async onRequest({ request }: { request: Request }) {
 			const headers = new Headers(request.headers);
-			headers.set("x-api-key", apiKey);
+			if (mode === "bearer") {
+				headers.set("Authorization", `Bearer ${config.accessToken}`);
+			} else {
+				headers.set("x-api-key", config.apiKey as string);
+			}
 			headers.set("Content-Type", "application/json");
 			headers.set("User-Agent", `RyzomeOpenclawPlugin/0.1.0`);
 
@@ -184,7 +210,7 @@ export class RyzomeClient {
 
 	constructor(config: RyzomeClientConfig) {
 		this.client = createApiClient(`${config.apiUrl.replace(/\/+$/, "")}/v1`);
-		this.client.use(makeApiKeyMiddleware(config.apiKey));
+		this.client.use(makeAuthMiddleware(config));
 		this.client.use(makeResponseCaptureMiddleware(this.responseBodies));
 	}
 
@@ -245,8 +271,10 @@ export class RyzomeClient {
 				body: {
 					documents: [
 						{
+							...(req.id ? { _id: req.id } : {}),
 							title: req.name,
 							description: req.description,
+							...(req.tags?.length ? { tags: req.tags } : {}),
 							content: {
 								_type: "Canvas",
 								_content: {
@@ -503,6 +531,7 @@ export class RyzomeClient {
 	}
 
 	async createBundle(params: {
+		id?: string;
 		title?: string;
 		description?: string;
 		tags?: string[];
@@ -510,6 +539,7 @@ export class RyzomeClient {
 	}): Promise<BundleDocument> {
 		return bundleDocumentSchema.parse(
 			await this.createDocument({
+				...(params.id ? { _id: params.id } : {}),
 				title: params.title,
 				description: params.description,
 				tags: params.tags,
@@ -807,7 +837,12 @@ export class RyzomeClient {
 				"/conversation/{conversation_id}/messages",
 				{
 					params: { path: { conversation_id: conversationId } },
-					body: req,
+					body: {
+						content: req.content,
+						agent_mode: req.agent_mode,
+						// The route deserializes `context` as bson ObjectIds (extended JSON).
+						context: req.context?.map((id) => ({ $oid: id })),
+					},
 				},
 			);
 

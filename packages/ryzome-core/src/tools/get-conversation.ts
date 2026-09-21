@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { RyzomeClient, type RyzomeClientConfig } from "../lib/ryzome-client.js";
 import { formatConversationAsMarkdown } from "../lib/format-conversation-markdown.js";
+import { toStructuredConversation } from "../lib/structured.js";
 
 export const getConversationToolName = "get_ryzome_conversation";
 export const getConversationToolDescription =
@@ -24,5 +25,9 @@ export async function executeGetConversation(
 				}),
 			},
 		],
+		structuredContent: toStructuredConversation(
+			conversation,
+			clientConfig.appUrl,
+		),
 	};
 }

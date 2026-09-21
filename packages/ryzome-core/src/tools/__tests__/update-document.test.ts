@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { RyzomeClient } from "../../lib/ryzome-client.js";
-import { executeUpdateDocument } from "../update-document.js";
+import {
+	executeUpdateDocument,
+	updateDocumentParamsSchema,
+} from "../update-document.js";
 
 const clientConfig = {
 	apiKey: "secret-key",
@@ -61,6 +64,21 @@ describe("executeUpdateDocument", () => {
 		expect(result.content[0].text).toContain(
 			"Document updated: **Updated spec**",
 		);
+	});
+
+	it("does not accept tags because the metadata route cannot update them", async () => {
+		const metadataSpy = vi
+			.spyOn(RyzomeClient.prototype, "updateDocumentMetadata")
+			.mockResolvedValue({ updated: true });
+
+		expect(updateDocumentParamsSchema.shape).not.toHaveProperty("tags");
+		await expect(
+			executeUpdateDocument(
+				{ document_id: "doc123", tags: ["draft"] },
+				clientConfig,
+			),
+		).rejects.toThrow("No document updates provided.");
+		expect(metadataSpy).not.toHaveBeenCalled();
 	});
 
 	it("rejects empty updates", async () => {

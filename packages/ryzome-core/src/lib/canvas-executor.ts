@@ -4,27 +4,46 @@ import {
 	type GroupInput,
 } from "./graph-builder.js";
 import { buildCanvasAppUrl } from "./app-url.js";
+import { mergeTags, type ProvenanceInput } from "./provenance.js";
 import { RyzomeClient, type RyzomeClientConfig } from "./ryzome-client.js";
 import { retryStage } from "./retry.js";
 
+export interface CanvasWithStepsParams {
+	title: string;
+	description?: string;
+	/** Caller-supplied 24-hex id for the canvas document. */
+	id?: string;
+	tags?: string[];
+	provenance?: ProvenanceInput;
+	steps: StepInput[];
+	groups?: GroupInput[];
+}
+
 export async function executeCanvasWithSteps(
-	params: {
-		title: string;
-		description?: string;
-		steps: StepInput[];
-		groups?: GroupInput[];
-	},
+	params: CanvasWithStepsParams,
 	clientConfig: RyzomeClientConfig,
-): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+): Promise<{
+	content: Array<{ type: "text"; text: string }>;
+	structuredContent: {
+		canvasId: string;
+		url: string;
+		nodeCount: number;
+		edgeCount: number;
+	};
+}> {
 	const client = new RyzomeClient(clientConfig);
 
 	const { canvas_id } = await client.createCanvas({
 		name: params.title,
 		description: params.description,
+		id: params.id,
+		tags: mergeTags(params.tags, params.provenance?.tags),
 	});
 
 	const canvasId = canvas_id.$oid;
-	const graph = await buildCanvasGraph(params.steps, canvasId, params.groups);
+	const graph = await buildCanvasGraph(params.steps, canvasId, params.groups, {
+		header: params.provenance?.header,
+	});
 
 	await retryStage(() =>
 		client.patchCanvas(canvasId, { operations: graph.operations }),
@@ -50,5 +69,6 @@ export async function executeCanvasWithSteps(
 				].join("\n"),
 			},
 		],
+		structuredContent: { canvasId, url: canvasUrl, nodeCount, edgeCount },
 	};
 }

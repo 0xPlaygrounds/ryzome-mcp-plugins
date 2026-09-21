@@ -80,22 +80,30 @@ export function computeLegacyLayoutRects(
 		const memberRects = members
 			.map((s) => nodeRects.get(s.id))
 			.filter((r): r is LayoutRect => r !== undefined);
-		if (memberRects.length === 0) continue;
-
-		const minX = Math.min(...memberRects.map((r) => r.x));
-		const minY = Math.min(...memberRects.map((r) => r.y));
-		const maxX = Math.max(...memberRects.map((r) => r.x + r.width));
-		const maxY = Math.max(...memberRects.map((r) => r.y + r.height));
-
-		groupRects.set(group.id, {
-			x: minX - GROUP_PADDING_SIDE,
-			y: minY - GROUP_PADDING_TOP,
-			width: maxX - minX + GROUP_PADDING_SIDE * 2,
-			height: maxY - minY + GROUP_PADDING_TOP + GROUP_PADDING_SIDE,
-		});
+		const rect = computeGroupRectFromMembers(memberRects);
+		if (rect) groupRects.set(group.id, rect);
 	}
 
 	return { nodeRects, groupRects };
+}
+
+/** Bounding box around member rects plus the standard group padding. */
+export function computeGroupRectFromMembers(
+	memberRects: readonly LayoutRect[],
+): LayoutRect | undefined {
+	if (memberRects.length === 0) return undefined;
+
+	const minX = Math.min(...memberRects.map((r) => r.x));
+	const minY = Math.min(...memberRects.map((r) => r.y));
+	const maxX = Math.max(...memberRects.map((r) => r.x + r.width));
+	const maxY = Math.max(...memberRects.map((r) => r.y + r.height));
+
+	return {
+		x: minX - GROUP_PADDING_SIDE,
+		y: minY - GROUP_PADDING_TOP,
+		width: maxX - minX + GROUP_PADDING_SIDE * 2,
+		height: maxY - minY + GROUP_PADDING_TOP + GROUP_PADDING_SIDE,
+	};
 }
 
 function computeDepths(steps: LegacyStep[]): Map<string, number> {

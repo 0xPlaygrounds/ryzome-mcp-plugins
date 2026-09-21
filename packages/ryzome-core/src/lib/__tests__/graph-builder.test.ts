@@ -48,6 +48,30 @@ describe("buildCanvasGraph", () => {
 		expect(node.width).toBe(320);
 	});
 
+	it("uses edge labels keyed by dependency id and defaults to an empty label", async () => {
+		const steps: StepInput[] = [
+			{ id: "a", title: "A", description: "First" },
+			{ id: "b", title: "B", description: "Second" },
+			{
+				id: "c",
+				title: "C",
+				description: "Third",
+				dependsOn: ["a", "b"],
+				edgeLabels: { a: "from A" },
+			},
+		];
+		const graph = await buildCanvasGraph(steps, canvasId);
+		const nodes = createNodeOps(graph.operations);
+		const edges = createEdgeOps(graph.operations);
+		const [nodeA, nodeB] = nodes;
+
+		expect(edges).toHaveLength(2);
+		const fromA = edges.find((e) => e.fromNodeId === nodeA.id);
+		const fromB = edges.find((e) => e.fromNodeId === nodeB.id);
+		expect(fromA?.label).toBe("from A");
+		expect(fromB?.label).toBe("");
+	});
+
 	it("builds a linear chain A -> B -> C with edges pointing down the layers", async () => {
 		const steps: StepInput[] = [
 			{ id: "a", title: "A", description: "First" },

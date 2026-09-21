@@ -4,9 +4,7 @@
 	"description": "Create Ryzome canvases from plans and research",
 	"version": "0.6.0",
 	"activation": {
-		"onCommands": [
-			"ryzome"
-		]
+		"onCommands": ["ryzome"]
 	},
 	"contracts": {
 		"tools": [
@@ -21,6 +19,8 @@
 			"save_ryzome_node_to_library",
 			"update_ryzome_document",
 			"upload_ryzome_image",
+			"update_ryzome_canvas",
+			"verify_ryzome_structure",
 			"create_ryzome_bundle",
 			"get_ryzome_bundle",
 			"update_ryzome_bundle",
@@ -38,6 +38,9 @@
 		"additionalProperties": false,
 		"properties": {
 			"apiKey": {
+				"type": "string"
+			},
+			"accessToken": {
 				"type": "string"
 			},
 			"apiUrl": {

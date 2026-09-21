@@ -83,9 +83,9 @@ that deletion.
 
 ## Other existing contract gaps
 
-The metadata update request does not accept `tags`, although the existing generic
-update tool advertises that field. Fixing tag updates needs a matching backend
-operation or a change to that tool's contract; adding a new tool would not resolve it.
+The metadata update request does not accept `tags`, so `update_ryzome_document`
+no longer advertises that field: tags can only be set when creating a document.
+Supporting tag updates needs a matching backend operation.
 
 ## Follow-up tools requiring backend authentication work
 

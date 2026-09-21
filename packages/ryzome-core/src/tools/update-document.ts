@@ -8,7 +8,8 @@ import { RyzomeClient, type RyzomeClientConfig } from "../lib/ryzome-client.js";
 
 export const updateDocumentToolName = "update_ryzome_document";
 export const updateDocumentToolDescription =
-	"Update a standalone Ryzome document using document operations and metadata changes.";
+	"Update a standalone Ryzome document using document operations and metadata changes. " +
+	"Tags can only be set when creating a document.";
 
 export const updateDocumentParamsSchema = z.object({
 	document_id: z.string().describe("The ID of the document to update"),
@@ -22,7 +23,6 @@ export const updateDocumentParamsSchema = z.object({
 		.string()
 		.optional()
 		.describe("Update the document description"),
-	tags: z.array(z.string()).optional().describe("Replace the document tags"),
 	in_library: z
 		.boolean()
 		.optional()
@@ -82,7 +82,6 @@ export async function executeUpdateDocument(
 	const metadata = Object.fromEntries(
 		Object.entries({
 			description: params.description,
-			tags: params.tags,
 			inLibrary: params.in_library,
 			archived: params.archived,
 			thumbnailS3Key: params.thumbnail_s3_key,

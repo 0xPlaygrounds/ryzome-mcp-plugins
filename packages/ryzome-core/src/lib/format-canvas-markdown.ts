@@ -1,24 +1,34 @@
 import { buildCanvasAppUrl } from "./app-url.js";
-import type { components } from "./client/index.js";
+import {
+	type CanvasEditorView,
+	describeUnavailableNode,
+	type NodeEditorView,
+	unwrapNodeData,
+} from "./client/index.js";
 
-export type CanvasEditorView = components["schemas"]["CanvasEditorView"];
-type NodeEditorView = components["schemas"]["NodeEditorView"];
+export type { CanvasEditorView };
 
 function extractNodeTitle(node: NodeEditorView): string {
-	if (node.data._type === "Document") {
-		return node.data.title ?? "Untitled";
+	const data = unwrapNodeData(node.data);
+	switch (data.kind) {
+		case "document":
+			return data.document.title ?? "Untitled";
+		case "group":
+			return data.title ?? "Group";
+		case "unavailable":
+			return describeUnavailableNode(data);
 	}
-	if (node.data._type === "Group") {
-		return node.data.title ?? "Group";
-	}
-	return "Untitled";
 }
 
 function extractNodeContent(node: NodeEditorView): string {
-	if (node.data._type === "Document" && node.data.content._type === "Text") {
-		return node.data.content._content.text ?? "";
+	const data = unwrapNodeData(node.data);
+	if (data.kind !== "document") return "";
+
+	const content = data.document.content;
+	if (content._type === "Text") {
+		return content._content.text ?? "";
 	}
-	if (node.data._type === "Document" && node.data.content._type === "File") {
+	if (content._type === "File") {
 		return "[File attachment]";
 	}
 	return "";

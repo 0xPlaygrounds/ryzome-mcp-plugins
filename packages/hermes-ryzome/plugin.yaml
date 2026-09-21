@@ -19,6 +19,8 @@ provides_tools:
   - update_ryzome_document
   - save_ryzome_node_to_library
   - upload_ryzome_image
+  - update_ryzome_canvas
+  - verify_ryzome_structure
   - create_ryzome_bundle
   - get_ryzome_bundle
   - update_ryzome_bundle

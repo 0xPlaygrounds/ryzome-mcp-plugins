@@ -1,7 +1,9 @@
 import { pathToFileURL } from "node:url";
 import {
 	parseConfig,
+	RYZOME_CREDENTIAL_SETUP_HINT,
 	RyzomeApiError,
+	toClientConfig,
 	toolRegistry,
 	type RyzomeClientConfig,
 } from "@ryzome-ai/ryzome-core";
@@ -21,6 +23,7 @@ export interface RunnerSuccess {
 	ok: true;
 	toolName: string;
 	content: Array<{ type: "text"; text: string }>;
+	structuredContent?: object;
 }
 
 export interface RunnerFailure {
@@ -46,8 +49,7 @@ function notConfiguredError(): RunnerFailure {
 		ok: false,
 		error: {
 			name: "ConfigError",
-			message:
-				"Ryzome API key not configured. Set `RYZOME_API_KEY` or create `~/.hermes/ryzome.json`.",
+			message: `Ryzome credentials not configured. ${RYZOME_CREDENTIAL_SETUP_HINT} Or create \`~/.hermes/ryzome.json\`.`,
 		},
 	};
 }
@@ -95,16 +97,8 @@ function serializeError(error: unknown, toolName?: string): RunnerFailure {
 function resolveClientConfig(
 	rawConfig: Record<string, unknown> | undefined,
 ): RyzomeClientConfig | null {
-	const resolved = parseConfig(rawConfig ?? {});
-	if (!resolved.apiKey) {
-		return null;
-	}
-
-	return {
-		apiKey: resolved.apiKey,
-		apiUrl: resolved.apiUrl,
-		appUrl: resolved.appUrl,
-	};
+	// "Has any credential": API key (x-api-key) or access token (bearer).
+	return toClientConfig(parseConfig(rawConfig ?? {}));
 }
 
 export async function runTool(input: RunnerInput): Promise<RunnerOutput> {
@@ -133,6 +127,9 @@ export async function runTool(input: RunnerInput): Promise<RunnerOutput> {
 			ok: true,
 			toolName: tool.name,
 			content: result.content,
+			...(result.structuredContent
+				? { structuredContent: result.structuredContent }
+				: {}),
 		};
 	} catch (error) {
 		return serializeError(error, tool.name);

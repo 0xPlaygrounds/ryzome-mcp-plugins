@@ -1,11 +1,16 @@
+export type RyzomeAuthMode = "apiKey" | "bearer";
+
 export interface RyzomePluginConfig {
 	apiKey?: string;
+	accessToken?: string;
 	apiUrl?: string;
 	appUrl?: string;
 }
 
 export interface ResolvedRyzomePluginConfig {
 	apiKey?: string;
+	accessToken?: string;
+	authMode: RyzomeAuthMode;
 	apiUrl: string;
 	appUrl: string;
 }
@@ -17,8 +22,16 @@ export const RYZOME_API_KEY_ENV_VARS = [
 	"RYZOME_API_KEY",
 	"PLUGIN_USER_CONFIG_API_KEY",
 ] as const;
+export const RYZOME_ACCESS_TOKEN_ENV_VARS = [
+	"RYZOME_ACCESS_TOKEN",
+	"PLUGIN_USER_CONFIG_ACCESS_TOKEN",
+] as const;
 
-const ALLOWED_KEYS = ["apiKey", "apiUrl", "appUrl"];
+/** One-line hint listing every credential source, for "not configured" errors. */
+export const RYZOME_CREDENTIAL_SETUP_HINT =
+	"Set RYZOME_API_KEY (API key, sent as x-api-key) or RYZOME_ACCESS_TOKEN (bearer token, sent as Authorization: Bearer).";
+
+const ALLOWED_KEYS = ["apiKey", "accessToken", "apiUrl", "appUrl"];
 
 function assertAllowedKeys(value: Record<string, unknown>): void {
 	const unknown = Object.keys(value).filter(
@@ -39,8 +52,8 @@ function resolveEnvVars(value: string): string {
 	});
 }
 
-function resolveApiKeyFromEnv(): string | undefined {
-	for (const envVar of RYZOME_API_KEY_ENV_VARS) {
+function resolveFromEnv(envVars: readonly string[]): string | undefined {
+	for (const envVar of envVars) {
 		const value = process.env[envVar];
 		if (typeof value === "string" && value.trim()) {
 			return value;
@@ -48,6 +61,19 @@ function resolveApiKeyFromEnv(): string | undefined {
 	}
 
 	return undefined;
+}
+
+function resolveSecret(
+	raw: unknown,
+	envVars: readonly string[],
+): string | undefined {
+	try {
+		return typeof raw === "string" && raw.trim().length > 0
+			? resolveEnvVars(raw.trim())
+			: resolveFromEnv(envVars);
+	} catch {
+		return undefined;
+	}
 }
 
 export function parseConfig(raw: unknown): ResolvedRyzomePluginConfig {
@@ -60,18 +86,19 @@ export function parseConfig(raw: unknown): ResolvedRyzomePluginConfig {
 		assertAllowedKeys(cfg);
 	}
 
-	let apiKey: string | undefined;
-	try {
-		apiKey =
-			typeof cfg.apiKey === "string" && cfg.apiKey.trim().length > 0
-				? resolveEnvVars(cfg.apiKey.trim())
-				: resolveApiKeyFromEnv();
-	} catch {
-		apiKey = undefined;
-	}
+	const apiKey = resolveSecret(cfg.apiKey, RYZOME_API_KEY_ENV_VARS);
+	const accessToken = resolveSecret(
+		cfg.accessToken,
+		RYZOME_ACCESS_TOKEN_ENV_VARS,
+	);
+
+	// An API key always wins; bearer is used only when it is the sole credential.
+	const authMode: RyzomeAuthMode = !apiKey && accessToken ? "bearer" : "apiKey";
 
 	return {
 		apiKey,
+		accessToken,
+		authMode,
 		apiUrl:
 			typeof cfg.apiUrl === "string" && cfg.apiUrl.trim()
 				? cfg.apiUrl.trim()
@@ -80,5 +107,33 @@ export function parseConfig(raw: unknown): ResolvedRyzomePluginConfig {
 			typeof cfg.appUrl === "string" && cfg.appUrl.trim()
 				? cfg.appUrl.trim()
 				: DEFAULT_RYZOME_APP_URL,
+	};
+}
+
+/** True when the config carries a credential usable by the client. */
+export function hasCredential(
+	cfg: Pick<ResolvedRyzomePluginConfig, "apiKey" | "accessToken">,
+): boolean {
+	return Boolean(cfg.apiKey || cfg.accessToken);
+}
+
+/**
+ * Project a resolved plugin config onto the client config shape, or `null`
+ * when no credential is available. Adapters use this for the lazy setup check.
+ */
+export function toClientConfig(cfg: ResolvedRyzomePluginConfig): {
+	apiKey?: string;
+	accessToken?: string;
+	authMode: RyzomeAuthMode;
+	apiUrl: string;
+	appUrl: string;
+} | null {
+	if (!hasCredential(cfg)) return null;
+	return {
+		apiKey: cfg.apiKey,
+		accessToken: cfg.accessToken,
+		authMode: cfg.authMode,
+		apiUrl: cfg.apiUrl,
+		appUrl: cfg.appUrl,
 	};
 }

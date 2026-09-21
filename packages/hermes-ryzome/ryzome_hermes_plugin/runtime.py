@@ -15,7 +15,15 @@ RYZOME_API_KEY_ENV_VARS = (
     "RYZOME_API_KEY",
     "PLUGIN_USER_CONFIG_API_KEY",
 )
-ALLOWED_KEYS = {"apiKey", "apiUrl", "appUrl"}
+RYZOME_ACCESS_TOKEN_ENV_VARS = (
+    "RYZOME_ACCESS_TOKEN",
+    "PLUGIN_USER_CONFIG_ACCESS_TOKEN",
+)
+ALLOWED_KEYS = {"apiKey", "accessToken", "apiUrl", "appUrl"}
+CREDENTIAL_SETUP_HINT = (
+    "Set `RYZOME_API_KEY` (API key) or `RYZOME_ACCESS_TOKEN` (bearer token), "
+    "or create `~/.hermes/ryzome.json`."
+)
 RUNNER_ENV_VAR = "RYZOME_HERMES_RUNNER"
 CONFIG_PATH_ENV_VAR = "RYZOME_HERMES_CONFIG_PATH"
 
@@ -25,6 +33,11 @@ class ResolvedConfig:
     api_key: str | None
     api_url: str
     app_url: str
+    access_token: str | None = None
+
+    @property
+    def has_credential(self) -> bool:
+        return bool(self.api_key or self.access_token)
 
 
 def default_config_path() -> Path:
@@ -84,6 +97,14 @@ def resolve_api_key_from_env() -> tuple[str | None, str | None]:
     return None, None
 
 
+def resolve_access_token_from_env() -> str | None:
+    for env_var in RYZOME_ACCESS_TOKEN_ENV_VARS:
+        value = os.getenv(env_var)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
 def parse_config(raw: Mapping[str, Any] | None) -> ResolvedConfig:
     config = dict(raw or {})
     if config:
@@ -98,6 +119,15 @@ def parse_config(raw: Mapping[str, Any] | None) -> ResolvedConfig:
             except ValueError:
                 api_key = None
 
+    access_token = resolve_access_token_from_env()
+    if not access_token:
+        raw_access_token = config.get("accessToken")
+        if isinstance(raw_access_token, str) and raw_access_token.strip():
+            try:
+                access_token = _resolve_env_placeholders(raw_access_token.strip())
+            except ValueError:
+                access_token = None
+
     raw_api_url = config.get("apiUrl")
     raw_app_url = config.get("appUrl")
     api_url = (
@@ -111,7 +141,12 @@ def parse_config(raw: Mapping[str, Any] | None) -> ResolvedConfig:
         else DEFAULT_RYZOME_APP_URL
     )
 
-    return ResolvedConfig(api_key=api_key, api_url=api_url, app_url=app_url)
+    return ResolvedConfig(
+        api_key=api_key,
+        api_url=api_url,
+        app_url=app_url,
+        access_token=access_token,
+    )
 
 
 def resolve_api_key_status(raw: Mapping[str, Any] | None) -> tuple[str | None, str | None]:
@@ -133,7 +168,7 @@ def resolve_api_key_status(raw: Mapping[str, Any] | None) -> tuple[str | None, s
 def is_configured() -> bool:
     try:
         raw = load_raw_config()
-        return bool(parse_config(raw).api_key)
+        return parse_config(raw).has_credential
     except Exception:
         return False
 
@@ -169,26 +204,28 @@ def resolve_runner_command(plugin_version: str) -> list[str]:
 def run_node_tool(tool_name: str, args: Mapping[str, Any], plugin_version: str) -> dict[str, Any]:
     raw_config = load_raw_config()
     resolved = parse_config(raw_config)
-    if not resolved.api_key:
+    if not resolved.has_credential:
         return {
             "ok": False,
             "error": {
                 "name": "ConfigError",
-                "message": (
-                    "Ryzome API key not configured. Set `RYZOME_API_KEY` or create "
-                    "`~/.hermes/ryzome.json`."
-                ),
+                "message": f"Ryzome credentials not configured. {CREDENTIAL_SETUP_HINT}",
             },
         }
+
+    config_payload: dict[str, Any] = {
+        "apiUrl": resolved.api_url,
+        "appUrl": resolved.app_url,
+    }
+    if resolved.api_key:
+        config_payload["apiKey"] = resolved.api_key
+    if resolved.access_token:
+        config_payload["accessToken"] = resolved.access_token
 
     payload = {
         "toolName": tool_name,
         "params": dict(args),
-        "config": {
-            "apiKey": resolved.api_key,
-            "apiUrl": resolved.api_url,
-            "appUrl": resolved.app_url,
-        },
+        "config": config_payload,
     }
 
     command = resolve_runner_command(plugin_version)

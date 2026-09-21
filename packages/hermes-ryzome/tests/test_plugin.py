@@ -117,6 +117,23 @@ class HermesPluginTests(unittest.TestCase):
 
         self.assertEqual(resolved.api_key, "rz_env_fallback")
 
+    def test_parse_config_accepts_access_token_as_bearer_credential(self) -> None:
+        env = {"RYZOME_API_KEY": "", "RYZOME_OPENCLAW_API_KEY": "", "RYZOME_ACCESS_TOKEN": "eyJ.token"}
+        with patch.dict(os.environ, env, clear=False):
+            resolved = parse_config({})
+
+        self.assertIsNone(resolved.api_key)
+        self.assertEqual(resolved.access_token, "eyJ.token")
+        self.assertTrue(resolved.has_credential)
+
+    def test_parse_config_reads_access_token_from_user_config(self) -> None:
+        env = {"RYZOME_API_KEY": "", "RYZOME_OPENCLAW_API_KEY": "", "RYZOME_ACCESS_TOKEN": ""}
+        with patch.dict(os.environ, env, clear=False):
+            resolved = parse_config({"accessToken": "eyJ.config"})
+
+        self.assertEqual(resolved.access_token, "eyJ.config")
+        self.assertTrue(resolved.has_credential)
+
     def test_parse_config_rejects_unknown_keys(self) -> None:
         with self.assertRaises(ValueError):
             parse_config({"unexpected": True})
