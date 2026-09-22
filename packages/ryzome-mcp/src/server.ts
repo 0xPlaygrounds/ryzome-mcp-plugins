@@ -73,10 +73,7 @@ export function createRyzomeMcpServer(): McpServer {
 						content: result.content,
 						...(result.structuredContent
 							? {
-									structuredContent: result.structuredContent as Record<
-										string,
-										unknown
-									>,
+									structuredContent: result.structuredContent,
 								}
 							: {}),
 					};

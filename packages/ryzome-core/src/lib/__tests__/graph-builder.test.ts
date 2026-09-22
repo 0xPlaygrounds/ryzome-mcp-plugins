@@ -48,7 +48,7 @@ describe("buildCanvasGraph", () => {
 		expect(node.width).toBe(320);
 	});
 
-	it("uses edge labels keyed by dependency id and defaults to an empty label", async () => {
+	it("preserves explicit edge labels and defaults to an empty label", async () => {
 		const steps: StepInput[] = [
 			{ id: "a", title: "A", description: "First" },
 			{ id: "b", title: "B", description: "Second" },
@@ -57,10 +57,14 @@ describe("buildCanvasGraph", () => {
 				title: "C",
 				description: "Third",
 				dependsOn: ["a", "b"],
-				edgeLabels: { a: "from A" },
 			},
 		];
-		const graph = await buildCanvasGraph(steps, canvasId);
+		const graph = await buildCanvasGraph(steps, canvasId, undefined, {
+			edges: [
+				{ from: "a", to: "c", label: "from A" },
+				{ from: "b", to: "c" },
+			],
+		});
 		const nodes = createNodeOps(graph.operations);
 		const edges = createEdgeOps(graph.operations);
 		const [nodeA, nodeB] = nodes;

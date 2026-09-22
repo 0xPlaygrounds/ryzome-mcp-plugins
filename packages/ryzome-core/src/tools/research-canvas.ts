@@ -42,7 +42,9 @@ export const researchCanvasParamsSchema = z.object({
 					),
 				nodeId: objectIdStringSchema
 					.optional()
-					.describe("Optional caller-supplied 24-hex id for the canvas node"),
+					.describe(
+						"Optional caller-supplied 24-hex id for the canvas node and any new backing document",
+					),
 				color: hexColorSchema.describe("Finding color as hex (e.g. '#FF6B6B')"),
 				group: z
 					.string()

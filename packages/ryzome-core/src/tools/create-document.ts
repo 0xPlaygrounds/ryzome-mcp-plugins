@@ -84,7 +84,7 @@ export async function executeCreateDocument(
 			id: document._id.$oid,
 			title: document.title ?? "Untitled",
 			kind: document.content._type,
-			url: documentUrl,
+			viewUrl: documentUrl,
 		},
 	};
 }

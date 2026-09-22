@@ -134,10 +134,11 @@ describe("buildCanvasGraph reference nodes and explicit layout", () => {
 				description: "Second",
 				nodeId: nodeB,
 				dependsOn: ["a"],
-				edgeIds: { a: edgeId },
 			},
 		];
-		const graph = await buildCanvasGraph(steps, canvasId);
+		const graph = await buildCanvasGraph(steps, canvasId, undefined, {
+			edges: [{ id: edgeId, from: "a", to: "b" }],
+		});
 		const nodes = createNodeOps(graph.operations);
 		expect(nodes.map((n) => n.id)).toEqual([nodeA, nodeB]);
 		const edge = graph.operations.find((o) => o._type === "createEdge");

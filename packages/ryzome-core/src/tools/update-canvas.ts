@@ -5,17 +5,17 @@ import {
 	toPatchOperation,
 } from "../lib/canvas-operations.js";
 import { objectIdStringSchema } from "../lib/ids.js";
-import { retryStage } from "../lib/retry.js";
+import type { CanvasUpdateResult } from "../lib/structured.js";
 import { RyzomeClient, type RyzomeClientConfig } from "../lib/ryzome-client.js";
 
 export const updateCanvasToolName = "update_ryzome_canvas";
 export const updateCanvasToolDescription =
 	"Apply canvas operations to an existing Ryzome canvas: setName, createNode (Group | ExistingDocument | NewDocument), " +
 	"setNodePosition, setNodeSize, setNodeTitle, setNodeColor, setNodeContent, appendNodeContent, setNodeFavoriteState, deleteNode, " +
-	"createEdge, setEdgeLabel, setEdgePosition, deleteEdge. Operations are applied in order in a single request.";
+	"createEdge, setEdgeLabel, setEdgePosition, deleteEdge. Operations are submitted in order in one request and are not automatically retried. Read back the canvas after an uncertain failure. Content supports Text, File, Youtube, Website, or an empty Canvas; use bundle tools for bundle content.";
 
 export const updateCanvasParamsSchema = z.object({
-	canvasId: objectIdStringSchema.describe("ID of the canvas to update"),
+	canvas_id: objectIdStringSchema.describe("ID of the canvas to update"),
 	operations: z
 		.array(canvasOperationSchema)
 		.min(1)
@@ -30,10 +30,14 @@ export async function executeUpdateCanvas(
 	const client = new RyzomeClient(clientConfig);
 	const operations = params.operations.map(toPatchOperation);
 
-	await retryStage(() => client.patchCanvas(params.canvasId, { operations }));
+	await client.patchCanvas(params.canvas_id, { operations });
 
-	const url = buildCanvasAppUrl(clientConfig.appUrl, params.canvasId);
-	const result = { canvasId: params.canvasId, applied: operations.length, url };
+	const url = buildCanvasAppUrl(clientConfig.appUrl, params.canvas_id);
+	const result: CanvasUpdateResult = {
+		id: params.canvas_id,
+		operationCount: operations.length,
+		viewUrl: url,
+	};
 
 	return {
 		content: [
@@ -41,8 +45,8 @@ export async function executeUpdateCanvas(
 				type: "text" as const,
 				text: [
 					`View: ${url}`,
-					`Canvas updated: ${params.canvasId}`,
-					`Applied: ${operations.length} operation${operations.length === 1 ? "" : "s"}`,
+					`Canvas request accepted: ${params.canvas_id}`,
+					`Submitted: ${operations.length} operation${operations.length === 1 ? "" : "s"}. Changes are not verified by the response.`,
 				].join("\n"),
 			},
 		],

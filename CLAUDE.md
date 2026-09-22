@@ -86,7 +86,7 @@ Tool params → Zod validation → canvas-executor
   → returns viewer URL + stats
 ```
 
-**Tool return format:** All tools return `{ content: [{ type: "text", text: string }], structuredContent?: object }`. The `get_ryzome_*` tools (and canvas creators/updaters) populate `structuredContent`; the MCP server forwards it.
+**Tool return format:** All tools return `{ content: [{ type: "text", text: string }], structuredContent?: StructuredToolResult }`. The `get_ryzome_*` tools (and canvas creators/updaters) populate `structuredContent`; the MCP server forwards it.
 
 ## Tech Stack
 
@@ -103,7 +103,7 @@ Tool params → Zod validation → canvas-executor
 
 `packages/ryzome-core/src/lib/client/index.ts` defines `PatchOperation` as the full generated `CanvasOperation` union from `schema.d.ts`. `lib/canvas-operations.ts` holds the Zod mirror used by `update_ryzome_canvas`; when the backend adds an operation variant, regenerate `schema.d.ts` and add the matching Zod variant there.
 
-`schema.d.ts` is auto-generated from the backend OpenAPI spec (`cargo run -p canvas-routes --bin generate-openapi` in the monorepo). When the backend has a route the spec hasn't been regenerated for, you can manually add paths/types with a `NOTE: Manually added — regenerate later` comment. Run `pnpm codegen:all` in the monorepo to regenerate all client specs.
+`schema.d.ts` is auto-generated from the backend OpenAPI spec (`cargo run -p canvas-api --bin generate-openapi` in the monorepo). When the backend has a route the spec hasn't been regenerated for, you can manually add paths/types with a `NOTE: Manually added — regenerate later` comment. Run `pnpm codegen:all` in the monorepo to regenerate all client specs.
 
 ## CI
 

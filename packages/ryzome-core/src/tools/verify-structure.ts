@@ -9,11 +9,11 @@ import {
 export const verifyStructureToolName = "verify_ryzome_structure";
 export const verifyStructureToolDescription =
 	"Read back a Ryzome bundle or canvas and report its structure: member/node/edge counts, " +
-	"unavailable members or nodes (NotFound, Unauthorized, Error), edges missing labels, and edges " +
+	"unavailable members or nodes (NotFound, Unauthorized, Error), optional labeling advisories, and edges " +
 	"referencing unknown node ids. Read-only; makes no changes.";
 
 export const verifyStructureParamsSchema = z.object({
-	rootId: objectIdStringSchema.describe(
+	document_id: objectIdStringSchema.describe(
 		"ID of the bundle or canvas document to verify",
 	),
 });
@@ -24,7 +24,7 @@ export async function executeVerifyStructure(
 ) {
 	const params = verifyStructureParamsSchema.parse(rawParams);
 	const client = new RyzomeClient(clientConfig);
-	const document = await client.getDocument(params.rootId);
+	const document = await client.getDocument(params.document_id);
 	const report = verifyDocumentStructure(document);
 
 	return {

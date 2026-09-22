@@ -2,11 +2,12 @@ import {
 	buildCanvasGraph,
 	type StepInput,
 	type GroupInput,
+	type EdgeInput,
 } from "./graph-builder.js";
 import { buildCanvasAppUrl } from "./app-url.js";
 import { mergeTags, type ProvenanceInput } from "./provenance.js";
 import { RyzomeClient, type RyzomeClientConfig } from "./ryzome-client.js";
-import { retryStage } from "./retry.js";
+import type { CanvasCreationResult } from "./structured.js";
 
 export interface CanvasWithStepsParams {
 	title: string;
@@ -17,6 +18,7 @@ export interface CanvasWithStepsParams {
 	provenance?: ProvenanceInput;
 	steps: StepInput[];
 	groups?: GroupInput[];
+	edges?: EdgeInput[];
 }
 
 export async function executeCanvasWithSteps(
@@ -24,13 +26,18 @@ export async function executeCanvasWithSteps(
 	clientConfig: RyzomeClientConfig,
 ): Promise<{
 	content: Array<{ type: "text"; text: string }>;
-	structuredContent: {
-		canvasId: string;
-		url: string;
-		nodeCount: number;
-		edgeCount: number;
-	};
+	structuredContent: CanvasCreationResult;
 }> {
+	// Validate and lay out the graph before creating any remote document.
+	const graph = await buildCanvasGraph(
+		params.steps,
+		params.id ?? "",
+		params.groups,
+		{
+			header: params.provenance?.header,
+			edges: params.edges,
+		},
+	);
 	const client = new RyzomeClient(clientConfig);
 
 	const { canvas_id } = await client.createCanvas({
@@ -41,13 +48,7 @@ export async function executeCanvasWithSteps(
 	});
 
 	const canvasId = canvas_id.$oid;
-	const graph = await buildCanvasGraph(params.steps, canvasId, params.groups, {
-		header: params.provenance?.header,
-	});
-
-	await retryStage(() =>
-		client.patchCanvas(canvasId, { operations: graph.operations }),
-	);
+	await client.patchCanvas(canvasId, { operations: graph.operations });
 
 	const canvasUrl = buildCanvasAppUrl(clientConfig.appUrl, canvasId);
 
@@ -69,6 +70,11 @@ export async function executeCanvasWithSteps(
 				].join("\n"),
 			},
 		],
-		structuredContent: { canvasId, url: canvasUrl, nodeCount, edgeCount },
+		structuredContent: {
+			id: canvasId,
+			viewUrl: canvasUrl,
+			nodeCount,
+			edgeCount,
+		},
 	};
 }

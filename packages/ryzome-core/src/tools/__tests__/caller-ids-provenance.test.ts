@@ -52,7 +52,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-describe("caller-supplied ids (A7)", () => {
+describe("caller-supplied ids", () => {
 	it("create_ryzome_document sends id as _id", async () => {
 		const fetch = vi
 			.fn()
@@ -118,7 +118,7 @@ describe("caller-supplied ids (A7)", () => {
 			label: "cites",
 		});
 		expect(result.structuredContent).toMatchObject({
-			canvasId: suppliedId,
+			id: suppliedId,
 			nodeCount: 2,
 			edgeCount: 1,
 		});
@@ -240,7 +240,7 @@ describe("caller-supplied ids (A7)", () => {
 	});
 });
 
-describe("provenance (A8)", () => {
+describe("provenance", () => {
 	it("mergeTags appends and dedupes; applyHeader prepends with a blank line", () => {
 		expect(mergeTags(["a", "b"], ["b", "c", " c ", ""])).toEqual([
 			"a",

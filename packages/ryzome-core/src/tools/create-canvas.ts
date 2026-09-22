@@ -22,7 +22,9 @@ const canvasNodeInputSchema = z
 		id: z.string().describe("Unique node identifier (local to this call)"),
 		nodeId: objectIdStringSchema
 			.optional()
-			.describe("Optional caller-supplied 24-hex id for the canvas node"),
+			.describe(
+				"Optional caller-supplied 24-hex id for the canvas node and any new backing document",
+			),
 		documentId: objectIdStringSchema
 			.optional()
 			.describe(
@@ -107,22 +109,10 @@ export async function executeCreateCanvas(
 	const params = createCanvasParamsSchema.parse(rawParams);
 
 	const edgesByTo = new Map<string, string[]>();
-	const edgeLabelsByTo = new Map<string, Record<string, string>>();
-	const edgeIdsByTo = new Map<string, Record<string, string>>();
 	for (const edge of params.edges ?? []) {
 		const deps = edgesByTo.get(edge.to) ?? [];
 		deps.push(edge.from);
 		edgesByTo.set(edge.to, deps);
-		if (edge.label) {
-			const labels = edgeLabelsByTo.get(edge.to) ?? {};
-			labels[edge.from] = edge.label;
-			edgeLabelsByTo.set(edge.to, labels);
-		}
-		if (edge.id) {
-			const ids = edgeIdsByTo.get(edge.to) ?? {};
-			ids[edge.from] = edge.id;
-			edgeIdsByTo.set(edge.to, ids);
-		}
 	}
 
 	const steps: StepInput[] = params.nodes.map((node) => ({
@@ -130,8 +120,6 @@ export async function executeCreateCanvas(
 		title: node.title ?? "",
 		description: node.description ?? "",
 		dependsOn: edgesByTo.get(node.id),
-		edgeLabels: edgeLabelsByTo.get(node.id),
-		edgeIds: edgeIdsByTo.get(node.id),
 		color: node.color,
 		group: node.group,
 		documentId: node.documentId,
@@ -152,6 +140,7 @@ export async function executeCreateCanvas(
 			tags: params.tags,
 			provenance: params.provenance,
 			steps,
+			edges: params.edges,
 			groups,
 		},
 		clientConfig,

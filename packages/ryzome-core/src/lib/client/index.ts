@@ -1,5 +1,4 @@
 import createClient from "openapi-fetch";
-import type { CreateBundleContent } from "./bundle.js";
 
 import type { components, paths } from "./schema";
 import type {
@@ -21,11 +20,8 @@ type DocumentListOperation = Omit<
 	};
 };
 type ApiPaths = Omit<paths, "/document"> & {
-	"/document": Omit<paths["/document"], "get" | "post"> & {
+	"/document": Omit<paths["/document"], "get"> & {
 		get: DocumentListOperation;
-		post: Omit<paths["/document"]["post"], "requestBody"> & {
-			requestBody: { content: { "application/json": CreateDocumentsRequest } };
-		};
 	};
 };
 
@@ -80,17 +76,12 @@ export type UpdateDocumentMetadataResponse =
 	CanvasSchemas["api.update_document_metadata.Response"];
 
 // API types for document routes (used internally by RyzomeClient)
-export type CreateDocumentsRequest = {
-	documents: CreateDocumentRequestDocument[];
-};
+export type CreateDocumentsRequest =
+	CanvasSchemas["api.create_documents.Request"];
 export type CreateDocumentsResponse =
 	CanvasSchemas["api.create_documents.Response"];
-export type CreateDocumentRequestDocument = Omit<
-	CanvasSchemas["api.create_documents.RequestDocument"],
-	"content"
-> & {
-	content?: CanvasSchemas["CreateDocumentContentView"] | CreateBundleContent;
-};
+export type CreateDocumentRequestDocument =
+	CanvasSchemas["api.create_documents.RequestDocument"];
 export type DocumentView = CanvasSchemas["DocumentView"];
 export type DocumentMetadataView = CanvasSchemas["DocumentMetadataView"];
 export type DocumentContentView = CanvasSchemas["DocumentContentView"];

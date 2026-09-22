@@ -36,7 +36,8 @@ import {
 	type UpdateDocumentMetadataResponse,
 } from "./client/index.js";
 
-export type RyzomeClientAuthMode = "apiKey" | "bearer";
+import type { RyzomeAuthMode } from "../config.js";
+export type RyzomeClientAuthMode = RyzomeAuthMode;
 
 export interface RyzomeClientConfig {
 	/** API key, sent as `x-api-key`. Required unless `accessToken` is set. */

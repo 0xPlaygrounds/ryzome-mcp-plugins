@@ -189,7 +189,10 @@ describe("verify_ryzome_structure", () => {
 		const fetch = vi.fn().mockResolvedValue(response(canvasFixture));
 		vi.stubGlobal("fetch", fetch);
 
-		const result = await executeVerifyStructure({ rootId }, config);
+		const result = await executeVerifyStructure(
+			{ document_id: rootId },
+			config,
+		);
 
 		expect(fetch).toHaveBeenCalledOnce();
 		const request = fetch.mock.calls[0][0] as Request;
@@ -242,16 +245,19 @@ describe("verify_ryzome_structure", () => {
 		expect(text).toContain("Edges: 3");
 		expect(text).toContain("4123456789abcdef01234567: NotFound");
 		expect(text).toContain("backend hiccup");
-		expect(text).toContain("Edges missing labels:");
+		expect(text).toContain("Advisory: edges missing optional labels:");
 		expect(text).toContain("Edges referencing unknown node ids:");
 		expect(text).toContain("(unknown: to)");
-		expect(text).toContain("Issues: 4");
+		expect(text).toContain("Issues: 3");
 	});
 
 	it("walks a bundle's access states", async () => {
 		vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(bundleFixture)));
 
-		const result = await executeVerifyStructure({ rootId }, config);
+		const result = await executeVerifyStructure(
+			{ document_id: rootId },
+			config,
+		);
 
 		expect(result.structuredContent).toEqual({
 			kind: "Bundle",
@@ -282,12 +288,17 @@ describe("verify_ryzome_structure", () => {
 				_type: "Canvas",
 				_content: {
 					nodes: canvasFixture.content._content.nodes.slice(0, 2),
-					edges: canvasFixture.content._content.edges.slice(0, 1),
+					edges: canvasFixture.content._content.edges
+						.slice(0, 1)
+						.map((edge) => ({ ...edge, label: "" })),
 				},
 			},
 		};
 		vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(clean)));
-		const result = await executeVerifyStructure({ rootId }, config);
+		const result = await executeVerifyStructure(
+			{ document_id: rootId },
+			config,
+		);
 		expect(result.content[0].text).toContain("OK: all nodes readable");
 	});
 
@@ -301,7 +312,10 @@ describe("verify_ryzome_structure", () => {
 				}),
 			),
 		);
-		const result = await executeVerifyStructure({ rootId }, config);
+		const result = await executeVerifyStructure(
+			{ document_id: rootId },
+			config,
+		);
 		expect(result.structuredContent).toMatchObject({
 			kind: "Text",
 			verifiable: false,
@@ -313,7 +327,7 @@ describe("verify_ryzome_structure", () => {
 		const fetch = vi.fn();
 		vi.stubGlobal("fetch", fetch);
 		await expect(
-			executeVerifyStructure({ rootId: "nope" }, config),
+			executeVerifyStructure({ document_id: "nope" }, config),
 		).rejects.toThrow();
 		expect(fetch).not.toHaveBeenCalled();
 	});

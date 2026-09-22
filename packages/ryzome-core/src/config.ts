@@ -1,3 +1,4 @@
+import type { RyzomeClientConfig } from "./lib/ryzome-client.js";
 export type RyzomeAuthMode = "apiKey" | "bearer";
 
 export interface RyzomePluginConfig {
@@ -121,13 +122,9 @@ export function hasCredential(
  * Project a resolved plugin config onto the client config shape, or `null`
  * when no credential is available. Adapters use this for the lazy setup check.
  */
-export function toClientConfig(cfg: ResolvedRyzomePluginConfig): {
-	apiKey?: string;
-	accessToken?: string;
-	authMode: RyzomeAuthMode;
-	apiUrl: string;
-	appUrl: string;
-} | null {
+export function toClientConfig(
+	cfg: ResolvedRyzomePluginConfig,
+): RyzomeClientConfig | null {
 	if (!hasCredential(cfg)) return null;
 	return {
 		apiKey: cfg.apiKey,

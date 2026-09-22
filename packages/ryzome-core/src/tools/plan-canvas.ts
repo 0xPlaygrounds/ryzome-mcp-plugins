@@ -41,7 +41,9 @@ export const planCanvasParamsSchema = z.object({
 					),
 				nodeId: objectIdStringSchema
 					.optional()
-					.describe("Optional caller-supplied 24-hex id for the canvas node"),
+					.describe(
+						"Optional caller-supplied 24-hex id for the canvas node and any new backing document",
+					),
 				color: hexColorSchema.describe("Step color as hex (e.g. '#FF6B6B')"),
 				group: z
 					.string()

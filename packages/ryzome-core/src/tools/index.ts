@@ -124,7 +124,7 @@ import type { RyzomeClientConfig } from "../lib/ryzome-client.js";
 export type ToolResult = {
 	content: Array<{ type: "text"; text: string }>;
 	/** Optional machine-readable projection of the text result (MCP structuredContent). */
-	structuredContent?: object;
+	structuredContent?: import("../lib/structured.js").StructuredToolResult;
 };
 
 export interface ToolEntry {

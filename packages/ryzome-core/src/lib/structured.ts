@@ -10,33 +10,33 @@ import { buildConversationAppUrl } from "./format-conversation-markdown.js";
 
 /** Machine-readable projections returned as MCP `structuredContent`. */
 
-export interface StructuredCanvasNode {
+export type StructuredCanvasNode = {
 	id: string;
 	kind: "document" | "group" | "unavailable";
 	documentId?: string;
 	title?: string;
 	x: number;
 	y: number;
-	w: number;
-	h: number;
+	width: number;
+	height: number;
 	color: string;
 	state: "Authorized" | "NotFound" | "Unauthorized" | "Error";
-}
+};
 
-export interface StructuredCanvasEdge {
+export type StructuredCanvasEdge = {
 	id: string;
 	from: string;
 	to: string;
 	label: string;
 	color: string;
-}
+};
 
-export interface StructuredCanvas {
+export type StructuredCanvas = {
 	id: string;
 	title: string;
 	nodes: StructuredCanvasNode[];
 	edges: StructuredCanvasEdge[];
-}
+};
 
 function toStructuredCanvasNode(
 	node: CanvasEditorView["nodes"][number],
@@ -46,8 +46,8 @@ function toStructuredCanvasNode(
 		id: node._id.$oid,
 		x: node.x,
 		y: node.y,
-		w: node.width,
-		h: node.height,
+		width: node.width,
+		height: node.height,
 		color: node.color,
 	};
 	if (data.kind === "document") {
@@ -90,7 +90,7 @@ export function toStructuredCanvas(canvas: CanvasEditorView): StructuredCanvas {
 	};
 }
 
-export interface StructuredDocument {
+export type StructuredDocument = {
 	id: string;
 	title: string;
 	kind: DocumentView["content"]["_type"];
@@ -106,7 +106,7 @@ export interface StructuredDocument {
 		downloadUrl?: string;
 		driveId?: string;
 	};
-}
+};
 
 export function toStructuredDocument(
 	document: DocumentView,
@@ -153,19 +153,19 @@ export function toStructuredDocument(
 	}
 }
 
-export interface StructuredBundleMember {
+export type StructuredBundleMember = {
 	id: string;
 	state: "Authorized" | "NotFound" | "Unauthorized" | "Error";
 	title?: string;
 	kind?: string;
 	message?: string;
-}
+};
 
-export interface StructuredBundle {
+export type StructuredBundle = {
 	id: string;
 	title: string;
 	members: StructuredBundleMember[];
-}
+};
 
 export function toStructuredBundle(bundle: BundleDocument): StructuredBundle {
 	return {
@@ -193,13 +193,13 @@ export function toStructuredBundle(bundle: BundleDocument): StructuredBundle {
 	};
 }
 
-export interface StructuredConversation {
+export type StructuredConversation = {
 	id: string;
 	title: string;
 	viewUrl: string;
 	context: Array<{ id: string; title?: string; kind?: string }>;
 	messages: Array<{ id: string; role: "user" | "assistant"; text: string }>;
-}
+};
 
 function messageText(message: ConversationView["messages"][number]): string {
 	if (message.content._type === "user") {
@@ -233,3 +233,30 @@ export function toStructuredConversation(
 		})),
 	};
 }
+
+export type CanvasCreationResult = {
+	id: string;
+	viewUrl: string;
+	nodeCount: number;
+	edgeCount: number;
+};
+export type CanvasUpdateResult = {
+	id: string;
+	viewUrl: string;
+	operationCount: number;
+};
+export type DocumentCreationResult = {
+	id: string;
+	title: string;
+	kind: DocumentView["content"]["_type"];
+	viewUrl: string;
+};
+export type StructuredToolResult =
+	| StructuredCanvas
+	| StructuredDocument
+	| StructuredBundle
+	| StructuredConversation
+	| CanvasCreationResult
+	| CanvasUpdateResult
+	| DocumentCreationResult
+	| import("./verify-structure.js").StructureReport;

@@ -149,22 +149,6 @@ def parse_config(raw: Mapping[str, Any] | None) -> ResolvedConfig:
     )
 
 
-def resolve_api_key_status(raw: Mapping[str, Any] | None) -> tuple[str | None, str | None]:
-    api_key, source = resolve_api_key_from_env()
-    if api_key:
-        return api_key, source
-
-    config = dict(raw or {})
-    raw_api_key = config.get("apiKey")
-    if isinstance(raw_api_key, str) and raw_api_key.strip():
-        try:
-            return _resolve_env_placeholders(raw_api_key.strip()), "config"
-        except ValueError:
-            return None, None
-
-    return None, None
-
-
 def is_configured() -> bool:
     try:
         raw = load_raw_config()
@@ -279,7 +263,15 @@ def describe_configuration() -> dict[str, Any]:
     try:
         raw = load_raw_config(config_path)
         resolved = parse_config(raw)
-        api_key, source = resolve_api_key_status(raw)
+        credential = resolved.api_key or resolved.access_token
+        auth_mode = "apiKey" if resolved.api_key else "bearer"
+        env_vars = (
+            RYZOME_API_KEY_ENV_VARS if resolved.api_key else RYZOME_ACCESS_TOKEN_ENV_VARS
+        )
+        source = next(
+            (f"environment ({name})" for name in env_vars if os.getenv(name, "").strip()),
+            "config",
+        )
     except Exception as exc:
         return {
             "configured": False,
@@ -288,10 +280,11 @@ def describe_configuration() -> dict[str, Any]:
         }
 
     return {
-        "configured": bool(api_key),
+        "configured": resolved.has_credential,
         "config_path": str(config_path),
-        "api_key_source": source,
-        "masked_api_key": _mask_secret(api_key) if api_key else None,
+        "auth_mode": auth_mode if credential else None,
+        "credential_source": source if credential else None,
+        "masked_credential": _mask_secret(credential) if credential else None,
         "api_url": resolved.api_url,
         "app_url": resolved.app_url,
     }

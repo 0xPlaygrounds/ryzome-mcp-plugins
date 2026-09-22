@@ -1,8 +1,8 @@
 # Hermes Ryzome plugin installed
 
-Hermes should prompt for `RYZOME_API_KEY` during install because this plugin declares it in `plugin.yaml` via `requires_env`.
+Set `RYZOME_API_KEY` or `RYZOME_ACCESS_TOKEN` in your environment or `~/.hermes/.env` before using the tools. Either credential enables the plugin; `/ryzome-status` reports the selected mode.
 
-If you skipped that prompt, configure the plugin with either:
+For example, configure an API key with:
 
 ```bash
 export RYZOME_API_KEY=***

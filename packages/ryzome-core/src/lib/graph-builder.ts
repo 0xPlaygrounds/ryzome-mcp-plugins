@@ -18,10 +18,6 @@ export interface StepInput {
 	title: string;
 	description: string;
 	dependsOn?: string[];
-	/** Optional edge labels keyed by the dependency (source) step id. */
-	edgeLabels?: Record<string, string>;
-	/** Optional caller-supplied 24-hex edge ids keyed by the dependency (source) step id. */
-	edgeIds?: Record<string, string>;
 	color?: string;
 	group?: string;
 	/**
@@ -38,6 +34,13 @@ export interface StepInput {
 	height?: number;
 }
 
+export interface EdgeInput {
+	from: string;
+	to: string;
+	id?: string;
+	label?: string;
+}
+
 export interface GroupInput {
 	id: string;
 	title?: string;
@@ -49,6 +52,8 @@ export interface CanvasPatchOperations {
 }
 
 export interface BuildCanvasGraphOptions {
+	/** Explicit edges preserve parallel relationships; omitted for plan/research dependencies. */
+	edges?: EdgeInput[];
 	/** Prepended to every new node's Text content (see provenance). */
 	header?: string;
 }
@@ -164,13 +169,68 @@ function buildNodeData(
 	};
 }
 
+function validateGraphIds(
+	steps: StepInput[],
+	canvasId: string,
+	edges: EdgeInput[],
+	groups: GroupInput[] = [],
+): void {
+	const documentRefs = new Set(
+		steps.flatMap((step) =>
+			step.documentId ? [step.documentId.toLowerCase()] : [],
+		),
+	);
+	if (documentRefs.has(canvasId.toLowerCase()))
+		throw new Error(
+			"Document ID collision: canvas id references an existing document",
+		);
+	const localIds = new Set<string>();
+	const nodeIds = new Set<string>();
+	const edgeIds = new Set<string>();
+	for (const step of steps) {
+		if (localIds.has(step.id))
+			throw new Error(`Duplicate local node id: ${step.id}`);
+		localIds.add(step.id);
+		if (!step.nodeId) continue;
+		const id = step.nodeId.toLowerCase();
+		if (nodeIds.has(id)) throw new Error(`Duplicate nodeId: ${step.nodeId}`);
+		nodeIds.add(id);
+		if (!step.documentId && documentRefs.has(id))
+			throw new Error(
+				`Document ID collision: nodeId ${step.nodeId} references an existing document`,
+			);
+		if (!step.documentId && id === canvasId.toLowerCase()) {
+			throw new Error(
+				`Document ID collision: nodeId ${step.nodeId} equals the canvas id`,
+			);
+		}
+	}
+	for (const edge of edges) {
+		if (!edge.id) continue;
+		const id = edge.id.toLowerCase();
+		if (edgeIds.has(id)) throw new Error(`Duplicate edge id: ${edge.id}`);
+		edgeIds.add(id);
+	}
+	const groupIds = new Set<string>();
+	for (const group of groups) {
+		if (groupIds.has(group.id) || localIds.has(group.id))
+			throw new Error(`Duplicate local group id: ${group.id}`);
+		groupIds.add(group.id);
+	}
+}
+
 export async function buildCanvasGraph(
 	steps: StepInput[],
 	canvasId: string,
 	groups?: GroupInput[],
 	options?: BuildCanvasGraphOptions,
 ): Promise<CanvasPatchOperations> {
-	void canvasId;
+	const edges: EdgeInput[] =
+		options?.edges ??
+		steps.flatMap((step) =>
+			(step.dependsOn ?? []).map((from) => ({ from, to: step.id })),
+		);
+	validateGraphIds(steps, canvasId, edges, groups);
 
 	const engine = resolveLayoutEngine();
 	const { nodeRects, groupRects } = await computeRects(steps, groups, engine);
@@ -201,22 +261,19 @@ export async function buildCanvasGraph(
 	});
 
 	const edgeOperations: PatchOperation[] = [];
-	for (const step of steps) {
-		for (const dep of step.dependsOn ?? []) {
-			const fromId = nodeIdMap.get(dep);
-			const toId = nodeIdMap.get(step.id);
-			if (!fromId || !toId) continue;
-
-			edgeOperations.push({
-				_type: "createEdge" as const,
-				id: step.edgeIds?.[dep] ?? new ObjectId().toString(),
-				fromNodeId: fromId,
-				fromSide: "bottom" as const,
-				toNodeId: toId,
-				toSide: "top" as const,
-				label: step.edgeLabels?.[dep] ?? "",
-			});
-		}
+	for (const edge of edges) {
+		const fromId = nodeIdMap.get(edge.from);
+		const toId = nodeIdMap.get(edge.to);
+		if (!fromId || !toId) continue;
+		edgeOperations.push({
+			_type: "createEdge",
+			id: edge.id ?? new ObjectId().toString(),
+			fromNodeId: fromId,
+			fromSide: "bottom",
+			toNodeId: toId,
+			toSide: "top",
+			label: edge.label ?? "",
+		});
 	}
 
 	const colorOperations: PatchOperation[] = steps

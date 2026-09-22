@@ -68,60 +68,74 @@
                       ]
                     },
                     "origin": {
-                      "type": "object",
-                      "properties": {
-                        "conversationId": {
+                      "anyOf": [
+                        {
                           "type": "object",
                           "properties": {
-                            "$oid": {
-                              "type": "string"
+                            "conversationId": {
+                              "type": "object",
+                              "properties": {
+                                "$oid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "$oid"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "messageId": {
+                              "type": "object",
+                              "properties": {
+                                "$oid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "$oid"
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
-                            "$oid"
+                            "conversationId",
+                            "messageId"
                           ],
                           "additionalProperties": false
                         },
-                        "messageId": {
-                          "type": "object",
-                          "properties": {
-                            "$oid": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "$oid"
-                          ],
-                          "additionalProperties": false
+                        {
+                          "type": "null"
                         }
-                      },
-                      "required": [
-                        "conversationId",
-                        "messageId"
-                      ],
-                      "additionalProperties": false
+                      ]
                     },
                     "agentConfig": {
-                      "type": "object",
-                      "properties": {
-                        "prompt": {
-                          "type": "string"
-                        },
-                        "apiKeyId": {
-                          "anyOf": [
-                            {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "prompt": {
                               "type": "string"
                             },
-                            {
-                              "type": "null"
+                            "apiKeyId": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
                             }
-                          ]
+                          },
+                          "required": [
+                            "prompt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
                         }
-                      },
-                      "required": [
-                        "prompt"
-                      ],
-                      "additionalProperties": false
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -262,12 +276,20 @@
                   "type": "object",
                   "properties": {
                     "nodes": {
+                      "maxItems": 0,
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "not": {}
+                      },
+                      "description": "Must be empty; add nodes with canvas tools"
                     },
                     "edges": {
+                      "maxItems": 0,
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "not": {}
+                      },
+                      "description": "Must be empty; add edges with canvas tools"
                     }
                   },
                   "required": [
@@ -345,7 +367,7 @@
                 "description": "Unique node identifier (local to this call)"
               },
               "nodeId": {
-                "description": "Optional caller-supplied 24-hex id for the canvas node",
+                "description": "Optional caller-supplied 24-hex id for the canvas node and any new backing document",
                 "type": "string",
                 "pattern": "^[a-fA-F0-9]{24}$"
               },
@@ -622,7 +644,7 @@
                 }
               },
               "nodeId": {
-                "description": "Optional caller-supplied 24-hex id for the canvas node",
+                "description": "Optional caller-supplied 24-hex id for the canvas node and any new backing document",
                 "type": "string",
                 "pattern": "^[a-fA-F0-9]{24}$"
               },
@@ -758,7 +780,7 @@
                 }
               },
               "nodeId": {
-                "description": "Optional caller-supplied 24-hex id for the canvas node",
+                "description": "Optional caller-supplied 24-hex id for the canvas node and any new backing document",
                 "type": "string",
                 "pattern": "^[a-fA-F0-9]{24}$"
               },
@@ -859,60 +881,74 @@
                       ]
                     },
                     "origin": {
-                      "type": "object",
-                      "properties": {
-                        "conversationId": {
+                      "anyOf": [
+                        {
                           "type": "object",
                           "properties": {
-                            "$oid": {
-                              "type": "string"
+                            "conversationId": {
+                              "type": "object",
+                              "properties": {
+                                "$oid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "$oid"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "messageId": {
+                              "type": "object",
+                              "properties": {
+                                "$oid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "$oid"
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
-                            "$oid"
+                            "conversationId",
+                            "messageId"
                           ],
                           "additionalProperties": false
                         },
-                        "messageId": {
-                          "type": "object",
-                          "properties": {
-                            "$oid": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "$oid"
-                          ],
-                          "additionalProperties": false
+                        {
+                          "type": "null"
                         }
-                      },
-                      "required": [
-                        "conversationId",
-                        "messageId"
-                      ],
-                      "additionalProperties": false
+                      ]
                     },
                     "agentConfig": {
-                      "type": "object",
-                      "properties": {
-                        "prompt": {
-                          "type": "string"
-                        },
-                        "apiKeyId": {
-                          "anyOf": [
-                            {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "prompt": {
                               "type": "string"
                             },
-                            {
-                              "type": "null"
+                            "apiKeyId": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
                             }
-                          ]
+                          },
+                          "required": [
+                            "prompt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
                         }
-                      },
-                      "required": [
-                        "prompt"
-                      ],
-                      "additionalProperties": false
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -1053,12 +1089,20 @@
                   "type": "object",
                   "properties": {
                     "nodes": {
+                      "maxItems": 0,
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "not": {}
+                      },
+                      "description": "Must be empty; add nodes with canvas tools"
                     },
                     "edges": {
+                      "maxItems": 0,
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "not": {}
+                      },
+                      "description": "Must be empty; add edges with canvas tools"
                     }
                   },
                   "required": [
@@ -1177,12 +1221,12 @@
   },
   {
     "name": "update_ryzome_canvas",
-    "description": "Apply canvas operations to an existing Ryzome canvas: setName, createNode (Group | ExistingDocument | NewDocument), setNodePosition, setNodeSize, setNodeTitle, setNodeColor, setNodeContent, appendNodeContent, setNodeFavoriteState, deleteNode, createEdge, setEdgeLabel, setEdgePosition, deleteEdge. Operations are applied in order in a single request.",
+    "description": "Apply canvas operations to an existing Ryzome canvas: setName, createNode (Group | ExistingDocument | NewDocument), setNodePosition, setNodeSize, setNodeTitle, setNodeColor, setNodeContent, appendNodeContent, setNodeFavoriteState, deleteNode, createEdge, setEdgeLabel, setEdgePosition, deleteEdge. Operations are submitted in order in one request and are not automatically retried. Read back the canvas after an uncertain failure. Content supports Text, File, Youtube, Website, or an empty Canvas; use bundle tools for bundle content.",
     "parameters": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
-        "canvasId": {
+        "canvas_id": {
           "type": "string",
           "pattern": "^[a-fA-F0-9]{24}$",
           "description": "ID of the canvas to update"
@@ -1384,60 +1428,74 @@
                                                     ]
                                                   },
                                                   "origin": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                      "conversationId": {
+                                                    "anyOf": [
+                                                      {
                                                         "type": "object",
                                                         "properties": {
-                                                          "$oid": {
-                                                            "type": "string"
+                                                          "conversationId": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                              "$oid": {
+                                                                "type": "string"
+                                                              }
+                                                            },
+                                                            "required": [
+                                                              "$oid"
+                                                            ],
+                                                            "additionalProperties": false
+                                                          },
+                                                          "messageId": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                              "$oid": {
+                                                                "type": "string"
+                                                              }
+                                                            },
+                                                            "required": [
+                                                              "$oid"
+                                                            ],
+                                                            "additionalProperties": false
                                                           }
                                                         },
                                                         "required": [
-                                                          "$oid"
+                                                          "conversationId",
+                                                          "messageId"
                                                         ],
                                                         "additionalProperties": false
                                                       },
-                                                      "messageId": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "$oid": {
-                                                            "type": "string"
-                                                          }
-                                                        },
-                                                        "required": [
-                                                          "$oid"
-                                                        ],
-                                                        "additionalProperties": false
+                                                      {
+                                                        "type": "null"
                                                       }
-                                                    },
-                                                    "required": [
-                                                      "conversationId",
-                                                      "messageId"
-                                                    ],
-                                                    "additionalProperties": false
+                                                    ]
                                                   },
                                                   "agentConfig": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                      "prompt": {
-                                                        "type": "string"
-                                                      },
-                                                      "apiKeyId": {
-                                                        "anyOf": [
-                                                          {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "object",
+                                                        "properties": {
+                                                          "prompt": {
                                                             "type": "string"
                                                           },
-                                                          {
-                                                            "type": "null"
+                                                          "apiKeyId": {
+                                                            "anyOf": [
+                                                              {
+                                                                "type": "string"
+                                                              },
+                                                              {
+                                                                "type": "null"
+                                                              }
+                                                            ]
                                                           }
-                                                        ]
+                                                        },
+                                                        "required": [
+                                                          "prompt"
+                                                        ],
+                                                        "additionalProperties": false
+                                                      },
+                                                      {
+                                                        "type": "null"
                                                       }
-                                                    },
-                                                    "required": [
-                                                      "prompt"
-                                                    ],
-                                                    "additionalProperties": false
+                                                    ]
                                                   }
                                                 },
                                                 "additionalProperties": false
@@ -1578,12 +1636,20 @@
                                                 "type": "object",
                                                 "properties": {
                                                   "nodes": {
+                                                    "maxItems": 0,
                                                     "type": "array",
-                                                    "items": {}
+                                                    "items": {
+                                                      "not": {}
+                                                    },
+                                                    "description": "Must be empty; add nodes with canvas tools"
                                                   },
                                                   "edges": {
+                                                    "maxItems": 0,
                                                     "type": "array",
-                                                    "items": {}
+                                                    "items": {
+                                                      "not": {}
+                                                    },
+                                                    "description": "Must be empty; add edges with canvas tools"
                                                   }
                                                 },
                                                 "required": [
@@ -1641,7 +1707,8 @@
                     "const": "setNodePosition"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "x": {
                     "type": "number"
@@ -1666,7 +1733,8 @@
                     "const": "setNodeSize"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "width": {
                     "type": "number"
@@ -1691,7 +1759,8 @@
                     "const": "setNodeTitle"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "title": {
                     "anyOf": [
@@ -1718,7 +1787,8 @@
                     "const": "setNodeColor"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "color": {
                     "anyOf": [
@@ -1745,7 +1815,8 @@
                     "const": "setNodeContent"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "content": {
                     "oneOf": [
@@ -1770,60 +1841,74 @@
                                 ]
                               },
                               "origin": {
-                                "type": "object",
-                                "properties": {
-                                  "conversationId": {
+                                "anyOf": [
+                                  {
                                     "type": "object",
                                     "properties": {
-                                      "$oid": {
-                                        "type": "string"
+                                      "conversationId": {
+                                        "type": "object",
+                                        "properties": {
+                                          "$oid": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "$oid"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "messageId": {
+                                        "type": "object",
+                                        "properties": {
+                                          "$oid": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "$oid"
+                                        ],
+                                        "additionalProperties": false
                                       }
                                     },
                                     "required": [
-                                      "$oid"
+                                      "conversationId",
+                                      "messageId"
                                     ],
                                     "additionalProperties": false
                                   },
-                                  "messageId": {
-                                    "type": "object",
-                                    "properties": {
-                                      "$oid": {
-                                        "type": "string"
-                                      }
-                                    },
-                                    "required": [
-                                      "$oid"
-                                    ],
-                                    "additionalProperties": false
+                                  {
+                                    "type": "null"
                                   }
-                                },
-                                "required": [
-                                  "conversationId",
-                                  "messageId"
-                                ],
-                                "additionalProperties": false
+                                ]
                               },
                               "agentConfig": {
-                                "type": "object",
-                                "properties": {
-                                  "prompt": {
-                                    "type": "string"
-                                  },
-                                  "apiKeyId": {
-                                    "anyOf": [
-                                      {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "prompt": {
                                         "type": "string"
                                       },
-                                      {
-                                        "type": "null"
+                                      "apiKeyId": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
                                       }
-                                    ]
+                                    },
+                                    "required": [
+                                      "prompt"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
                                   }
-                                },
-                                "required": [
-                                  "prompt"
-                                ],
-                                "additionalProperties": false
+                                ]
                               }
                             },
                             "additionalProperties": false
@@ -1964,12 +2049,20 @@
                             "type": "object",
                             "properties": {
                               "nodes": {
+                                "maxItems": 0,
                                 "type": "array",
-                                "items": {}
+                                "items": {
+                                  "not": {}
+                                },
+                                "description": "Must be empty; add nodes with canvas tools"
                               },
                               "edges": {
+                                "maxItems": 0,
                                 "type": "array",
-                                "items": {}
+                                "items": {
+                                  "not": {}
+                                },
+                                "description": "Must be empty; add edges with canvas tools"
                               }
                             },
                             "required": [
@@ -2003,7 +2096,8 @@
                     "const": "appendNodeContent"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "content": {
                     "type": "string"
@@ -2024,7 +2118,8 @@
                     "const": "setNodeFavoriteState"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "isFavorite": {
                     "type": "boolean"
@@ -2045,7 +2140,8 @@
                     "const": "deleteNode"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   }
                 },
                 "required": [
@@ -2074,7 +2170,8 @@
                     ]
                   },
                   "fromNodeId": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "fromSide": {
                     "type": "string",
@@ -2086,7 +2183,8 @@
                     ]
                   },
                   "toNodeId": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "toSide": {
                     "type": "string",
@@ -2125,7 +2223,8 @@
                     "const": "setEdgeLabel"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "label": {
                     "type": "string"
@@ -2146,10 +2245,12 @@
                     "const": "setEdgePosition"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "fromNodeId": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "fromSide": {
                     "type": "string",
@@ -2161,7 +2262,8 @@
                     ]
                   },
                   "toNodeId": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "toSide": {
                     "type": "string",
@@ -2191,7 +2293,8 @@
                     "const": "deleteEdge"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
                   }
                 },
                 "required": [
@@ -2206,7 +2309,7 @@
         }
       },
       "required": [
-        "canvasId",
+        "canvas_id",
         "operations"
       ],
       "additionalProperties": false
@@ -2214,19 +2317,19 @@
   },
   {
     "name": "verify_ryzome_structure",
-    "description": "Read back a Ryzome bundle or canvas and report its structure: member/node/edge counts, unavailable members or nodes (NotFound, Unauthorized, Error), edges missing labels, and edges referencing unknown node ids. Read-only; makes no changes.",
+    "description": "Read back a Ryzome bundle or canvas and report its structure: member/node/edge counts, unavailable members or nodes (NotFound, Unauthorized, Error), optional labeling advisories, and edges referencing unknown node ids. Read-only; makes no changes.",
     "parameters": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
-        "rootId": {
+        "document_id": {
           "type": "string",
           "pattern": "^[a-fA-F0-9]{24}$",
           "description": "ID of the bundle or canvas document to verify"
         }
       },
       "required": [
-        "rootId"
+        "document_id"
       ],
       "additionalProperties": false
     }

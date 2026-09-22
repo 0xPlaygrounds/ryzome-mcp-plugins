@@ -6,6 +6,7 @@ import {
 	toClientConfig,
 	toolRegistry,
 	type RyzomeClientConfig,
+	type ToolResult,
 } from "@ryzome-ai/ryzome-core";
 import { z } from "zod";
 
@@ -23,7 +24,7 @@ export interface RunnerSuccess {
 	ok: true;
 	toolName: string;
 	content: Array<{ type: "text"; text: string }>;
-	structuredContent?: object;
+	structuredContent?: ToolResult["structuredContent"];
 }
 
 export interface RunnerFailure {

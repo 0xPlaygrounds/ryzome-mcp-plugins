@@ -4,8 +4,8 @@ import { documentContentInputSchema } from "./document-content.js";
 import { objectIdStringSchema } from "./ids.js";
 
 /**
- * Zod mirror of the generated `CanvasOperation` union (see schema.d.ts).
- * Keep the variants and field names in lockstep with the backend spec.
+ * Zod input for all generated `CanvasOperation` variants (see schema.d.ts).
+ * Content payloads use the supported subset in document-content.ts.
  */
 
 const connectionSideSchema = z.enum(["left", "right", "top", "bottom"]);
@@ -51,72 +51,72 @@ export const canvasOperationSchema = z.discriminatedUnion("_type", [
 	}),
 	z.object({
 		_type: z.literal("setNodePosition"),
-		id: z.string(),
+		id: objectIdStringSchema,
 		x: z.number(),
 		y: z.number(),
 	}),
 	z.object({
 		_type: z.literal("setNodeSize"),
-		id: z.string(),
+		id: objectIdStringSchema,
 		width: z.number(),
 		height: z.number(),
 	}),
 	z.object({
 		_type: z.literal("setNodeTitle"),
-		id: z.string(),
+		id: objectIdStringSchema,
 		title: z.string().nullish(),
 	}),
 	z.object({
 		_type: z.literal("setNodeColor"),
-		id: z.string(),
+		id: objectIdStringSchema,
 		color: z.string().nullish(),
 	}),
 	z.object({
 		_type: z.literal("setNodeContent"),
-		id: z.string(),
+		id: objectIdStringSchema,
 		content: documentContentInputSchema,
 	}),
 	z.object({
 		_type: z.literal("appendNodeContent"),
-		id: z.string(),
+		id: objectIdStringSchema,
 		content: z.string(),
 	}),
 	z.object({
 		_type: z.literal("setNodeFavoriteState"),
-		id: z.string(),
+		id: objectIdStringSchema,
 		isFavorite: z.boolean(),
 	}),
-	z.object({ _type: z.literal("deleteNode"), id: z.string() }),
+	z.object({ _type: z.literal("deleteNode"), id: objectIdStringSchema }),
 	z.object({
 		_type: z.literal("createEdge"),
 		id: objectIdStringSchema
 			.nullish()
 			.describe("Optional 24-hex edge id (generated when omitted)"),
-		fromNodeId: z.string(),
+		fromNodeId: objectIdStringSchema,
 		fromSide: connectionSideSchema,
-		toNodeId: z.string(),
+		toNodeId: objectIdStringSchema,
 		toSide: connectionSideSchema,
 		label: z.string().nullish(),
 	}),
 	z.object({
 		_type: z.literal("setEdgeLabel"),
-		id: z.string(),
+		id: objectIdStringSchema,
 		label: z.string(),
 	}),
 	z.object({
 		_type: z.literal("setEdgePosition"),
-		id: z.string(),
-		fromNodeId: z.string(),
+		id: objectIdStringSchema,
+		fromNodeId: objectIdStringSchema,
 		fromSide: connectionSideSchema,
-		toNodeId: z.string(),
+		toNodeId: objectIdStringSchema,
 		toSide: connectionSideSchema,
 	}),
-	z.object({ _type: z.literal("deleteEdge"), id: z.string() }),
+	z.object({ _type: z.literal("deleteEdge"), id: objectIdStringSchema }),
 ]);
 
 export type CanvasOperationInput = z.infer<typeof canvasOperationSchema>;
 
 /** The zod mirror is structurally compatible with the generated union. */
 export function toPatchOperation(op: CanvasOperationInput): PatchOperation {
-	return op as unknown as PatchOperation;
+	return op;
 }

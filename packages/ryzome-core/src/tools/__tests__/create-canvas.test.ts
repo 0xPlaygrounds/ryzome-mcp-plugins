@@ -43,37 +43,27 @@ describe("executeCreateCanvas", () => {
 		);
 	});
 
-	it("should retry patchCanvas without recreating the canvas", async () => {
-		const createCanvasSpy = vi
+	it("surfaces ambiguous population failure without replaying the patch", async () => {
+		const create = vi
 			.spyOn(RyzomeClient.prototype, "createCanvas")
-			.mockResolvedValue({
-				canvas_id: { $oid: "0123456789abcdef01234567" },
-			});
-		const patchCanvasSpy = vi
+			.mockResolvedValue({ canvas_id: { $oid: "0123456789abcdef01234567" } });
+		const error = new RyzomeApiError({
+			stage: "patchCanvas",
+			method: "PATCH",
+			path: "/canvas/0123456789abcdef01234567",
+			status: 503,
+			body: "response lost",
+			retryable: true,
+			canvasId: "0123456789abcdef01234567",
+		});
+		const patch = vi
 			.spyOn(RyzomeClient.prototype, "patchCanvas")
-			.mockRejectedValueOnce(
-				new RyzomeApiError({
-					stage: "patchCanvas",
-					method: "PATCH",
-					path: "/canvas/0123456789abcdef01234567",
-					status: 503,
-					body: "temporary outage",
-					retryable: true,
-					canvasId: "0123456789abcdef01234567",
-				}),
-			)
-			.mockResolvedValueOnce(undefined);
-
-		const result = await executeCreateCanvas(
-			{ title: "Plan", nodes },
-			clientConfig,
-		);
-
-		expect(createCanvasSpy).toHaveBeenCalledTimes(1);
-		expect(patchCanvasSpy).toHaveBeenCalledTimes(2);
-		expect(result.content[0].text).toContain(
-			"https://ryzome.ai/workspace?document=0123456789abcdef01234567",
-		);
+			.mockRejectedValue(error);
+		await expect(
+			executeCreateCanvas({ title: "Plan", nodes }, clientConfig),
+		).rejects.toBe(error);
+		expect(create).toHaveBeenCalledTimes(1);
+		expect(patch).toHaveBeenCalledTimes(1);
 	});
 
 	it("should create a canvas with edges and report correct counts", async () => {

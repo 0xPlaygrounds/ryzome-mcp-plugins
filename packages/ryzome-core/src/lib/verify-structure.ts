@@ -185,7 +185,7 @@ export function formatStructureReport(report: StructureReport): string {
 		lines.push(...report.unavailable.map(describeUnavailable));
 	}
 	if (report.edgesMissingLabels.length) {
-		lines.push("", "Edges missing labels:");
+		lines.push("", "Advisory: edges missing optional labels:");
 		lines.push(
 			...report.edgesMissingLabels.map((e) => `- ${e.id}: ${e.from} → ${e.to}`),
 		);
@@ -200,13 +200,11 @@ export function formatStructureReport(report: StructureReport): string {
 		);
 	}
 	const issueCount =
-		report.unavailable.length +
-		report.edgesMissingLabels.length +
-		report.edgesWithUnknownNodes.length;
+		report.unavailable.length + report.edgesWithUnknownNodes.length;
 	lines.push(
 		"",
 		issueCount === 0
-			? "OK: all nodes readable, all edges labeled and resolvable."
+			? "OK: all nodes readable and all edge endpoints resolvable."
 			: `Issues: ${issueCount}`,
 	);
 	return lines.join("\n");

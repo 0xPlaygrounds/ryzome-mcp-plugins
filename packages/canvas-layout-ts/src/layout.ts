@@ -195,8 +195,8 @@ export async function computeCanvasLayout(
 	const elk = new ELK();
 	const laidOut = await elk.layout(root);
 
-	const nodeRects: Record<string, LayoutRect> = {};
-	const groupRects: Record<string, LayoutRect> = {};
+	const nodeRects: Record<string, LayoutRect> = Object.create(null);
+	const groupRects: Record<string, LayoutRect> = Object.create(null);
 
 	const walk = (
 		node: ElkNode,

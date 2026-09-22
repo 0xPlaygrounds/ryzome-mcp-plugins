@@ -63,7 +63,6 @@ const everyOperation = [
 	},
 	{ _type: "appendNodeContent", id: otherNodeId, content: "\nMore" },
 	{ _type: "setNodeFavoriteState", id: nodeId, isFavorite: true },
-	{ _type: "deleteNode", id: nodeId },
 	{
 		_type: "createEdge",
 		id: edgeId,
@@ -83,6 +82,7 @@ const everyOperation = [
 		toSide: "left",
 	},
 	{ _type: "deleteEdge", id: edgeId },
+	{ _type: "deleteNode", id: nodeId },
 ];
 
 afterEach(() => vi.unstubAllGlobals());
@@ -127,24 +127,24 @@ describe("update_ryzome_canvas", () => {
 			}),
 		).toThrow();
 		expect(() =>
-			updateCanvasParamsSchema.parse({ canvasId, operations: [] }),
+			updateCanvasParamsSchema.parse({ canvas_id: canvasId, operations: [] }),
 		).toThrow();
 		expect(() =>
 			updateCanvasParamsSchema.parse({
-				canvasId: "short",
+				canvas_id: "short",
 				operations: [{ _type: "setName", name: "x" }],
 			}),
 		).toThrow();
 	});
 
-	it("sends the operations verbatim in a single PATCH and reports the applied count", async () => {
+	it("sends the operations verbatim in a single PATCH and reports the submitted count (serialization only)", async () => {
 		const fetch = vi
 			.fn()
 			.mockResolvedValue(new Response("{}", { status: 200 }));
 		vi.stubGlobal("fetch", fetch);
 
 		const result = await executeUpdateCanvas(
-			{ canvasId, operations: everyOperation },
+			{ canvas_id: canvasId, operations: everyOperation },
 			config,
 		);
 
@@ -156,16 +156,41 @@ describe("update_ryzome_canvas", () => {
 		expect(await request.json()).toEqual({ operations: everyOperation });
 
 		expect(result.structuredContent).toEqual({
-			canvasId,
-			applied: everyOperation.length,
-			url: `https://app.example.com/workspace?document=${canvasId}`,
+			id: canvasId,
+			operationCount: everyOperation.length,
+			viewUrl: `https://app.example.com/workspace?document=${canvasId}`,
 		});
 		expect(result.content[0].text).toContain(
 			`View: https://app.example.com/workspace?document=${canvasId}`,
 		);
 		expect(result.content[0].text).toContain(
-			`Applied: ${everyOperation.length} operations`,
+			`Submitted: ${everyOperation.length} operations`,
 		);
+	});
+
+	it("reports submission without claiming effects for a successful no-op", async () => {
+		// Mirrors the backend's successful append to a missing node: no mutation receipt.
+		const fetch = vi
+			.fn()
+			.mockResolvedValue(new Response(null, { status: 200 }));
+		vi.stubGlobal("fetch", fetch);
+		const result = await executeUpdateCanvas(
+			{
+				canvas_id: canvasId,
+				operations: [
+					{
+						_type: "appendNodeContent",
+						id: nodeId,
+						content: "nothing to append to",
+					},
+				],
+			},
+			config,
+		);
+		expect(result.structuredContent.operationCount).toBe(1);
+		expect(result.structuredContent).not.toHaveProperty("applied");
+		expect(result.content[0].text).toContain("Changes are not verified");
+		expect(fetch).toHaveBeenCalledOnce();
 	});
 
 	it("surfaces non-retryable API failures", async () => {
@@ -175,7 +200,7 @@ describe("update_ryzome_canvas", () => {
 		);
 		await expect(
 			executeUpdateCanvas(
-				{ canvasId, operations: [{ _type: "setName", name: "x" }] },
+				{ canvas_id: canvasId, operations: [{ _type: "setName", name: "x" }] },
 				config,
 			),
 		).rejects.toMatchObject({ stage: "patchCanvas", status: 400 });
