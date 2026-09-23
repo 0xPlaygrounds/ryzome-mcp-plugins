@@ -1,5 +1,21 @@
 # @ryzome-ai/ryzome-mcp
 
+## 0.4.0
+
+### Minor Changes
+
+- 67eb75f: Align canvas reads with resource access states and add reference nodes, explicit layout,
+  caller-supplied IDs, provenance, canvas updates, structural inspection, bearer authentication,
+  and structured results. Preserve parallel edges, validate identity collisions before writes,
+  and avoid replaying ambiguous canvas mutations. Keep adapter diagnostics and results aligned.
+
+  Respect explicit dimensions in legacy layout spacing and send image-node canvas mutations only once.
+
+### Patch Changes
+
+- Updated dependencies [67eb75f]
+  - @ryzome-ai/ryzome-core@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
