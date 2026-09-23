@@ -6,6 +6,11 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
+        "id": {
+          "description": "Optional caller-supplied 24-hex id for the document",
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$"
+        },
         "title": {
           "description": "Document title",
           "type": "string"
@@ -20,6 +25,24 @@
           "items": {
             "type": "string"
           }
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "tags": {
+              "description": "Tags appended to the created document (deduplicated)",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "header": {
+              "description": "Line prepended to Text content, followed by a blank line (documents and new canvas nodes)",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Provenance metadata stamped onto created documents"
         },
         "content": {
           "description": "Initial document content",
@@ -45,60 +68,74 @@
                       ]
                     },
                     "origin": {
-                      "type": "object",
-                      "properties": {
-                        "conversationId": {
+                      "anyOf": [
+                        {
                           "type": "object",
                           "properties": {
-                            "$oid": {
-                              "type": "string"
+                            "conversationId": {
+                              "type": "object",
+                              "properties": {
+                                "$oid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "$oid"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "messageId": {
+                              "type": "object",
+                              "properties": {
+                                "$oid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "$oid"
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
-                            "$oid"
+                            "conversationId",
+                            "messageId"
                           ],
                           "additionalProperties": false
                         },
-                        "messageId": {
-                          "type": "object",
-                          "properties": {
-                            "$oid": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "$oid"
-                          ],
-                          "additionalProperties": false
+                        {
+                          "type": "null"
                         }
-                      },
-                      "required": [
-                        "conversationId",
-                        "messageId"
-                      ],
-                      "additionalProperties": false
+                      ]
                     },
                     "agentConfig": {
-                      "type": "object",
-                      "properties": {
-                        "prompt": {
-                          "type": "string"
-                        },
-                        "apiKeyId": {
-                          "anyOf": [
-                            {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "prompt": {
                               "type": "string"
                             },
-                            {
-                              "type": "null"
+                            "apiKeyId": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
                             }
-                          ]
+                          },
+                          "required": [
+                            "prompt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
                         }
-                      },
-                      "required": [
-                        "prompt"
-                      ],
-                      "additionalProperties": false
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -239,12 +276,20 @@
                   "type": "object",
                   "properties": {
                     "nodes": {
+                      "maxItems": 0,
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "not": {}
+                      },
+                      "description": "Must be empty; add nodes with canvas tools"
                     },
                     "edges": {
+                      "maxItems": 0,
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "not": {}
+                      },
+                      "description": "Must be empty; add edges with canvas tools"
                     }
                   },
                   "required": [
@@ -268,11 +313,16 @@
   },
   {
     "name": "create_ryzome_canvas",
-    "description": "Create a Ryzome canvas with explicitly defined nodes and edges. The result starts with a 'View: <url>' line — include that URL verbatim in your reply so the user can open the canvas.",
+    "description": "Create a Ryzome canvas with explicitly defined nodes and edges. Nodes either create a new text document (title + description) or reference an existing document (documentId). Positions are computed automatically unless x/y/width/height are given per node. The result starts with a 'View: <url>' line — include that URL verbatim in your reply so the user can open the canvas.",
     "parameters": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
+        "id": {
+          "description": "Optional caller-supplied 24-hex id for the canvas document",
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$"
+        },
         "title": {
           "type": "string",
           "description": "Canvas title"
@@ -280,6 +330,31 @@
         "description": {
           "description": "Canvas description",
           "type": "string"
+        },
+        "tags": {
+          "description": "Canvas tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "tags": {
+              "description": "Tags appended to the created document (deduplicated)",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "header": {
+              "description": "Line prepended to Text content, followed by a blank line (documents and new canvas nodes)",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Provenance metadata stamped onto created documents"
         },
         "nodes": {
           "minItems": 1,
@@ -289,15 +364,25 @@
             "properties": {
               "id": {
                 "type": "string",
-                "description": "Unique node identifier"
+                "description": "Unique node identifier (local to this call)"
+              },
+              "nodeId": {
+                "description": "Optional caller-supplied 24-hex id for the canvas node and any new backing document",
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{24}$"
+              },
+              "documentId": {
+                "description": "Reference an existing document by id instead of creating a new one",
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{24}$"
               },
               "title": {
-                "type": "string",
-                "description": "Node title"
+                "description": "Node title (new documents)",
+                "type": "string"
               },
               "description": {
-                "type": "string",
-                "description": "Node content"
+                "description": "Node content (new documents)",
+                "type": "string"
               },
               "color": {
                 "description": "Node color as hex (e.g. '#FF6B6B')",
@@ -307,12 +392,28 @@
               "group": {
                 "description": "ID of the group this node belongs to",
                 "type": "string"
+              },
+              "x": {
+                "description": "Explicit x position (overrides layout)",
+                "type": "number"
+              },
+              "y": {
+                "description": "Explicit y position (overrides layout)",
+                "type": "number"
+              },
+              "width": {
+                "description": "Explicit node width",
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "height": {
+                "description": "Explicit node height",
+                "type": "number",
+                "exclusiveMinimum": 0
               }
             },
             "required": [
-              "id",
-              "title",
-              "description"
+              "id"
             ],
             "additionalProperties": false
           },
@@ -324,6 +425,11 @@
           "items": {
             "type": "object",
             "properties": {
+              "id": {
+                "description": "Optional caller-supplied 24-hex id for the edge",
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{24}$"
+              },
               "from": {
                 "type": "string",
                 "description": "Source node id"
@@ -474,6 +580,11 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
+        "id": {
+          "description": "Optional caller-supplied 24-hex id for the canvas document",
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$"
+        },
         "title": {
           "type": "string",
           "description": "Canvas title"
@@ -481,6 +592,31 @@
         "description": {
           "description": "Canvas description",
           "type": "string"
+        },
+        "tags": {
+          "description": "Canvas tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "tags": {
+              "description": "Tags appended to the created document (deduplicated)",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "header": {
+              "description": "Line prepended to Text content, followed by a blank line (documents and new canvas nodes)",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Provenance metadata stamped onto created documents"
         },
         "steps": {
           "minItems": 1,
@@ -506,6 +642,11 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "nodeId": {
+                "description": "Optional caller-supplied 24-hex id for the canvas node and any new backing document",
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{24}$"
               },
               "color": {
                 "description": "Step color as hex (e.g. '#FF6B6B')",
@@ -566,6 +707,11 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
+        "id": {
+          "description": "Optional caller-supplied 24-hex id for the canvas document",
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$"
+        },
         "title": {
           "type": "string",
           "description": "Canvas title"
@@ -573,6 +719,31 @@
         "description": {
           "description": "Canvas description",
           "type": "string"
+        },
+        "tags": {
+          "description": "Canvas tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "tags": {
+              "description": "Tags appended to the created document (deduplicated)",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "header": {
+              "description": "Line prepended to Text content, followed by a blank line (documents and new canvas nodes)",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Provenance metadata stamped onto created documents"
         },
         "topic": {
           "type": "string",
@@ -607,6 +778,11 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "nodeId": {
+                "description": "Optional caller-supplied 24-hex id for the canvas node and any new backing document",
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{24}$"
               },
               "color": {
                 "description": "Finding color as hex (e.g. '#FF6B6B')",
@@ -664,7 +840,7 @@
   },
   {
     "name": "update_ryzome_document",
-    "description": "Update a standalone Ryzome document using document operations and metadata changes.",
+    "description": "Update a standalone Ryzome document using document operations and metadata changes. Tags can only be set when creating a document.",
     "parameters": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
@@ -705,60 +881,74 @@
                       ]
                     },
                     "origin": {
-                      "type": "object",
-                      "properties": {
-                        "conversationId": {
+                      "anyOf": [
+                        {
                           "type": "object",
                           "properties": {
-                            "$oid": {
-                              "type": "string"
+                            "conversationId": {
+                              "type": "object",
+                              "properties": {
+                                "$oid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "$oid"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "messageId": {
+                              "type": "object",
+                              "properties": {
+                                "$oid": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "$oid"
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
-                            "$oid"
+                            "conversationId",
+                            "messageId"
                           ],
                           "additionalProperties": false
                         },
-                        "messageId": {
-                          "type": "object",
-                          "properties": {
-                            "$oid": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "$oid"
-                          ],
-                          "additionalProperties": false
+                        {
+                          "type": "null"
                         }
-                      },
-                      "required": [
-                        "conversationId",
-                        "messageId"
-                      ],
-                      "additionalProperties": false
+                      ]
                     },
                     "agentConfig": {
-                      "type": "object",
-                      "properties": {
-                        "prompt": {
-                          "type": "string"
-                        },
-                        "apiKeyId": {
-                          "anyOf": [
-                            {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "prompt": {
                               "type": "string"
                             },
-                            {
-                              "type": "null"
+                            "apiKeyId": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
                             }
-                          ]
+                          },
+                          "required": [
+                            "prompt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
                         }
-                      },
-                      "required": [
-                        "prompt"
-                      ],
-                      "additionalProperties": false
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -899,12 +1089,20 @@
                   "type": "object",
                   "properties": {
                     "nodes": {
+                      "maxItems": 0,
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "not": {}
+                      },
+                      "description": "Must be empty; add nodes with canvas tools"
                     },
                     "edges": {
+                      "maxItems": 0,
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "not": {}
+                      },
+                      "description": "Must be empty; add edges with canvas tools"
                     }
                   },
                   "required": [
@@ -929,13 +1127,6 @@
         "description": {
           "description": "Update the document description",
           "type": "string"
-        },
-        "tags": {
-          "description": "Replace the document tags",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         },
         "in_library": {
           "description": "Control whether the document appears in the library",
@@ -1029,12 +1220,1132 @@
     }
   },
   {
+    "name": "update_ryzome_canvas",
+    "description": "Apply canvas operations to an existing Ryzome canvas: setName, createNode (Group | ExistingDocument | NewDocument), setNodePosition, setNodeSize, setNodeTitle, setNodeColor, setNodeContent, appendNodeContent, setNodeFavoriteState, deleteNode, createEdge, setEdgeLabel, setEdgePosition, deleteEdge. Operations are submitted in order in one request and are not automatically retried. Read back the canvas after an uncertain failure. Content supports Text, File, Youtube, Website, or an empty Canvas; use bundle tools for bundle content.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "canvas_id": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$",
+          "description": "ID of the canvas to update"
+        },
+        "operations": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "setName"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "_type",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "createNode"
+                  },
+                  "id": {
+                    "description": "Optional 24-hex node id (generated when omitted)",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[a-fA-F0-9]{24}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "width": {
+                    "type": "number"
+                  },
+                  "height": {
+                    "type": "number"
+                  },
+                  "data": {
+                    "anyOf": [
+                      {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "_type": {
+                                "type": "string",
+                                "const": "Group"
+                              },
+                              "_content": {
+                                "type": "object",
+                                "properties": {
+                                  "title": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "_type",
+                              "_content"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "_type": {
+                                "type": "string",
+                                "const": "ExistingDocument"
+                              },
+                              "_content": {
+                                "type": "object",
+                                "properties": {
+                                  "document_id": {
+                                    "type": "string",
+                                    "pattern": "^[a-fA-F0-9]{24}$"
+                                  }
+                                },
+                                "required": [
+                                  "document_id"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "_type",
+                              "_content"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "_type": {
+                                "type": "string",
+                                "const": "NewDocument"
+                              },
+                              "_content": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "description": "Optional 24-hex id for the new backing document",
+                                    "type": "string",
+                                    "pattern": "^[a-fA-F0-9]{24}$"
+                                  },
+                                  "title": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "description": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "generated": {
+                                    "anyOf": [
+                                      {
+                                        "type": "boolean"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "tags": {
+                                    "anyOf": [
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "content": {
+                                    "anyOf": [
+                                      {
+                                        "oneOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "_type": {
+                                                "type": "string",
+                                                "const": "Text"
+                                              },
+                                              "_content": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "text": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "string"
+                                                      },
+                                                      {
+                                                        "type": "null"
+                                                      }
+                                                    ]
+                                                  },
+                                                  "origin": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "object",
+                                                        "properties": {
+                                                          "conversationId": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                              "$oid": {
+                                                                "type": "string"
+                                                              }
+                                                            },
+                                                            "required": [
+                                                              "$oid"
+                                                            ],
+                                                            "additionalProperties": false
+                                                          },
+                                                          "messageId": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                              "$oid": {
+                                                                "type": "string"
+                                                              }
+                                                            },
+                                                            "required": [
+                                                              "$oid"
+                                                            ],
+                                                            "additionalProperties": false
+                                                          }
+                                                        },
+                                                        "required": [
+                                                          "conversationId",
+                                                          "messageId"
+                                                        ],
+                                                        "additionalProperties": false
+                                                      },
+                                                      {
+                                                        "type": "null"
+                                                      }
+                                                    ]
+                                                  },
+                                                  "agentConfig": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "object",
+                                                        "properties": {
+                                                          "prompt": {
+                                                            "type": "string"
+                                                          },
+                                                          "apiKeyId": {
+                                                            "anyOf": [
+                                                              {
+                                                                "type": "string"
+                                                              },
+                                                              {
+                                                                "type": "null"
+                                                              }
+                                                            ]
+                                                          }
+                                                        },
+                                                        "required": [
+                                                          "prompt"
+                                                        ],
+                                                        "additionalProperties": false
+                                                      },
+                                                      {
+                                                        "type": "null"
+                                                      }
+                                                    ]
+                                                  }
+                                                },
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "_type",
+                                              "_content"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "_type": {
+                                                "type": "string",
+                                                "const": "File"
+                                              },
+                                              "_content": {
+                                                "oneOf": [
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "_type": {
+                                                        "type": "string",
+                                                        "const": "s3Object"
+                                                      },
+                                                      "key": {
+                                                        "type": "string"
+                                                      },
+                                                      "file_type": {
+                                                        "type": "string"
+                                                      },
+                                                      "download_url": {
+                                                        "default": "",
+                                                        "type": "string"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "_type",
+                                                      "key",
+                                                      "file_type",
+                                                      "download_url"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "_type": {
+                                                        "type": "string",
+                                                        "const": "googleDriveObject"
+                                                      },
+                                                      "id": {
+                                                        "type": "string"
+                                                      },
+                                                      "file_type": {
+                                                        "type": "string"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "_type",
+                                                      "id",
+                                                      "file_type"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "_type",
+                                              "_content"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "_type": {
+                                                "type": "string",
+                                                "const": "Youtube"
+                                              },
+                                              "_content": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "videoId": {
+                                                    "type": "string"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "videoId"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "_type",
+                                              "_content"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "_type": {
+                                                "type": "string",
+                                                "const": "Website"
+                                              },
+                                              "_content": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "url": {
+                                                    "type": "string",
+                                                    "format": "uri"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "url"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "_type",
+                                              "_content"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "_type": {
+                                                "type": "string",
+                                                "const": "Canvas"
+                                              },
+                                              "_content": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "nodes": {
+                                                    "maxItems": 0,
+                                                    "type": "array",
+                                                    "items": {
+                                                      "not": {}
+                                                    },
+                                                    "description": "Must be empty; add nodes with canvas tools"
+                                                  },
+                                                  "edges": {
+                                                    "maxItems": 0,
+                                                    "type": "array",
+                                                    "items": {
+                                                      "not": {}
+                                                    },
+                                                    "description": "Must be empty; add edges with canvas tools"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "nodes",
+                                                  "edges"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "_type",
+                                              "_content"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "_type",
+                              "_content"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "_type",
+                  "x",
+                  "y",
+                  "width",
+                  "height"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "setNodePosition"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id",
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "setNodeSize"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "width": {
+                    "type": "number"
+                  },
+                  "height": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id",
+                  "width",
+                  "height"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "setNodeTitle"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "title": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "setNodeColor"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "color": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "setNodeContent"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "content": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "_type": {
+                            "type": "string",
+                            "const": "Text"
+                          },
+                          "_content": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "origin": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "conversationId": {
+                                        "type": "object",
+                                        "properties": {
+                                          "$oid": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "$oid"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "messageId": {
+                                        "type": "object",
+                                        "properties": {
+                                          "$oid": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "$oid"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "conversationId",
+                                      "messageId"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "agentConfig": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "prompt": {
+                                        "type": "string"
+                                      },
+                                      "apiKeyId": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "prompt"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "_type",
+                          "_content"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "_type": {
+                            "type": "string",
+                            "const": "File"
+                          },
+                          "_content": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "_type": {
+                                    "type": "string",
+                                    "const": "s3Object"
+                                  },
+                                  "key": {
+                                    "type": "string"
+                                  },
+                                  "file_type": {
+                                    "type": "string"
+                                  },
+                                  "download_url": {
+                                    "default": "",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "_type",
+                                  "key",
+                                  "file_type",
+                                  "download_url"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "_type": {
+                                    "type": "string",
+                                    "const": "googleDriveObject"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "file_type": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "_type",
+                                  "id",
+                                  "file_type"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "_type",
+                          "_content"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "_type": {
+                            "type": "string",
+                            "const": "Youtube"
+                          },
+                          "_content": {
+                            "type": "object",
+                            "properties": {
+                              "videoId": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "videoId"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "_type",
+                          "_content"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "_type": {
+                            "type": "string",
+                            "const": "Website"
+                          },
+                          "_content": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string",
+                                "format": "uri"
+                              }
+                            },
+                            "required": [
+                              "url"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "_type",
+                          "_content"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "_type": {
+                            "type": "string",
+                            "const": "Canvas"
+                          },
+                          "_content": {
+                            "type": "object",
+                            "properties": {
+                              "nodes": {
+                                "maxItems": 0,
+                                "type": "array",
+                                "items": {
+                                  "not": {}
+                                },
+                                "description": "Must be empty; add nodes with canvas tools"
+                              },
+                              "edges": {
+                                "maxItems": 0,
+                                "type": "array",
+                                "items": {
+                                  "not": {}
+                                },
+                                "description": "Must be empty; add edges with canvas tools"
+                              }
+                            },
+                            "required": [
+                              "nodes",
+                              "edges"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "_type",
+                          "_content"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id",
+                  "content"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "appendNodeContent"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id",
+                  "content"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "setNodeFavoriteState"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "isFavorite": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id",
+                  "isFavorite"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "deleteNode"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "createEdge"
+                  },
+                  "id": {
+                    "description": "Optional 24-hex edge id (generated when omitted)",
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[a-fA-F0-9]{24}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "fromNodeId": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "fromSide": {
+                    "type": "string",
+                    "enum": [
+                      "left",
+                      "right",
+                      "top",
+                      "bottom"
+                    ]
+                  },
+                  "toNodeId": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "toSide": {
+                    "type": "string",
+                    "enum": [
+                      "left",
+                      "right",
+                      "top",
+                      "bottom"
+                    ]
+                  },
+                  "label": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "_type",
+                  "fromNodeId",
+                  "fromSide",
+                  "toNodeId",
+                  "toSide"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "setEdgeLabel"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id",
+                  "label"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "setEdgePosition"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "fromNodeId": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "fromSide": {
+                    "type": "string",
+                    "enum": [
+                      "left",
+                      "right",
+                      "top",
+                      "bottom"
+                    ]
+                  },
+                  "toNodeId": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "toSide": {
+                    "type": "string",
+                    "enum": [
+                      "left",
+                      "right",
+                      "top",
+                      "bottom"
+                    ]
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id",
+                  "fromNodeId",
+                  "fromSide",
+                  "toNodeId",
+                  "toSide"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "_type": {
+                    "type": "string",
+                    "const": "deleteEdge"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  }
+                },
+                "required": [
+                  "_type",
+                  "id"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "description": "Ordered canvas operations to apply"
+        }
+      },
+      "required": [
+        "canvas_id",
+        "operations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "verify_ryzome_structure",
+    "description": "Read back a Ryzome bundle or canvas and report its structure: member/node/edge counts, unavailable members or nodes (NotFound, Unauthorized, Error), optional labeling advisories, and edges referencing unknown node ids. Read-only; makes no changes.",
+    "parameters": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$",
+          "description": "ID of the bundle or canvas document to verify"
+        }
+      },
+      "required": [
+        "document_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "create_ryzome_bundle",
     "description": "Create an ordered Ryzome bundle containing existing documents. Include the returned View URL in your reply.",
     "parameters": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
+        "id": {
+          "description": "Optional caller-supplied 24-hex id for the bundle document",
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$"
+        },
         "title": {
           "type": "string"
         },
@@ -1046,6 +2357,24 @@
           "items": {
             "type": "string"
           }
+        },
+        "provenance": {
+          "description": "Provenance metadata; only `tags` applies to bundles (they have no text content)",
+          "type": "object",
+          "properties": {
+            "tags": {
+              "description": "Tags appended to the created document (deduplicated)",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "header": {
+              "description": "Line prepended to Text content, followed by a blank line (documents and new canvas nodes)",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         },
         "document_ids": {
           "default": [],
@@ -1177,6 +2506,11 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "properties": {
+        "id": {
+          "description": "Optional caller-supplied 24-hex id for the conversation",
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$"
+        },
         "title": {
           "description": "Conversation title",
           "type": "string"

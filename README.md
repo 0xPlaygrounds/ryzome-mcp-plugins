@@ -10,7 +10,7 @@ This monorepo provides Ryzome canvas tools for AI agents across multiple integra
 
 | Package | Description | Registry |
 |---------|-------------|----------|
-| [`@ryzome-ai/ryzome-core`](packages/ryzome-core) | Shared logic: API client, 21 tools, graph builder, layout | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-core)](https://www.npmjs.com/package/@ryzome-ai/ryzome-core) |
+| [`@ryzome-ai/ryzome-core`](packages/ryzome-core) | Shared logic: API client, 23 tools, graph builder, layout | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-core)](https://www.npmjs.com/package/@ryzome-ai/ryzome-core) |
 | [`@ryzome-ai/ryzome-mcp`](packages/ryzome-mcp) | MCP server with tools + resources for Claude Code and other MCP clients | [![npm](https://img.shields.io/npm/v/@ryzome-ai/ryzome-mcp)](https://www.npmjs.com/package/@ryzome-ai/ryzome-mcp) |
 | [`@ryzome-ai/openclaw-ryzome`](packages/openclaw-ryzome) | OpenClaw plugin adapter | [![npm](https://img.shields.io/npm/v/@ryzome-ai/openclaw-ryzome)](https://www.npmjs.com/package/@ryzome-ai/openclaw-ryzome) |
 | [`hermes-ryzome-plugin`](packages/hermes-ryzome) | Hermes Agent plugin source package. Standard Hermes install repo: [`0xPlaygrounds/hermes-ryzome-plugin`](https://github.com/0xPlaygrounds/hermes-ryzome-plugin) | [![PyPI](https://img.shields.io/pypi/v/hermes-ryzome-plugin)](https://pypi.org/project/hermes-ryzome-plugin/) |
@@ -31,7 +31,7 @@ hermes-ryzome (Hermes plugin)
   └── ryzome-core (shared logic via Node runner)
 ```
 
-`ryzome-core` contains the API client, 21 tools, graph builder, layout engine, and markdown formatter. The MCP server, OpenClaw plugin, and Hermes plugin all reuse that shared tool implementation.
+`ryzome-core` contains the API client, 23 tools, graph builder, layout engine, and markdown formatter. The MCP server, OpenClaw plugin, and Hermes plugin all reuse that shared tool implementation.
 
 ## Getting Started
 

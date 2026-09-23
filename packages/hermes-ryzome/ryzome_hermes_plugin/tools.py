@@ -37,6 +37,9 @@ def _adapt_success(result: dict[str, Any]) -> dict[str, Any]:
         "content": content,
     }
 
+    if "structuredContent" in result:
+        payload["structuredContent"] = result["structuredContent"]
+
     if text_content is None:
         return payload
 

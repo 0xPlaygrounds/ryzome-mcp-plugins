@@ -121,7 +121,11 @@ export {
 import type { ZodObject, ZodRawShape } from "zod";
 import type { RyzomeClientConfig } from "../lib/ryzome-client.js";
 
-export type ToolResult = { content: Array<{ type: "text"; text: string }> };
+export type ToolResult = {
+	content: Array<{ type: "text"; text: string }>;
+	/** Optional machine-readable projection of the text result (MCP structuredContent). */
+	structuredContent?: import("../lib/structured.js").StructuredToolResult;
+};
 
 export interface ToolEntry {
 	name: string;
@@ -210,6 +214,20 @@ export {
 	executeUploadImage,
 } from "./upload-image.js";
 
+export {
+	updateCanvasToolName,
+	updateCanvasToolDescription,
+	updateCanvasParamsSchema,
+	executeUpdateCanvas,
+} from "./update-canvas.js";
+
+export {
+	verifyStructureToolName,
+	verifyStructureToolDescription,
+	verifyStructureParamsSchema,
+	executeVerifyStructure,
+} from "./verify-structure.js";
+
 import {
 	createDocumentToolName,
 	createDocumentToolDescription,
@@ -276,6 +294,18 @@ import {
 	uploadImageParamsSchema,
 	executeUploadImage,
 } from "./upload-image.js";
+import {
+	updateCanvasToolName,
+	updateCanvasToolDescription,
+	updateCanvasParamsSchema,
+	executeUpdateCanvas,
+} from "./update-canvas.js";
+import {
+	verifyStructureToolName,
+	verifyStructureToolDescription,
+	verifyStructureParamsSchema,
+	executeVerifyStructure,
+} from "./verify-structure.js";
 
 export const toolRegistry: ToolEntry[] = [
 	{
@@ -343,6 +373,18 @@ export const toolRegistry: ToolEntry[] = [
 		description: uploadImageToolDescription,
 		paramsSchema: uploadImageParamsSchema,
 		execute: executeUploadImage,
+	},
+	{
+		name: updateCanvasToolName,
+		description: updateCanvasToolDescription,
+		paramsSchema: updateCanvasParamsSchema,
+		execute: executeUpdateCanvas,
+	},
+	{
+		name: verifyStructureToolName,
+		description: verifyStructureToolDescription,
+		paramsSchema: verifyStructureParamsSchema,
+		execute: executeVerifyStructure,
 	},
 	{
 		name: createBundleToolName,

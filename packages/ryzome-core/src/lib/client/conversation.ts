@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { components } from "./schema";
 
 const objectIdSchema = z.object({ $oid: z.string() });
 
@@ -102,6 +103,8 @@ export const addMessageResponseSchema = z.object({
 });
 
 export interface CreateConversationRequest {
+	/** Caller-supplied 24-hex conversation id. */
+	id?: string;
 	title?: string | null;
 	context?: string[];
 }
@@ -114,7 +117,7 @@ export interface UpdateConversationRequest {
 }
 
 export interface AddMessageRequest {
-	content: MessageContentInput;
+	content: components["schemas"]["MessageContent"];
 	context?: string[];
 	agent_mode?: string | null;
 }

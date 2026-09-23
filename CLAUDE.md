@@ -6,7 +6,7 @@ This file provides guidance to coding agents working in this repository (Claude 
 
 A pnpm monorepo providing Ryzome canvas tools for AI agents via multiple integration surfaces:
 
-- `packages/ryzome-core` (`@ryzome-ai/ryzome-core`) — Shared logic: API client, 21 tools, graph builder, layout, canvas markdown formatter
+- `packages/ryzome-core` (`@ryzome-ai/ryzome-core`) — Shared logic: API client, 23 tools, graph builder, layout, canvas markdown formatter
 - `packages/openclaw-ryzome` (`@ryzome-ai/openclaw-ryzome`) — OpenClaw plugin adapter (thin wrapper over core)
 - `packages/hermes-ryzome` (`hermes-ryzome-plugin` on PyPI) — Hermes plugin source package. Standard Hermes install repo: `0xPlaygrounds/hermes-ryzome-plugin`. This monorepo copy stays tied to the shared `ryzome-core` development flow.
 - `packages/ryzome-mcp` (`@ryzome-ai/ryzome-mcp`) — MCP server with tools + resources for Claude Code / any MCP client
@@ -39,14 +39,14 @@ Integration tests hit the live Ryzome API and are gated by env vars: `RYZOME_ENA
 
 **`ryzome-core`** — shared logic, all other packages depend on this:
 
-- `packages/ryzome-core/src/config.ts` — Resolves config from env vars (`RYZOME_OPENCLAW_API_KEY`, `RYZOME_API_KEY`, `PLUGIN_USER_CONFIG_API_KEY`). Supports `${ENV_VAR}` syntax.
+- `packages/ryzome-core/src/config.ts` — Resolves config from env vars (`RYZOME_OPENCLAW_API_KEY`, `RYZOME_API_KEY`, `PLUGIN_USER_CONFIG_API_KEY`; or `RYZOME_ACCESS_TOKEN` for bearer auth when no API key is set — `authMode`). Supports `${ENV_VAR}` syntax.
 - `packages/ryzome-core/src/lib/ryzome-client.ts` — `openapi-fetch`-based API client. `RyzomeApiError` marks 408/429/5xx as retryable.
 - `packages/ryzome-core/src/lib/graph-builder.ts` — Converts tool steps into `createNode`/`createEdge`/`setNodeColor` patch operations. Supports node coloring and group containers. DAG depths via BFS.
 - `packages/ryzome-core/src/lib/layout.ts` — Positions nodes by depth level (320px wide, 80px H / 60px V gaps).
 - `packages/ryzome-core/src/lib/canvas-executor.ts` — Orchestrates create → build graph → patch → return URL.
 - `packages/ryzome-core/src/lib/format-canvas-markdown.ts` — Converts `CanvasEditorView` to LLM-readable markdown. Used by MCP resources.
 - `packages/ryzome-core/src/lib/retry.ts` — Max 2 retries with exponential backoff (250ms base).
-- `packages/ryzome-core/src/tools/` — 21 tools spanning canvas creation, document CRUD, library promotion, and image upload. Zod schemas + execute functions.
+- `packages/ryzome-core/src/tools/` — 23 tools spanning canvas creation, document CRUD, library promotion, and image upload. Zod schemas + execute functions.
 
 **`ryzome-mcp`** — MCP server (`packages/ryzome-mcp/src/server.ts`):
 
@@ -61,7 +61,7 @@ Onboarding invariants (to avoid re-debugging the same phantom):
 
 - Entry uses `definePluginEntry` from `openclaw/plugin-sdk/plugin-entry`; no hand-rolled `PluginApi` type.
 - Tools register **unconditionally** regardless of whether the API key is set. The api-key check is lazy: each tool's `execute` resolves config at call time and throws a setup-hint error if missing. Do not reintroduce an early return in `register()` — that's what made the plugin appear "broken" with no tools visible.
-- The manifest declares `contracts.tools` (all 21 tool names) and `activation.onCommands: ["ryzome"]`. `contracts.tools` is what makes OpenClaw auto-allowlist `openclaw-ryzome` into `plugins.allow` once a config entry exists — agents should **not** "fix" missing tools by writing to `plugins.allow` from the plugin CLI.
+- The manifest declares `contracts.tools` (all 23 tool names) and `activation.onCommands: ["ryzome"]`. `contracts.tools` is what makes OpenClaw auto-allowlist `openclaw-ryzome` into `plugins.allow` once a config entry exists — agents should **not** "fix" missing tools by writing to `plugins.allow` from the plugin CLI.
 - Onboarding path is `openclaw ryzome setup --key <api-key>` (and `openclaw ryzome status` to verify). The global `openclaw setup` wizard does not have a tool-plugin step today; upstream request tracked at [openclaw/openclaw#68115](https://github.com/openclaw/openclaw/issues/68115).
 
 **`hermes-ryzome`** — Hermes plugin source package (`packages/hermes-ryzome`). Standard user install path is the standalone repo `0xPlaygrounds/hermes-ryzome-plugin` via `hermes plugins install 0xPlaygrounds/hermes-ryzome-plugin --enable`, which prompts for `RYZOME_API_KEY` from `plugin.yaml` and saves it to `~/.hermes/.env`. Hermes general plugins should prefer `requires_env` + tools + optional slash commands (here: `/ryzome-status`), not `ctx.register_cli_command()`. Do not tell users to symlink `packages/hermes-ryzome` unless they are developing against this monorepo.
@@ -86,7 +86,7 @@ Tool params → Zod validation → canvas-executor
   → returns viewer URL + stats
 ```
 
-**Tool return format:** All tools return `{ content: [{ type: "text", text: string }] }`.
+**Tool return format:** All tools return `{ content: [{ type: "text", text: string }], structuredContent?: StructuredToolResult }`. The `get_ryzome_*` tools (and canvas creators/updaters) populate `structuredContent`; the MCP server forwards it.
 
 ## Tech Stack
 
@@ -101,9 +101,9 @@ Tool params → Zod validation → canvas-executor
 
 ## Adding New Canvas Operations
 
-`packages/ryzome-core/src/lib/client/index.ts` defines `PatchOperation` as a narrowed `Extract<>` of the full `Operation` union from `schema.d.ts`. It only includes the operation types the plugin actually uses. When adding a new canvas capability (e.g. a new patch operation type), widen this type first — downstream code won't compile until you do.
+`packages/ryzome-core/src/lib/client/index.ts` defines `PatchOperation` as the full generated `CanvasOperation` union from `schema.d.ts`. `lib/canvas-operations.ts` holds the Zod mirror used by `update_ryzome_canvas`; when the backend adds an operation variant, regenerate `schema.d.ts` and add the matching Zod variant there.
 
-`schema.d.ts` is auto-generated from the backend OpenAPI spec (`cargo run -p canvas-routes --bin generate-openapi` in the monorepo). When the backend has a route the spec hasn't been regenerated for, you can manually add paths/types with a `NOTE: Manually added — regenerate later` comment. Run `pnpm codegen:all` in the monorepo to regenerate all client specs.
+`schema.d.ts` is auto-generated from the backend OpenAPI spec (`cargo run -p canvas-api --bin generate-openapi` in the monorepo). When the backend has a route the spec hasn't been regenerated for, you can manually add paths/types with a `NOTE: Manually added — regenerate later` comment. Run `pnpm codegen:all` in the monorepo to regenerate all client specs.
 
 ## CI
 

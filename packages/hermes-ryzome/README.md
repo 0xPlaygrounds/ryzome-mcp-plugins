@@ -6,7 +6,7 @@
 
 - Python 3.10+
 - Node.js (the wheel bundles a compiled Node runner; `node` must be on `PATH`)
-- A Ryzome API key — [get one here](https://ryzome.ai/workspace#settings/api-keys)
+- A Ryzome API key or bearer token — [get one here](https://ryzome.ai/workspace#settings/api-keys)
 
 ## Install
 
@@ -24,13 +24,13 @@ For git installs via Hermes:
 hermes plugins install 0xPlaygrounds/hermes-ryzome-plugin --enable
 ```
 
-During `hermes plugins install`, Hermes prompts for `RYZOME_API_KEY` from `plugin.yaml` and saves it to `~/.hermes/.env` automatically.
+Configure one credential before using the tools: `RYZOME_API_KEY` or `RYZOME_ACCESS_TOKEN`. You can save it in `~/.hermes/.env`.
 
 The wheel bundles the Node runner (`ryzome_hermes_plugin/_runner.js`) — no separate npm install is required.
 
 ## Configure
 
-Hermes-native auth for general plugins is `requires_env` in `plugin.yaml`, which `hermes plugins install` prompts for and saves to `~/.hermes/.env`.
+The manifest lists both credentials as optional because either one is sufficient. Tool availability is checked by the plugin against the resolved environment or config-file credential.
 
 You can also configure the plugin manually with either:
 
@@ -52,7 +52,8 @@ or a config file at `~/.hermes/ryzome.json`:
 
 | Field | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `apiKey` | Yes | — | Ryzome API key |
+| `apiKey` | Either credential | — | Ryzome API key |
+| `accessToken` | Either credential | — | Ryzome bearer token; used when no API key is configured |
 | `apiUrl` | No | `https://api.ryzome.ai` | API base URL |
 | `appUrl` | No | `https://ryzome.ai` | App base URL (for viewer links) |
 
@@ -73,6 +74,8 @@ Environment variables `RYZOME_API_KEY`, `RYZOME_OPENCLAW_API_KEY`, or `PLUGIN_US
 | `update_ryzome_document` | Update a standalone Ryzome document using document operations and metadata changes |
 | `save_ryzome_node_to_library` | Promote an existing canvas node's backing document into the library |
 | `upload_ryzome_image` | Upload an image from a URL to an existing canvas as an image node |
+| `update_ryzome_canvas` | Submit ordered canvas operations using `canvas_id` |
+| `verify_ryzome_structure` | Read back a canvas or bundle using `document_id` |
 | `create_ryzome_bundle` | Create an ordered collection of existing documents |
 | `get_ryzome_bundle` | Retrieve a bundle and its member metadata, including access status |
 | `update_ryzome_bundle` | Add, remove, or reorder documents in a bundle |
@@ -90,7 +93,7 @@ Environment variables `RYZOME_API_KEY`, `RYZOME_OPENCLAW_API_KEY`, or `PLUGIN_US
 |---------|-------------|
 | `/ryzome-status` | Show Ryzome plugin configuration status inside a Hermes session |
 
-This matches how Hermes general plugins work in practice today: tools + optional slash commands, with auth handled through `requires_env` and `~/.hermes/.env`.
+`/ryzome-status` reports the selected authentication mode and masks the credential. Hermes receives `structuredContent` alongside text tool results.
 
 There is no separate plugin auth step inside `hermes setup` for general plugins.
 
@@ -101,14 +104,16 @@ There is no separate plugin auth step inside `hermes setup` for general plugins.
 | `RYZOME_API_KEY` | API key (standard) |
 | `RYZOME_OPENCLAW_API_KEY` | API key (alternative) |
 | `PLUGIN_USER_CONFIG_API_KEY` | API key (set automatically by some hosts) |
+| `RYZOME_ACCESS_TOKEN` | Bearer token when no API key is configured |
+| `PLUGIN_USER_CONFIG_ACCESS_TOKEN` | Bearer token fallback |
 | `RYZOME_HERMES_RUNNER` | Override the Node runner command (advanced) |
 | `RYZOME_HERMES_CONFIG_PATH` | Override the config file path (default: `~/.hermes/ryzome.json`) |
 
 ## Troubleshooting
 
-### `Ryzome API key not configured`
+### Missing credentials
 
-Tools register unconditionally but throw this error on call if no key is set. The standard fix is to reinstall or enable the plugin through Hermes so `requires_env` prompts for `RYZOME_API_KEY`, or set `RYZOME_API_KEY` manually.
+Set `RYZOME_API_KEY` or `RYZOME_ACCESS_TOKEN`, or configure `apiKey` or `accessToken` in `~/.hermes/ryzome.json`. Tools remain unavailable until a credential resolves. API keys take precedence when both credential types are supplied.
 
 ### `Could not find a Ryzome Hermes runner`
 
@@ -119,7 +124,7 @@ The wheel ships with a bundled Node runner. If this error appears, verify:
 
 ### 401 or 403 errors
 
-- Verify the API key is valid and has canvas route access
+- Verify the selected credential is valid and has canvas route access
 - If using a non-production API, confirm `apiUrl` matches that environment
 
 ## License

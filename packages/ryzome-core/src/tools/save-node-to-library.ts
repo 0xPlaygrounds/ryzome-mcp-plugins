@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { buildDocumentViewAppUrl } from "../lib/app-url.js";
+import { unwrapNodeData } from "../lib/client/index.js";
 import { RyzomeClient, type RyzomeClientConfig } from "../lib/ryzome-client.js";
 
 export const saveNodeToLibraryToolName = "save_ryzome_node_to_library";
@@ -29,11 +30,17 @@ export async function executeSaveNodeToLibrary(
 		);
 	}
 
-	if (node.data._type !== "Document") {
+	const data = unwrapNodeData(node.data);
+	if (data.kind === "unavailable") {
+		throw new Error(
+			`Node ${params.node_id} cannot be saved: its document is unavailable (${data.state}).`,
+		);
+	}
+	if (data.kind !== "document") {
 		throw new Error("Only document-backed nodes can be saved to the library.");
 	}
 
-	const document = node.data;
+	const document = data.document;
 	if (document.inLibrary) {
 		return {
 			content: [

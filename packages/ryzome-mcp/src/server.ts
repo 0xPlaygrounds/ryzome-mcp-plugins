@@ -10,8 +10,10 @@ import {
 	buildDocumentViewAppUrl,
 	formatDocumentAsMarkdown,
 	parseConfig,
+	RYZOME_CREDENTIAL_SETUP_HINT,
 	RyzomeApiError,
 	RyzomeClient,
+	toClientConfig,
 	toolRegistry,
 	formatCanvasAsMarkdown,
 	formatConversationAsMarkdown,
@@ -34,19 +36,14 @@ const { version: SERVER_VERSION } = JSON.parse(
 ) as { version: string };
 
 function resolveClientConfig(): RyzomeClientConfig | null {
-	const cfg = parseConfig({});
-	if (!cfg.apiKey) return null;
-	return { apiKey: cfg.apiKey, apiUrl: cfg.apiUrl, appUrl: cfg.appUrl };
+	return toClientConfig(parseConfig({}));
 }
+
+const NOT_CONFIGURED_MESSAGE = `Ryzome credentials not configured. ${RYZOME_CREDENTIAL_SETUP_HINT}`;
 
 function notConfiguredError() {
 	return {
-		content: [
-			{
-				type: "text" as const,
-				text: "Ryzome API key not configured. Set the RYZOME_API_KEY environment variable.",
-			},
-		],
+		content: [{ type: "text" as const, text: NOT_CONFIGURED_MESSAGE }],
 		isError: true,
 	};
 }
@@ -70,7 +67,16 @@ export function createRyzomeMcpServer(): McpServer {
 				if (!clientConfig) return notConfiguredError();
 
 				try {
-					return await tool.execute(params, clientConfig);
+					// Forward structuredContent alongside text content when a tool provides it.
+					const result = await tool.execute(params, clientConfig);
+					return {
+						content: result.content,
+						...(result.structuredContent
+							? {
+									structuredContent: result.structuredContent,
+								}
+							: {}),
+					};
 				} catch (error) {
 					const message =
 						error instanceof RyzomeApiError
@@ -105,7 +111,7 @@ export function createRyzomeMcpServer(): McpServer {
 						{
 							uri: uri.href,
 							mimeType: "text/plain" as const,
-							text: "Ryzome API key not configured.",
+							text: NOT_CONFIGURED_MESSAGE,
 						},
 					],
 				};
@@ -149,7 +155,7 @@ export function createRyzomeMcpServer(): McpServer {
 						{
 							uri: uri.href,
 							mimeType: "text/plain" as const,
-							text: "Ryzome API key not configured.",
+							text: NOT_CONFIGURED_MESSAGE,
 						},
 					],
 				};
@@ -214,7 +220,7 @@ export function createRyzomeMcpServer(): McpServer {
 						{
 							uri: uri.href,
 							mimeType: "text/plain" as const,
-							text: "Ryzome API key not configured.",
+							text: NOT_CONFIGURED_MESSAGE,
 						},
 					],
 				};
@@ -272,7 +278,7 @@ export function createRyzomeMcpServer(): McpServer {
 						{
 							uri: uri.href,
 							mimeType: "text/plain" as const,
-							text: "Ryzome API key not configured.",
+							text: NOT_CONFIGURED_MESSAGE,
 						},
 					],
 				};
@@ -311,7 +317,7 @@ export function createRyzomeMcpServer(): McpServer {
 						{
 							uri: uri.href,
 							mimeType: "text/plain" as const,
-							text: "Ryzome API key not configured.",
+							text: NOT_CONFIGURED_MESSAGE,
 						},
 					],
 				};
@@ -375,7 +381,7 @@ export function createRyzomeMcpServer(): McpServer {
 						{
 							uri: uri.href,
 							mimeType: "text/plain" as const,
-							text: "Ryzome API key not configured.",
+							text: NOT_CONFIGURED_MESSAGE,
 						},
 					],
 				};

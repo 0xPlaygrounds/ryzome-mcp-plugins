@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { RyzomeClient, type RyzomeClientConfig } from "../lib/ryzome-client.js";
+import { toStructuredCanvas } from "../lib/structured.js";
 
 export const getCanvasToolName = "get_ryzome_canvas";
 export const getCanvasToolDescription =
@@ -12,7 +13,7 @@ export const getCanvasParamsSchema = z.object({
 export async function executeGetCanvas(
 	rawParams: unknown,
 	clientConfig: RyzomeClientConfig,
-): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+) {
 	const params = getCanvasParamsSchema.parse(rawParams);
 	const client = new RyzomeClient(clientConfig);
 
@@ -24,7 +25,7 @@ export async function executeGetCanvas(
 	return {
 		content: [
 			{
-				type: "text",
+				type: "text" as const,
 				text: JSON.stringify(
 					{
 						id: canvas._id.$oid,
@@ -40,5 +41,6 @@ export async function executeGetCanvas(
 				),
 			},
 		],
+		structuredContent: toStructuredCanvas(canvas),
 	};
 }

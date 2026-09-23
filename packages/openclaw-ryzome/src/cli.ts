@@ -4,6 +4,7 @@ import {
 	DEFAULT_RYZOME_APP_URL,
 	parseConfig,
 	RYZOME_API_KEY_ENV_VARS,
+	RYZOME_ACCESS_TOKEN_ENV_VARS,
 } from "@ryzome-ai/ryzome-core";
 import type {
 	OpenClawConfig,
@@ -58,25 +59,29 @@ function readRyzomeEntry(
 	return entries?.["openclaw-ryzome"];
 }
 
-function resolveApiKeyStatus(entry: RyzomePluginEntry | undefined): {
-	apiKey?: string;
+export function resolveCredentialStatus(entry: RyzomePluginEntry | undefined): {
+	credential?: string;
 	source?: string;
+	authMode: "apiKey" | "bearer";
 } {
-	const envVar = RYZOME_API_KEY_ENV_VARS.find((name) => {
-		const value = process.env[name];
-		return typeof value === "string" && value.trim().length > 0;
-	});
-	if (envVar) {
-		return { apiKey: process.env[envVar], source: `environment (${envVar})` };
-	}
-
-	const rawConfig = entry?.config;
-	const parsed = parseConfig(rawConfig);
-	if (parsed.apiKey) {
-		return { apiKey: parsed.apiKey, source: "config" };
-	}
-
-	return {};
+	const parsed = parseConfig(entry?.config);
+	const bearer = parsed.authMode === "bearer";
+	const credential = bearer ? parsed.accessToken : parsed.apiKey;
+	const configKey = bearer ? "accessToken" : "apiKey";
+	const envVars = bearer
+		? RYZOME_ACCESS_TOKEN_ENV_VARS
+		: RYZOME_API_KEY_ENV_VARS;
+	const configured = entry?.config?.[configKey];
+	const envVar = envVars.find((name) => process.env[name]?.trim());
+	return {
+		credential,
+		authMode: parsed.authMode,
+		source: credential
+			? typeof configured === "string" && configured.trim()
+				? "config"
+				: `environment (${envVar})`
+			: undefined,
+	};
 }
 
 function centerPad(content: string, totalWidth: number): string {
@@ -303,11 +308,11 @@ export function registerCliSetup(api: OpenClawPluginApi): void {
 					const current = api.runtime.config.loadConfig();
 					const entry = readRyzomeEntry(current);
 					const resolved = parseConfig(entry?.config);
-					const apiKeyStatus = resolveApiKeyStatus(entry);
+					const credentialStatus = resolveCredentialStatus(entry);
 
 					printStatusHeader();
 
-					if (!apiKeyStatus.apiKey) {
+					if (!credentialStatus.credential) {
 						console.log(
 							dim(
 								"  No bound thread detected. The rhizome stays out of circuit.",
@@ -322,10 +327,14 @@ export function registerCliSetup(api: OpenClawPluginApi): void {
 
 					console.log(
 						success(" 🫚 Ryzome in circuit.") +
-							dim(` (key from ${apiKeyStatus.source})`),
+							dim(
+								` (${credentialStatus.authMode} from ${credentialStatus.source})`,
+							),
 					);
 					console.log("");
-					console.log(accent("  Key:     ") + maskSecret(apiKeyStatus.apiKey));
+					console.log(
+						accent("  Credential: ") + maskSecret(credentialStatus.credential),
+					);
 					console.log(
 						accent("  Enabled: ") +
 							((entry?.enabled ?? true) ? success("yes") : dim("no")),

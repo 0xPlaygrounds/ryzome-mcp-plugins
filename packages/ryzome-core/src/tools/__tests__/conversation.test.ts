@@ -168,7 +168,7 @@ describe("conversation tools and API contracts", () => {
 				_type: "user",
 				content: [{ _type: "text", text: "Follow-up" }],
 			},
-			context: [contextId],
+			context: [{ $oid: contextId }],
 		});
 		expect(result.content[0].text).toContain("### User");
 	});

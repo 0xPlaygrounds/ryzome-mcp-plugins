@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { buildDocumentViewAppUrl } from "../lib/app-url.js";
 import { RyzomeClient, type RyzomeClientConfig } from "../lib/ryzome-client.js";
+import { toStructuredDocument } from "../lib/structured.js";
 
 export const getDocumentToolName = "get_ryzome_document";
 export const getDocumentToolDescription =
@@ -13,7 +14,7 @@ export const getDocumentParamsSchema = z.object({
 export async function executeGetDocument(
 	rawParams: unknown,
 	clientConfig: RyzomeClientConfig,
-): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+) {
 	const params = getDocumentParamsSchema.parse(rawParams);
 	const client = new RyzomeClient(clientConfig);
 
@@ -23,7 +24,7 @@ export async function executeGetDocument(
 	return {
 		content: [
 			{
-				type: "text",
+				type: "text" as const,
 				text: JSON.stringify(
 					{
 						id: document._id.$oid,
@@ -31,7 +32,7 @@ export async function executeGetDocument(
 						description: document.description,
 						contentType: document.content._type,
 						inLibrary: document.inLibrary ?? false,
-						isFavorite: document.isFavorite ?? false,
+						isFavorite: document.pinned ?? false,
 						tags: document.tags ?? [],
 						url,
 						content: document.content,
@@ -41,5 +42,6 @@ export async function executeGetDocument(
 				),
 			},
 		],
+		structuredContent: toStructuredDocument(document, clientConfig.appUrl),
 	};
 }

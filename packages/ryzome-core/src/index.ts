@@ -1,5 +1,6 @@
-export { parseConfig } from "./config.js";
+export { parseConfig, hasCredential, toClientConfig } from "./config.js";
 export type {
+	RyzomeAuthMode,
 	RyzomePluginConfig,
 	ResolvedRyzomePluginConfig,
 } from "./config.js";
@@ -7,9 +8,22 @@ export {
 	DEFAULT_RYZOME_API_URL,
 	DEFAULT_RYZOME_APP_URL,
 	RYZOME_API_KEY_ENV_VARS,
+	RYZOME_ACCESS_TOKEN_ENV_VARS,
+	RYZOME_CREDENTIAL_SETUP_HINT,
 } from "./config.js";
 
-export { RyzomeClient, RyzomeApiError } from "./lib/ryzome-client.js";
+export {
+	RyzomeClient,
+	RyzomeApiError,
+	resolveAuthMode,
+} from "./lib/ryzome-client.js";
+export {
+	formatStructureReport,
+	verifyDocumentStructure,
+} from "./lib/verify-structure.js";
+export type { StructureReport } from "./lib/verify-structure.js";
+export { canvasOperationSchema } from "./lib/canvas-operations.js";
+export type { CanvasOperationInput } from "./lib/canvas-operations.js";
 export {
 	buildCanvasAppUrl,
 	buildDocumentAppUrl,
@@ -30,6 +44,7 @@ export type {
 } from "./lib/client/index.js";
 export type {
 	ListDocumentsOptions,
+	RyzomeClientAuthMode,
 	RyzomeClientConfig,
 	RyzomeRequestStage,
 } from "./lib/ryzome-client.js";

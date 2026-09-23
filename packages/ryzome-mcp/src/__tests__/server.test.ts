@@ -21,6 +21,8 @@ describe("createRyzomeMcpServer", () => {
 		expect(expectedNames).toContain("update_ryzome_document");
 		expect(expectedNames).toContain("save_ryzome_node_to_library");
 		expect(expectedNames).toContain("upload_ryzome_image");
+		expect(expectedNames).toContain("update_ryzome_canvas");
+		expect(expectedNames).toContain("verify_ryzome_structure");
 		expect(expectedNames).toContain("create_ryzome_bundle");
 		expect(expectedNames).toContain("get_ryzome_bundle");
 		expect(expectedNames).toContain("update_ryzome_bundle");
@@ -31,7 +33,7 @@ describe("createRyzomeMcpServer", () => {
 		expect(expectedNames).toContain("add_ryzome_conversation_message");
 		expect(expectedNames).toContain("search_ryzome_conversations");
 		expect(expectedNames).toContain("delete_ryzome_conversation");
-		expect(expectedNames).toHaveLength(21);
+		expect(expectedNames).toHaveLength(23);
 	});
 });
 

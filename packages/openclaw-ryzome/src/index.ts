@@ -1,6 +1,8 @@
 import {
 	parseConfig,
+	RYZOME_CREDENTIAL_SETUP_HINT,
 	type RyzomeClientConfig,
+	toClientConfig,
 	toolRegistry,
 } from "@ryzome-ai/ryzome-core";
 import {
@@ -14,15 +16,8 @@ const RYZOME_SETUP_GUIDE_URL = "https://ryzome.ai/claw";
 const RYZOME_API_KEY_URL = "https://ryzome.ai/api-key";
 
 function tryResolveConfig(api: OpenClawPluginApi): RyzomeClientConfig | null {
-	const cfg = parseConfig(api.pluginConfig);
-	if (!cfg.apiKey) {
-		return null;
-	}
-	return {
-		apiKey: cfg.apiKey,
-		apiUrl: cfg.apiUrl,
-		appUrl: cfg.appUrl,
-	};
+	// "Has any credential": API key (x-api-key) or access token (bearer).
+	return toClientConfig(parseConfig(api.pluginConfig));
 }
 
 function logSetupHint(api: OpenClawPluginApi): void {
@@ -32,7 +27,9 @@ function logSetupHint(api: OpenClawPluginApi): void {
 	api.logger.info("[ryzome] run: openclaw ryzome setup --key <api-key>");
 	api.logger.info(`[ryzome] guide: ${RYZOME_SETUP_GUIDE_URL}`);
 	api.logger.info(`[ryzome] get a key: ${RYZOME_API_KEY_URL}`);
-	api.logger.info("[ryzome] env fallback: RYZOME_OPENCLAW_API_KEY");
+	api.logger.info(
+		"[ryzome] env fallback: RYZOME_OPENCLAW_API_KEY / RYZOME_API_KEY, or RYZOME_ACCESS_TOKEN for bearer auth",
+	);
 }
 
 function toolLabel(name: string): string {
@@ -46,7 +43,7 @@ function toolLabel(name: string): string {
 
 function missingApiKeyError(): Error {
 	return new Error(
-		`Ryzome plugin: apiKey is not configured. Run: openclaw ryzome setup --key <api-key>  (guide: ${RYZOME_SETUP_GUIDE_URL})`,
+		`Ryzome plugin: no credential is configured. Run: openclaw ryzome setup --key <api-key>  (guide: ${RYZOME_SETUP_GUIDE_URL}). ${RYZOME_CREDENTIAL_SETUP_HINT}`,
 	);
 }
 

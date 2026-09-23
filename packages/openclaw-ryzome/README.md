@@ -66,7 +66,7 @@ You can also configure manually in `~/.openclaw/openclaw.json`:
 | `apiUrl` | No | `https://api.ryzome.ai` | API base URL |
 | `appUrl` | No | `https://ryzome.ai` | App base URL (for viewer links) |
 
-Environment variables `RYZOME_OPENCLAW_API_KEY` or `RYZOME_API_KEY` also work.
+Environment variables `RYZOME_OPENCLAW_API_KEY` or `RYZOME_API_KEY` also work. To authenticate with a bearer token instead, set `accessToken` (or `RYZOME_ACCESS_TOKEN`); it is used only when no API key is configured.
 
 ## Tools
 
