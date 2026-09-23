@@ -36,7 +36,7 @@ Run with pnpm 10.31.0 and Node 26.9.0 (GitHub uses Node 24):
 - `pnpm build`
 - `pnpm lint:check`
 - `pnpm typecheck`
-- `pnpm test`: 231 TypeScript tests and 17 Python tests
+- `pnpm test`: 235 TypeScript tests and 17 Python tests
 - `pnpm test:integration`: packed OpenClaw stub integration passed; live smoke skipped
 - `pnpm changeset status --since=origin/main`: layout patch; core/MCP/OpenClaw/Hermes minor.
   The existing peer-dependency policy also schedules a Claude plugin major because
@@ -48,3 +48,20 @@ credentials and stubs. No live Ryzome calls, deployment verification, or release
 performed. The generated runner is rebuilt by the existing monorepo build and stays
 ignored here; the tracked tool manifest is regenerated. GitHub checks at the submitted
 tip remain the authority for the Node 24 CI result.
+
+## Copilot follow-up (2026-09-23)
+
+Addressed all three review comments on commit `67eb75f`:
+
+- Image uploads now send the canvas PATCH once. A response-loss regression uses
+  the real client error path and confirms the canvas ID survives without replay.
+  Existing storage upload retries are unchanged.
+- Legacy layout measures requested widths and requested/estimated heights before
+  spacing siblings and rows. Graph-level regressions cover wide nodes, tall nodes,
+  long text, and enclosing group bounds. Explicit x/y still override automatic layout.
+- Removed the blank line splitting the credential configuration table.
+
+The behavioral regressions failed on the original implementations and pass with
+these fixes. Fresh-context review found no additional actionable regressions.
+Build, lint, typecheck, package tests, packed stub integration, formatting, and
+whitespace validation were run for this follow-up; live smoke remains disabled.

@@ -125,7 +125,8 @@ export async function executeUploadImage(
 		});
 	}
 
-	await retryStage(() => client.patchCanvas(params.canvas_id, { operations }));
+	// A lost PATCH response may follow a committed create; do not replay it.
+	await client.patchCanvas(params.canvas_id, { operations });
 
 	const canvasUrl = buildCanvasAppUrl(clientConfig.appUrl, params.canvas_id);
 

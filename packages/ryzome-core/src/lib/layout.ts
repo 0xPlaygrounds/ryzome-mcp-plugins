@@ -17,6 +17,8 @@ export function estimateNodeHeight(description: string): number {
 }
 
 interface LegacyStep {
+	width?: number;
+	height?: number;
 	id: string;
 	description: string;
 	dependsOn?: string[];
@@ -30,7 +32,7 @@ interface LegacyGroup {
 /**
  * Legacy depth-grid layout, retained for rollback via RYZOME_LAYOUT_ENGINE=legacy.
  * Assigns each node a depth via BFS over dependsOn, spreads depths horizontally
- * in fixed-width rows, then wraps group bounding boxes around post-hoc members.
+ * in rows sized to their members, then wraps group bounding boxes around them.
  */
 export function computeLegacyLayoutRects(
 	steps: LegacyStep[],
@@ -55,21 +57,22 @@ export function computeLegacyLayoutRects(
 	let cumulativeY = 0;
 	for (let depth = 0; depth <= maxDepth; depth++) {
 		const group = byDepth.get(depth) ?? [];
+		const measured = group.map((step) => ({
+			step,
+			width: step.width ?? NODE_WIDTH,
+			height: step.height ?? estimateNodeHeight(step.description),
+		}));
 		const totalWidth =
-			group.length * NODE_WIDTH + Math.max(group.length - 1, 0) * NODE_GAP_X;
-		const startX = -totalWidth / 2;
-
-		for (let i = 0; i < group.length; i++) {
-			const step = group[i];
-			nodeRects.set(step.id, {
-				x: startX + i * (NODE_WIDTH + NODE_GAP_X),
-				y: cumulativeY,
-				width: NODE_WIDTH,
-				height: estimateNodeHeight(step.description),
-			});
+			measured.reduce((sum, node) => sum + node.width, 0) +
+			Math.max(group.length - 1, 0) * NODE_GAP_X;
+		let x = -totalWidth / 2;
+		let rowHeight = 0;
+		for (const { step, width, height } of measured) {
+			nodeRects.set(step.id, { x, y: cumulativeY, width, height });
+			x += width + NODE_GAP_X;
+			rowHeight = Math.max(rowHeight, height);
 		}
-
-		cumulativeY += BASE_NODE_HEIGHT + NODE_GAP_Y;
+		cumulativeY += rowHeight + NODE_GAP_Y;
 	}
 
 	const groupRects = new Map<string, LayoutRect>();

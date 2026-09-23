@@ -86,7 +86,6 @@ Config is resolved from a config object or environment variables:
 | `RYZOME_OPENCLAW_API_KEY` | API key (highest priority) |
 | `RYZOME_API_KEY` | API key (fallback) |
 | `PLUGIN_USER_CONFIG_API_KEY` | API key (used by Claude Code plugin) |
-
 | `RYZOME_ACCESS_TOKEN` | Bearer credential when no API key is configured |
 | `PLUGIN_USER_CONFIG_ACCESS_TOKEN` | Bearer credential fallback |
 
