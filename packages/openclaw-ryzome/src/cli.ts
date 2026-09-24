@@ -6,10 +6,7 @@ import {
 	RYZOME_API_KEY_ENV_VARS,
 	RYZOME_ACCESS_TOKEN_ENV_VARS,
 } from "@ryzome-ai/ryzome-core";
-import type {
-	OpenClawConfig,
-	OpenClawPluginApi,
-} from "openclaw/plugin-sdk/plugin-entry";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk/plugin-entry";
 import {
 	accent,
 	bold,
@@ -51,7 +48,7 @@ function createPrompt() {
 }
 
 function readRyzomeEntry(
-	config: OpenClawConfig,
+	config: ReturnType<OpenClawPluginApi["runtime"]["config"]["current"]>,
 ): RyzomePluginEntry | undefined {
 	const entries = config.plugins?.entries as
 		| Record<string, RyzomePluginEntry | undefined>
@@ -255,35 +252,29 @@ export function registerCliSetup(api: OpenClawPluginApi): void {
 										)
 									).trim();
 
-						const current = api.runtime.config.loadConfig();
-						const entries = (current.plugins?.entries ?? {}) as Record<
-							string,
-							RyzomePluginEntry | undefined
-						>;
-						const existingEntry = entries["openclaw-ryzome"] ?? {};
-						const nextEntry: RyzomePluginEntry = {
-							...existingEntry,
-							enabled: true,
-							config: {
-								...(existingEntry.config ?? {}),
-								apiKey,
-								...(apiUrl ? { apiUrl } : {}),
-								...(appUrl ? { appUrl } : {}),
+						await api.runtime.config.mutateConfigFile({
+							afterWrite: { mode: "auto" },
+							mutate: (draft) => {
+								const entries = draft.plugins?.entries ?? {};
+								const existingEntry = entries["openclaw-ryzome"] ?? {};
+								draft.plugins = {
+									...draft.plugins,
+									entries: {
+										...entries,
+										"openclaw-ryzome": {
+											...existingEntry,
+											enabled: true,
+											config: {
+												...existingEntry.config,
+												apiKey,
+												...(apiUrl ? { apiUrl } : {}),
+												...(appUrl ? { appUrl } : {}),
+											},
+										},
+									},
+								};
 							},
-						};
-
-						const nextConfig: OpenClawConfig = {
-							...current,
-							plugins: {
-								...current.plugins,
-								entries: {
-									...entries,
-									"openclaw-ryzome": nextEntry,
-								},
-							},
-						};
-
-						await api.runtime.config.writeConfigFile(nextConfig);
+						});
 
 						printSetupSuccess({
 							apiKey,
@@ -305,7 +296,7 @@ export function registerCliSetup(api: OpenClawPluginApi): void {
 				.command("status")
 				.description("Show the current Ryzome plugin configuration status")
 				.action(() => {
-					const current = api.runtime.config.loadConfig();
+					const current = api.runtime.config.current();
 					const entry = readRyzomeEntry(current);
 					const resolved = parseConfig(entry?.config);
 					const credentialStatus = resolveCredentialStatus(entry);

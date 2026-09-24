@@ -4,7 +4,7 @@
 	"description": "Ryzome core library — shared client, graph builder, and tools",
 	"license": "MIT",
 	"type": "module",
-	"packageManager": "pnpm@10.31.0",
+	"packageManager": "pnpm@12.6.0",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/0xPlaygrounds/ryzome-mcp-plugins.git",
@@ -27,6 +27,9 @@
 		"./tools": "./dist/tools/index.js",
 		"./lib/ryzome-client": "./dist/lib/ryzome-client.js"
 	},
+	"files": [
+		"dist"
+	],
 	"publishConfig": {
 		"access": "public"
 	},
@@ -41,15 +44,15 @@
 		"format:check": "biome format ."
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.6",
-		"@types/node": "^25.4.0",
-		"typescript": "^5.9.3",
-		"vitest": "^4.0.18"
+		"@biomejs/biome": "^2.5.14",
+		"@types/node": "^24",
+		"typescript": "^7.0.2",
+		"vitest": "^5.0.1"
 	},
 	"dependencies": {
 		"@ryzome-ai/canvas-layout-ts": "workspace:*",
-		"bson": "^7.2.0",
+		"bson": "^7.3.3",
 		"openapi-fetch": "^0.17.0",
-		"zod": "^4.3.6"
+		"zod": "^4.6.5"
 	}
 }

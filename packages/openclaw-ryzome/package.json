@@ -4,7 +4,7 @@
 	"description": "Ryzome Canvas OpenClaw Plugin",
 	"license": "MIT",
 	"type": "module",
-	"packageManager": "pnpm@10.31.0",
+	"packageManager": "pnpm@12.6.0",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/0xPlaygrounds/ryzome-mcp-plugins.git",
@@ -23,28 +23,30 @@
 	],
 	"openclaw": {
 		"extensions": [
-			"./src/index.ts"
+			"./dist/index.js"
 		],
 		"compat": {
-			"pluginApi": ">=2026.4.14",
-			"minGatewayVersion": "2026.4.14"
+			"pluginApi": ">=2026.9.5",
+			"minGatewayVersion": "2026.9.5"
 		},
 		"build": {
-			"openclawVersion": "2026.4.14",
-			"pluginSdkVersion": "2026.4.14"
+			"openclawVersion": "2026.9.5",
+			"pluginSdkVersion": "2026.9.5"
 		}
 	},
 	"exports": {
-		".": "./src/index.ts"
+		".": "./dist/index.js"
 	},
 	"files": [
-		"src/*.ts",
+		"dist",
 		"openclaw.plugin.json"
 	],
 	"publishConfig": {
 		"access": "public"
 	},
 	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"prepack": "pnpm build",
 		"test": "vitest run",
 		"test:integration": "vitest run --config vitest.integration.config.ts",
 		"test:watch": "vitest watch",
@@ -55,16 +57,16 @@
 		"format:check": "biome format ."
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.6",
-		"@sinclair/typebox": "^0.34.48",
-		"@types/node": "^25.4.0",
-		"openclaw": "^2026.4.14",
-		"typescript": "^5.9.3",
-		"vitest": "^4.0.18"
+		"@biomejs/biome": "^2.5.14",
+		"@sinclair/typebox": "^0.34.52",
+		"@types/node": "^24",
+		"openclaw": "^2026.9.5",
+		"typescript": "^7.0.2",
+		"vitest": "^5.0.1"
 	},
 	"dependencies": {
 		"@ryzome-ai/ryzome-core": "workspace:*",
-		"chalk": "^5.6.2",
-		"zod": "^4.3.6"
+		"chalk": "^6.0.0",
+		"zod": "^4.6.5"
 	}
 }

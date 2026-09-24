@@ -57,6 +57,10 @@ Integration tests hit the live Ryzome API and are gated by env vars: `RYZOME_ENA
 
 **`openclaw-ryzome`** — OpenClaw plugin adapter (`packages/openclaw-ryzome/src/index.ts`): thin wrapper registering core tools + CLI commands.
 
+The published OpenClaw extension is `dist/index.js`; `pnpm build` compiles it and
+`prepack` rebuilds it for npm archives. OpenClaw 2026.9.5 and later reject
+TypeScript-only plugin archives. Local link installs also need a build first.
+
 Onboarding invariants (to avoid re-debugging the same phantom):
 
 - Entry uses `definePluginEntry` from `openclaw/plugin-sdk/plugin-entry`; no hand-rolled `PluginApi` type.
@@ -91,7 +95,7 @@ Tool params → Zod validation → canvas-executor
 ## Tech Stack
 
 - **Runtime:** Node, ESM (`"type": "module"`)
-- **Package manager:** pnpm 10.31.0
+- **Package manager:** pnpm 12.6.0
 - **Monorepo:** pnpm workspaces (`packages/*`)
 - **Linting/formatting:** Biome (no ESLint or Prettier)
 - **Testing:** Vitest with globals enabled

@@ -58,13 +58,9 @@
                   "type": "object",
                   "properties": {
                     "text": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
+                      "type": [
+                        "string",
+                        "null"
                       ]
                     },
                     "origin": {
@@ -117,13 +113,9 @@
                               "type": "string"
                             },
                             "apiKeyId": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "null"
-                                }
+                              "type": [
+                                "string",
+                                "null"
                               ]
                             }
                           },
@@ -871,13 +863,9 @@
                   "type": "object",
                   "properties": {
                     "text": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
+                      "type": [
+                        "string",
+                        "null"
                       ]
                     },
                     "origin": {
@@ -930,13 +918,9 @@
                               "type": "string"
                             },
                             "apiKeyId": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "null"
-                                }
+                              "type": [
+                                "string",
+                                "null"
                               ]
                             }
                           },
@@ -1299,13 +1283,9 @@
                                 "type": "object",
                                 "properties": {
                                   "title": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
+                                    "type": [
+                                      "string",
+                                      "null"
                                     ]
                                   }
                                 },
@@ -1361,33 +1341,21 @@
                                     "pattern": "^[a-fA-F0-9]{24}$"
                                   },
                                   "title": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
+                                    "type": [
+                                      "string",
+                                      "null"
                                     ]
                                   },
                                   "description": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
+                                    "type": [
+                                      "string",
+                                      "null"
                                     ]
                                   },
                                   "generated": {
-                                    "anyOf": [
-                                      {
-                                        "type": "boolean"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
+                                    "type": [
+                                      "boolean",
+                                      "null"
                                     ]
                                   },
                                   "tags": {
@@ -1418,13 +1386,9 @@
                                                 "type": "object",
                                                 "properties": {
                                                   "text": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "string"
-                                                      },
-                                                      {
-                                                        "type": "null"
-                                                      }
+                                                    "type": [
+                                                      "string",
+                                                      "null"
                                                     ]
                                                   },
                                                   "origin": {
@@ -1477,13 +1441,9 @@
                                                             "type": "string"
                                                           },
                                                           "apiKeyId": {
-                                                            "anyOf": [
-                                                              {
-                                                                "type": "string"
-                                                              },
-                                                              {
-                                                                "type": "null"
-                                                              }
+                                                            "type": [
+                                                              "string",
+                                                              "null"
                                                             ]
                                                           }
                                                         },
@@ -1763,13 +1723,9 @@
                     "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "title": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   }
                 },
@@ -1791,13 +1747,9 @@
                     "pattern": "^[a-fA-F0-9]{24}$"
                   },
                   "color": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   }
                 },
@@ -1831,13 +1783,9 @@
                             "type": "object",
                             "properties": {
                               "text": {
-                                "anyOf": [
-                                  {
-                                    "type": "string"
-                                  },
-                                  {
-                                    "type": "null"
-                                  }
+                                "type": [
+                                  "string",
+                                  "null"
                                 ]
                               },
                               "origin": {
@@ -1890,13 +1838,9 @@
                                         "type": "string"
                                       },
                                       "apiKeyId": {
-                                        "anyOf": [
-                                          {
-                                            "type": "string"
-                                          },
-                                          {
-                                            "type": "null"
-                                          }
+                                        "type": [
+                                          "string",
+                                          "null"
                                         ]
                                       }
                                     },
@@ -2196,13 +2140,9 @@
                     ]
                   },
                   "label": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   }
                 },

@@ -20,34 +20,39 @@ describe("buildCanvasGraph reference nodes and explicit layout", () => {
 		{ width: 1000, height: undefined, description: "" },
 		{ width: undefined, height: 900, description: "" },
 		{ width: undefined, height: undefined, description: "x".repeat(10000) },
-	])("spaces legacy nodes using their final dimensions (case %#)", async (dimensions) => {
-		vi.stubEnv("RYZOME_LAYOUT_ENGINE", "legacy");
-		const graph = await buildCanvasGraph(
-			[
-				{ id: "large", title: "Large", ...dimensions, group: "g" },
-				{ id: "sibling", title: "Sibling", description: "", group: "g" },
-				{
-					id: "child",
-					title: "Child",
-					description: "",
-					dependsOn: ["large"],
-					group: "g",
-				},
-			],
-			canvasId,
-			[{ id: "g" }],
-		);
-		const [group, large, sibling, child] = createNodeOps(graph.operations);
-		expect(sibling.x).toBeGreaterThanOrEqual(large.x + large.width + 80);
-		expect(child.y).toBeGreaterThanOrEqual(
-			Math.max(large.y + large.height, sibling.y + sibling.height) + 60,
-		);
-		for (const node of [large, sibling, child]) {
-			expect(node.x).toBeGreaterThanOrEqual(group.x);
-			expect(node.x + node.width).toBeLessThanOrEqual(group.x + group.width);
-			expect(node.y + node.height).toBeLessThanOrEqual(group.y + group.height);
-		}
-	});
+	])(
+		"spaces legacy nodes using their final dimensions (case %#)",
+		async (dimensions) => {
+			vi.stubEnv("RYZOME_LAYOUT_ENGINE", "legacy");
+			const graph = await buildCanvasGraph(
+				[
+					{ id: "large", title: "Large", ...dimensions, group: "g" },
+					{ id: "sibling", title: "Sibling", description: "", group: "g" },
+					{
+						id: "child",
+						title: "Child",
+						description: "",
+						dependsOn: ["large"],
+						group: "g",
+					},
+				],
+				canvasId,
+				[{ id: "g" }],
+			);
+			const [group, large, sibling, child] = createNodeOps(graph.operations);
+			expect(sibling.x).toBeGreaterThanOrEqual(large.x + large.width + 80);
+			expect(child.y).toBeGreaterThanOrEqual(
+				Math.max(large.y + large.height, sibling.y + sibling.height) + 60,
+			);
+			for (const node of [large, sibling, child]) {
+				expect(node.x).toBeGreaterThanOrEqual(group.x);
+				expect(node.x + node.width).toBeLessThanOrEqual(group.x + group.width);
+				expect(node.y + node.height).toBeLessThanOrEqual(
+					group.y + group.height,
+				);
+			}
+		},
+	);
 
 	it("emits ExistingDocument nodes for documentId steps and NewDocument otherwise", async () => {
 		const steps: StepInput[] = [
