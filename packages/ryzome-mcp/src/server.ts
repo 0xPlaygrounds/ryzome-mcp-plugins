@@ -67,16 +67,7 @@ export function createRyzomeMcpServer(): McpServer {
 				if (!clientConfig) return notConfiguredError();
 
 				try {
-					// Forward structuredContent alongside text content when a tool provides it.
-					const result = await tool.execute(params, clientConfig);
-					return {
-						content: result.content,
-						...(result.structuredContent
-							? {
-									structuredContent: result.structuredContent,
-								}
-							: {}),
-					};
+					return await tool.execute(params, clientConfig);
 				} catch (error) {
 					const message =
 						error instanceof RyzomeApiError
