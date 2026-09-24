@@ -1,3 +1,4 @@
+import { ZodError } from "zod";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { executeVerifyStructure } from "../verify-structure.js";
 
@@ -328,7 +329,7 @@ describe("verify_ryzome_structure", () => {
 		vi.stubGlobal("fetch", fetch);
 		await expect(
 			executeVerifyStructure({ document_id: "nope" }, config),
-		).rejects.toThrow();
+		).rejects.toThrow(ZodError);
 		expect(fetch).not.toHaveBeenCalled();
 	});
 });

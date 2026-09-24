@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { PatchOperation } from "./client/index.js";
 import { documentContentInputSchema } from "./document-content.js";
 import { objectIdStringSchema } from "./ids.js";
 
@@ -115,8 +114,3 @@ export const canvasOperationSchema = z.discriminatedUnion("_type", [
 ]);
 
 export type CanvasOperationInput = z.infer<typeof canvasOperationSchema>;
-
-/** The zod mirror is structurally compatible with the generated union. */
-export function toPatchOperation(op: CanvasOperationInput): PatchOperation {
-	return op;
-}

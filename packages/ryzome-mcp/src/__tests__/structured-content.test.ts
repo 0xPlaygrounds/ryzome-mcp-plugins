@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { toolRegistry } from "@ryzome-ai/ryzome-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { createRyzomeMcpServer } from "../server.js";
 
@@ -49,10 +50,7 @@ it("forwards structuredContent from get_ryzome_document over MCP", async () => {
 	await withServer(async (client) => {
 		const { tools } = await client.listTools();
 		expect(tools.map((tool) => tool.name)).toEqual(
-			expect.arrayContaining([
-				"update_ryzome_canvas",
-				"verify_ryzome_structure",
-			]),
+			toolRegistry.map((tool) => tool.name),
 		);
 
 		const result = await client.callTool({

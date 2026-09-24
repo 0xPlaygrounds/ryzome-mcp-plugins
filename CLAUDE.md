@@ -105,6 +105,17 @@ Tool params → Zod validation → canvas-executor
 
 `schema.d.ts` is auto-generated from the backend OpenAPI spec (`cargo run -p canvas-api --bin generate-openapi` in the monorepo). When the backend has a route the spec hasn't been regenerated for, you can manually add paths/types with a `NOTE: Manually added — regenerate later` comment. Run `pnpm codegen:all` in the monorepo to regenerate all client specs.
 
+## Testing Strategy
+
+As a general strategy for tests:
+
+- NEVER write unit tests after you write code.
+- Highly prefer E2E tests as the sole testing mechanism. Use them to verify complex features work. At the end of E2E tests, produce a verifiable and repeatable artifact.
+- If you must test a system in isolation, FIRST write all the ways it could fail, THEN write the code.
+- Tautological tests considered harmful.
+- Change-detector tests considered harmful.
+- Do not create regression tests for bug fixes without a genuine gap in behavior testing.
+
 ## CI
 
 GitHub Actions runs lint, typecheck, and tests on every push to main and on PRs. Live smoke tests run as a separate gated job.
