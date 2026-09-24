@@ -1,13 +1,15 @@
 {
 	"private": true,
 	"name": "ryzome-openclaw-workspace",
-	"packageManager": "pnpm@10.31.0",
+	"type": "module",
+	"packageManager": "pnpm@12.6.0",
 	"scripts": {
 		"test": "pnpm --filter './packages/*' -r --if-present test",
 		"test:integration": "pnpm --filter './packages/*' -r --if-present test:integration",
 		"typecheck": "pnpm -r --if-present typecheck",
 		"lint": "pnpm -r --if-present lint",
 		"lint:check": "pnpm -r --if-present lint:check",
+		"lint:anti-slop": "oxlint packages scripts",
 		"format": "pnpm -r --if-present format",
 		"format:check": "pnpm -r --if-present format:check",
 		"build": "pnpm -r --if-present build",
@@ -16,6 +18,8 @@
 		"release": "pnpm build && changeset publish"
 	},
 	"devDependencies": {
-		"@changesets/cli": "^2.30.0"
+		"@changesets/cli": "^3.0.3",
+		"@oxlint/plugins": "1.85.0",
+		"oxlint": "1.85.0"
 	}
 }

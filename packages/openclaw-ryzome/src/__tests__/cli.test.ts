@@ -43,12 +43,11 @@ it.each([
 		env: {},
 		expected: { credential: undefined, authMode: "apiKey", source: undefined },
 	},
-])("status describes the credential selected for execution: $expected.authMode", ({
-	config,
-	env,
-	expected,
-}) => {
-	for (const name of envNames) vi.stubEnv(name, undefined);
-	for (const [name, value] of Object.entries(env)) vi.stubEnv(name, value);
-	expect(resolveCredentialStatus({ config })).toEqual(expected);
-});
+])(
+	"status describes the credential selected for execution: $expected.authMode",
+	({ config, env, expected }) => {
+		for (const name of envNames) vi.stubEnv(name, undefined);
+		for (const [name, value] of Object.entries(env)) vi.stubEnv(name, value);
+		expect(resolveCredentialStatus({ config })).toEqual(expected);
+	},
+);

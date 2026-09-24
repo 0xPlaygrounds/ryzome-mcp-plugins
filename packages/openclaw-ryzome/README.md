@@ -6,7 +6,7 @@
 
 ## Requirements
 
-- [OpenClaw](https://docs.openclaw.ai/plugin)
+- [OpenClaw](https://docs.openclaw.ai/plugin) 2026.9.5 or newer
 - A Ryzome API key — [get one here](https://ryzome.ai/workspace#settings/api-keys)
 
 ## Install
@@ -24,6 +24,7 @@ For local development from a monorepo checkout:
 git clone https://github.com/0xPlaygrounds/ryzome-mcp-plugins
 cd ryzome-mcp-plugins
 pnpm install
+pnpm build
 openclaw plugins install -l packages/openclaw-ryzome
 ```
 

@@ -4,7 +4,7 @@
 	"description": "Ryzome MCP server — expose Ryzome canvas tools to Claude Code and other MCP clients",
 	"license": "MIT",
 	"type": "module",
-	"packageManager": "pnpm@10.31.0",
+	"packageManager": "pnpm@12.6.0",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/0xPlaygrounds/ryzome-mcp-plugins.git",
@@ -44,14 +44,14 @@
 		"format:check": "biome format ."
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.6",
-		"@types/node": "^25.4.0",
-		"typescript": "^5.9.3",
-		"vitest": "^4.0.18"
+		"@biomejs/biome": "^2.5.14",
+		"@types/node": "^24",
+		"typescript": "^7.0.2",
+		"vitest": "^5.0.1"
 	},
 	"dependencies": {
-		"@modelcontextprotocol/sdk": "^1.13.1",
+		"@modelcontextprotocol/sdk": "^1.30.0",
 		"@ryzome-ai/ryzome-core": "workspace:*",
-		"zod": "^4.3.6"
+		"zod": "^4.6.5"
 	}
 }

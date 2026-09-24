@@ -17,7 +17,6 @@ type OpenClawConfig = {
 			string,
 			{ enabled?: boolean; config?: Record<string, unknown> } | undefined
 		>;
-		installs?: Record<string, unknown>;
 	};
 };
 
@@ -248,7 +247,7 @@ async function executeCreateCanvasTool(
 		"extensions",
 		"openclaw-ryzome",
 	);
-	const installedEntry = path.join(installedPluginRoot, "src", "index.ts");
+	const installedEntry = path.join(installedPluginRoot, "dist", "index.js");
 	const pluginModule = await withStateDirEnv(
 		stateDir,
 		async () => await import(pathToFileURL(installedEntry).href),
@@ -272,8 +271,14 @@ async function executeCreateCanvasTool(
 		pluginConfig: config.plugins?.entries?.["openclaw-ryzome"]?.config ?? {},
 		runtime: {
 			config: {
-				loadConfig: () => config,
-				writeConfigFile: async () => {},
+				current: () => config,
+				mutateConfigFile: async ({
+					mutate,
+				}: {
+					mutate: (draft: OpenClawConfig) => void;
+				}) => {
+					mutate(config);
+				},
 			},
 		},
 		logger,
@@ -507,7 +512,7 @@ async function installPackagedPlugin(stateDir: string) {
 	});
 
 	const installOutput = await runOpenClaw(
-		["plugins", "install", repackedTarball],
+		["plugins", "install", repackedTarball, "--force", "--accept-capabilities"],
 		stateDir,
 	);
 	return { installOutput, tarballPath: repackedTarball };
@@ -542,8 +547,16 @@ describe("OpenClaw integration", () => {
 				configAfterInstall.plugins?.entries?.["openclaw-ryzome"]?.enabled,
 			).toBe(true);
 			expect(
-				configAfterInstall.plugins?.installs?.["openclaw-ryzome"],
-			).toBeTruthy();
+				await pathExists(
+					path.join(
+						stateDir,
+						"extensions",
+						"openclaw-ryzome",
+						"dist",
+						"index.js",
+					),
+				),
+			).toBe(true);
 
 			const statusBeforeConfig = await runOpenClaw(
 				["ryzome", "status"],
@@ -551,11 +564,19 @@ describe("OpenClaw integration", () => {
 			);
 			expect(statusBeforeConfig).toContain("No bound thread detected");
 
-			await setPluginConfig(stateDir, {
-				apiKey: "stub-api-key",
-				apiUrl: stub.apiUrl,
-				appUrl: stub.appUrl,
-			});
+			await runOpenClaw(
+				[
+					"ryzome",
+					"setup",
+					"--key",
+					"stub-api-key",
+					"--api-url",
+					stub.apiUrl,
+					"--app-url",
+					stub.appUrl,
+				],
+				stateDir,
+			);
 
 			const statusAfterConfig = await runOpenClaw(
 				["ryzome", "status"],
