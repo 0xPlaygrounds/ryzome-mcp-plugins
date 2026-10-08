@@ -17,10 +17,10 @@ concurrency:
 jobs:
   verify:
     name: Lint, typecheck and test
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -57,7 +57,7 @@ jobs:
 
   live-smoke:
     name: Live production smoke test
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: verify
     env:
       RYZOME_ENABLE_LIVE_SMOKE: "1"
@@ -66,7 +66,7 @@ jobs:
       RYZOME_LIVE_SMOKE_APP_URL: ${{ vars.RYZOME_LIVE_SMOKE_APP_URL }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -100,13 +100,13 @@ jobs:
 
   release:
     name: Release
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs:
       - verify
       - live-smoke
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -161,7 +161,7 @@ jobs:
 
   dev-snapshot:
     name: Publish dev snapshots
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs:
       - verify
       - live-smoke
@@ -170,7 +170,7 @@ jobs:
     if: ${{ !contains(github.event.head_commit.message, 'Version Packages') }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
