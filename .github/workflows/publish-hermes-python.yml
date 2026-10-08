@@ -17,7 +17,7 @@ concurrency:
 jobs:
   publish:
     name: Build and publish Hermes Python plugin
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     # Auto-publish only on the "Version Packages" commit created by
     # changesets/action when that PR merges — same gate publish.yml uses
     # (inverted) for dev snapshots. Manual dispatch is always allowed.
@@ -26,7 +26,7 @@ jobs:
       startsWith(github.event.head_commit.message, 'Version Packages')
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
 
       # Fail fast with a clear message if the version in pyproject.toml has
       # already been uploaded to PyPI. PyPI rejects file-name reuse with a

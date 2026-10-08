@@ -20,10 +20,10 @@ concurrency:
 jobs:
   lint-typecheck-and-test:
     name: Lint, typecheck and test
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
         with:
           fetch-depth: 0
 
@@ -98,7 +98,7 @@ jobs:
   changeset-live-smoke:
     name: Live integration test for Changesets PRs
     if: github.event_name == 'pull_request' && github.head_ref == 'changeset-release/main'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: lint-typecheck-and-test
     env:
       RYZOME_ENABLE_LIVE_SMOKE: "1"
@@ -107,7 +107,7 @@ jobs:
       RYZOME_LIVE_SMOKE_APP_URL: ${{ vars.RYZOME_LIVE_SMOKE_APP_URL }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: useblacksmith/checkout@v1
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
