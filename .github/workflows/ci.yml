@@ -59,7 +59,7 @@ jobs:
 
           if [ "$has_release_changes" -eq 1 ] && [ "$has_changeset" -eq 0 ]; then
             echo "Release-relevant changes were detected under packages/ without a changeset."
-            echo "Run 'pnpm changeset' and commit the generated .changeset/*.md file in this PR."
+            echo "Write a .changeset/<short-name>.md intent file (see AGENTS.md Changeset Discipline) and commit it in this PR."
             exit 1
           fi
 
@@ -79,6 +79,15 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Parse committed changesets
+        run: |
+          pending=$(find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+          if [ "$pending" -eq 0 ]; then
+            echo "No changeset files to parse."
+            exit 0
+          fi
+          pnpm changeset status
 
       - name: Build packages
         run: pnpm build

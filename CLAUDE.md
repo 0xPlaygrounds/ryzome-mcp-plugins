@@ -23,8 +23,8 @@ pnpm -r --if-present typecheck  # tsc --noEmit in each package
 pnpm -r --if-present lint       # biome lint + typecheck
 pnpm format                # biome format --write (root)
 pnpm format:check          # biome format check (CI mode)
-pnpm changeset             # Create a changeset for version bumps
-pnpm version-packages      # Apply changesets + sync adapter metadata
+pnpm changeset status      # Print the release plan from .changeset/*.md
+pnpm version-packages      # Apply changesets + sync adapter metadata (Version Packages PR)
 pnpm release               # Build + publish all changed packages
 
 # Per-package
@@ -111,14 +111,29 @@ GitHub Actions runs lint, typecheck, and tests on every push to main and on PRs.
 
 ## Changeset Discipline
 
-- Any PR with release-relevant changes under `packages/` should include a changeset file created with `pnpm changeset`.
-- Treat code, config, manifest, or shipped asset changes in published packages as release-relevant by default. Pure test-only changes and Markdown-only documentation edits do not need a changeset.
-- Do not leave changeset creation for later in the flow. Add or update the changeset in the same PR as the package change so CI can enforce it.
+A changeset is an intent file. Leave `package.json` versions untouched; the Version Packages PR applies bumps.
 
-**Publishing** uses [Changesets](https://github.com/changesets/changesets) for independent per-package versioning:
+**Same feature PR.** Release-relevant changes under `packages/` (code, config, manifest, shipped assets) ship with a `.changeset/<short-name>.md` in that PR. Tests-only and Markdown-only docs skip this. CI green means the changeset is already in the PR — after merge, publishing is the open Version Packages PR, not a second changeset PR.
 
-- Each package is versioned independently — `pnpm changeset` to describe changes
-- On push to main, `changesets/action` either creates a "Version Packages" PR (if pending changesets exist) or publishes stable releases (if a version PR was just merged)
-- Dev snapshots are published on every main push under the `dev` npm tag when there are pending changesets
-- `scripts/sync-plugin-version.mjs` keeps `openclaw.plugin.json` version in sync with the `openclaw-ryzome` package version
-- `scripts/sync-hermes-plugin-version.mjs` keeps `packages/hermes-ryzome/plugin.yaml`, `pyproject.toml`, and `__version__` in sync with the `hermes-ryzome` package version
+Write the markdown file yourself (`pnpm changeset` is an interactive prompt and will hang). Confirm with `pnpm changeset status`:
+
+```md
+---
+"@ryzome-ai/ryzome-core": minor
+"@ryzome-ai/ryzome-mcp": minor
+---
+
+One changelog paragraph of what shipped.
+```
+
+List every published package whose shipped surface changes. New tools in `ryzome-core` also list adapters that re-export `toolRegistry` (`ryzome-mcp`, `openclaw-ryzome`, `hermes-ryzome`) even when those packages' own source is unchanged. List `ryzome-claude-plugin` only when its own shipped files change — `.mcp.json` runs `npx -y @ryzome-ai/ryzome-mcp` and floats to latest MCP.
+
+**Publishing** (Changesets, independent per-package versions):
+
+1. Feature PR merges with the intent file.
+2. `changesets/action` on `main` updates the open Version Packages PR and publishes `dev` npm snapshots.
+3. Merging Version Packages publishes stable npm (and runs the adapter version-sync scripts). Feature-PR merge is not a stable release.
+
+- `scripts/sync-plugin-version.mjs` keeps `openclaw.plugin.json` in sync with `openclaw-ryzome`
+- `scripts/sync-hermes-plugin-version.mjs` keeps `plugin.yaml`, `pyproject.toml`, and `__version__` in sync with `hermes-ryzome`
+- `scripts/sync-claude-plugin-version.mjs` keeps `plugin.json` and the root marketplace entry in sync with `ryzome-claude-plugin`

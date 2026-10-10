@@ -89,10 +89,10 @@ pnpm --filter @ryzome-ai/ryzome-core test -- --testPathPattern=layout
 This repo uses [Changesets](https://github.com/changesets/changesets) for versioning and publishing. Each package is versioned independently.
 
 1. Make your changes
-2. Run `pnpm changeset` to describe what changed and which packages are affected
+2. Add a `.changeset/<name>.md` intent file in the same PR (`pnpm changeset` interactively, or write the file — format in `AGENTS.md`)
 3. Commit the changeset file with your PR
-4. When the PR merges, a "Version Packages" PR is automatically created
-5. Merging that PR bumps versions, updates changelogs, and publishes to npm
+4. When the PR merges, the bot updates the open "Version Packages" PR and publishes `dev` snapshots
+5. Merging Version Packages bumps versions, updates changelogs, and publishes stable npm
 
 Dev snapshots are published on every push to `main` under the `dev` tag.
 
