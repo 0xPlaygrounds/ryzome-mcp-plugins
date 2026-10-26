@@ -21,22 +21,25 @@ afterEach(() => {
 it.each([
 	{ _type: "appendNodeContent", id: nodeId, content: "hello" },
 	{ _type: "createNode", x: 0, y: 0, width: 100, height: 100 },
-])("does not replay a committed mutation after response loss: $_type", async (operation) => {
-	let commits = 0;
-	const fetch = vi.fn(async () => {
-		commits++;
-		if (commits === 1) throw new TypeError("Response lost after commit");
-		return new Response(null, { status: 200 });
-	});
-	vi.stubGlobal("fetch", fetch);
-	await expect(
-		executeUpdateCanvas(
-			{ canvas_id: canvasId, operations: [operation] },
-			config,
-		),
-	).rejects.toMatchObject({ canvasId });
-	expect(commits).toBe(1);
-});
+])(
+	"does not replay a committed mutation after response loss: $_type",
+	async (operation) => {
+		let commits = 0;
+		const fetch = vi.fn(async () => {
+			commits++;
+			if (commits === 1) throw new TypeError("Response lost after commit");
+			return new Response(null, { status: 200 });
+		});
+		vi.stubGlobal("fetch", fetch);
+		await expect(
+			executeUpdateCanvas(
+				{ canvas_id: canvasId, operations: [operation] },
+				config,
+			),
+		).rejects.toMatchObject({ canvasId });
+		expect(commits).toBe(1);
+	},
+);
 
 it.each(
 	["elk", "legacy"].flatMap((engine) =>
@@ -45,56 +48,63 @@ it.each(
 			from,
 		})),
 	),
-)("preserves parallel edges for $from with $engine", async ({
-	engine,
-	from,
-}) => {
-	vi.stubEnv("RYZOME_LAYOUT_ENGINE", engine);
-	const requests: Array<{
-		operations: Array<{ _type: string; id: string; label: string }>;
-	}> = [];
-	vi.stubGlobal(
-		"fetch",
-		vi.fn(async (request: Request) => {
-			if (request.method === "POST")
-				return Response.json({
-					documents: [
-						{
-							_id: { $oid: canvasId },
-							content: { _type: "Canvas", _content: { nodes: [], edges: [] } },
-						},
-					],
-				});
-			requests.push(await request.json());
-			return new Response(null, { status: 200 });
-		}),
-	);
-	await executeCreateCanvas(
-		{
-			title: "Edges",
-			nodes: [
-				{ id: from, title: "A", description: "A" },
-				{ id: "b", title: "B", description: "B" },
-			],
-			edges: [
-				{ id: edgeId, from, to: "b", label: "supports" },
-				{ id: nodeId, from, to: "b", label: "contradicts" },
-				{ from, to: "b" },
-			],
-		},
-		config,
-	);
-	const edges = requests[0].operations.filter(
-		(op) => op._type === "createEdge",
-	);
-	expect(edges.map((op) => op.label)).toEqual(["supports", "contradicts", ""]);
-	expect(edges.map((op) => op.id)).toEqual([
-		edgeId,
-		nodeId,
-		expect.stringMatching(/^[a-f0-9]{24}$/),
-	]);
-	expect(new Set(edges.map((op) => op.id)).size).toBe(3);
-});
+)(
+	"preserves parallel edges for $from with $engine",
+	async ({ engine, from }) => {
+		vi.stubEnv("RYZOME_LAYOUT_ENGINE", engine);
+		const requests: Array<{
+			operations: Array<{ _type: string; id: string; label: string }>;
+		}> = [];
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (request: Request) => {
+				if (request.method === "POST")
+					return Response.json({
+						documents: [
+							{
+								_id: { $oid: canvasId },
+								content: {
+									_type: "Canvas",
+									_content: { nodes: [], edges: [] },
+								},
+							},
+						],
+					});
+				requests.push(await request.json());
+				return new Response(null, { status: 200 });
+			}),
+		);
+		await executeCreateCanvas(
+			{
+				title: "Edges",
+				nodes: [
+					{ id: from, title: "A", description: "A" },
+					{ id: "b", title: "B", description: "B" },
+				],
+				edges: [
+					{ id: edgeId, from, to: "b", label: "supports" },
+					{ id: nodeId, from, to: "b", label: "contradicts" },
+					{ from, to: "b" },
+				],
+			},
+			config,
+		);
+		const edges = requests[0].operations.filter(
+			(op) => op._type === "createEdge",
+		);
+		expect(edges.map((op) => op.label)).toEqual([
+			"supports",
+			"contradicts",
+			"",
+		]);
+		expect(edges.map((op) => op.id)).toEqual([
+			edgeId,
+			nodeId,
+			expect.stringMatching(/^[a-f0-9]{24}$/),
+		]);
+		expect(new Set(edges.map((op) => op.id)).size).toBe(3);
+	},
+);
 
 it.each(
 	[
@@ -110,27 +120,28 @@ it.each(
 		],
 		[{ id: "a", documentId: canvasId.toUpperCase() }],
 	].map((nodes) => ({ nodes })),
-)("rejects graph identity collisions before creating any document: $nodes", async ({
-	nodes,
-}) => {
-	const fetch = vi.fn();
-	vi.stubGlobal("fetch", fetch);
-	await expect(
-		executeCreateCanvas(
-			{
-				id: canvasId,
-				title: "Bad",
-				nodes: nodes.map((node) => ({
-					...node,
-					title: "Node",
-					description: "Body",
-				})),
-			},
-			config,
-		),
-	).rejects.toThrow(/duplicate|collision/i);
-	expect(fetch).not.toHaveBeenCalled();
-});
+)(
+	"rejects graph identity collisions before creating any document: $nodes",
+	async ({ nodes }) => {
+		const fetch = vi.fn();
+		vi.stubGlobal("fetch", fetch);
+		await expect(
+			executeCreateCanvas(
+				{
+					id: canvasId,
+					title: "Bad",
+					nodes: nodes.map((node) => ({
+						...node,
+						title: "Node",
+						description: "Body",
+					})),
+				},
+				config,
+			),
+		).rejects.toThrow(/duplicate|collision/i);
+		expect(fetch).not.toHaveBeenCalled();
+	},
+);
 
 it("preflights caller IDs in plan and research too", async () => {
 	const fetch = vi.fn();
