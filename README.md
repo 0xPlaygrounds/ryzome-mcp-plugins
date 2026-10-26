@@ -74,7 +74,21 @@ pnpm test                           # Run unit tests across all packages
 pnpm typecheck                      # tsc --noEmit in each package
 pnpm lint                           # Biome lint + typecheck
 pnpm format                         # Biome format --write
+pnpm lint:anti-slop                 # Experimental Oxlint policy check
 ```
+
+### Anti-slop trial
+
+[Anti-slop](https://github.com/dmmulroy/anti-slop) is vendored in
+`tools/oxlint/anti-slop/` and configured in `oxlint.config.ts`. It runs through
+Oxlint's JavaScript plugin API; Biome cannot load these rules. Keep using Biome
+for formatting and its existing lint rules. `pnpm lint:anti-slop` runs separately
+and is not yet a CI gate.
+
+The first full run found 1,242 existing violations: 818 spacing findings, 258
+unsafe dictionary types, 72 assertions without safety comments, and 94 other
+findings. The Oxlint rules are all enabled at error level so the command can be
+used to evaluate the policy. Review semantic changes before applying them.
 
 ### Per-package commands
 

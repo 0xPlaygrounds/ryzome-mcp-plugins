@@ -361,15 +361,14 @@ describe("Hermes runner integration", () => {
 				request.method === "PATCH" && request.url === `/v1/canvas/${CANVAS_ID}`,
 		);
 		expect(createRequest?.apiKey).toBe("stub-api-key");
+		const patchOperations = (
+			patchRequest?.body as
+				| { operations?: Array<{ _type: string }> }
+				| undefined
+		)?.operations;
+		expect(Array.isArray(patchOperations)).toBe(true);
 		expect(
-			Array.isArray(
-				(patchRequest?.body as { operations?: unknown[] })?.operations,
-			),
-		).toBe(true);
-		expect(
-			(
-				patchRequest?.body as { operations: Array<{ _type: string }> }
-			).operations.some((operation) => operation._type === "createEdge"),
+			patchOperations?.some((operation) => operation._type === "createEdge"),
 		).toBe(true);
 	});
 

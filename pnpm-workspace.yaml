@@ -1,2 +1,13 @@
 packages:
   - "packages/*"
+allowBuilds:
+  '@discordjs/opus': false
+  '@google/genai': false
+  '@matrix-org/matrix-sdk-crypto-nodejs': false
+  '@whiskeysockets/baileys': false
+  esbuild: true
+  koffi: false
+  openclaw: false
+  protobufjs: false
+  sharp: false
+  tree-sitter-bash: false
