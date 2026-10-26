@@ -1,5 +1,13 @@
 # @ryzome-ai/ryzome-claude-plugin
 
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies [73a284c]
+- Updated dependencies [67eb75f]
+  - @ryzome-ai/ryzome-mcp@0.4.0
+
 ## 2.0.0
 
 ### Patch Changes
