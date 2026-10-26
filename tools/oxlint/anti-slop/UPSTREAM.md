@@ -5,6 +5,7 @@
 - Installed from: `skills/install-anti-slop/scripts/install.mjs` at that revision
 - Copied source: `skills/install-anti-slop/assets/anti-slop/` to `tools/oxlint/anti-slop/`
 - Local changes: none to the vendored rule implementation
+- Documentation changes: clarify that the spacing rule's regression tests and verification workflow belong to the upstream anti-slop repository, and link to the tests at the pinned revision
 
 The repository's `oxlint.config.ts` chooses which rules to run. Update this
 record when refreshing the vendored source.

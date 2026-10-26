@@ -10,7 +10,7 @@ Copied files:
 
 The rule is MIT-licensed. Keep `LICENSE` with every redistributed copy, including skill assets. No Stylistic, ESLint, TypeScript-ESLint, or additional parser runtime dependency is required.
 
-## Local adaptations
+## Adaptations inherited from anti-slop
 
 - Replace upstream type aliases with Oxlint's ESTree, context, token/comment, and rule types. Upstream's token type includes comments; Oxlint exposes those separately.
 - Replace `AST_NODE_TYPES` enum members with identical string literals.
@@ -23,6 +23,8 @@ The opinionated policy lives outside this directory in `../../rules/require-read
 
 ## Updating and verification
 
-Fetch an explicit upstream revision, compare the original rule and types against this revision, and port relevant fixes while retaining the adapters above. Update this record and preserve the license. Run `pnpm check` and `pnpm sync:skill-assets` as required by repository guidance.
+Fetch an explicit upstream revision, compare the original rule and types against this revision, and port relevant fixes while retaining the adapters above. Update this record and preserve the license. Validate changes in the anti-slop repository before copying refreshed skill assets into this repository.
 
-Focused Oxlint RuleTester cases live in `../../rules/require-readable-spacing.test.ts`; they test exact fixes, JSDoc/trailing comments, same-line statements, semicolon-free code, TypeScript exports/overloads, Effect-style generators, and upstream removal behavior. `../../rules/require-readable-spacing-cli.test.ts` verifies the exported plugin through the native Oxlint CLI on multiple files, including rejection, autofix, and repeated-fix stability. The complete upstream JS/TS test suites have not been ported; this is focused compatibility evidence, not a claim of full upstream conformance.
+The pinned anti-slop revision contains focused [RuleTester tests](https://github.com/dmmulroy/anti-slop/blob/c44ef22ca116d0ba62a3ff663a0bd13a3f3fa40b/src/rules/require-readable-spacing.test.ts) and [native Oxlint CLI tests](https://github.com/dmmulroy/anti-slop/blob/c44ef22ca116d0ba62a3ff663a0bd13a3f3fa40b/src/rules/require-readable-spacing-cli.test.ts). Those tests belong to the upstream repository; they are not vendored here or run by this repository's CI. The complete ESLint Stylistic JS/TS test suites have not been ported into anti-slop.
+
+In this repository, `pnpm lint:anti-slop` runs the vendored plugin against package and script sources. It reports existing policy violations and is not a regression test suite for the rule implementation.
