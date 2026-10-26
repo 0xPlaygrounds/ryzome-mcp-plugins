@@ -173,11 +173,16 @@ describe("formatCanvasAsMarkdown", () => {
 					_type: "Authorized",
 					_content: { _type: "Group", title: "Planning Phase" },
 				}),
+				makeNodeShell("g2", {
+					_type: "Authorized",
+					_content: { _type: "Group" },
+				}),
 			],
 		});
 
 		const md = formatCanvasAsMarkdown(canvas as never);
 		expect(md).toContain("### Planning Phase");
+		expect(md).toContain("### Group");
 	});
 
 	it("should render unavailable nodes with their access state instead of Untitled", () => {

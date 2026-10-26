@@ -1,12 +1,9 @@
 import { z } from "zod";
 import { buildCanvasAppUrl } from "../lib/app-url.js";
-import {
-	canvasOperationSchema,
-	toPatchOperation,
-} from "../lib/canvas-operations.js";
+import { canvasOperationSchema } from "../lib/canvas-operations.js";
 import { objectIdStringSchema } from "../lib/ids.js";
-import type { CanvasUpdateResult } from "../lib/structured.js";
 import { RyzomeClient, type RyzomeClientConfig } from "../lib/ryzome-client.js";
+import type { CanvasUpdateResult } from "../lib/structured.js";
 
 export const updateCanvasToolName = "update_ryzome_canvas";
 export const updateCanvasToolDescription =
@@ -28,7 +25,7 @@ export async function executeUpdateCanvas(
 ) {
 	const params = updateCanvasParamsSchema.parse(rawParams);
 	const client = new RyzomeClient(clientConfig);
-	const operations = params.operations.map(toPatchOperation);
+	const operations = params.operations;
 
 	await client.patchCanvas(params.canvas_id, { operations });
 

@@ -1,6 +1,5 @@
 import type { components } from "./schema";
 
-type ObjectId = components["schemas"]["ObjectId"];
 type NodeEditorView = components["schemas"]["NodeEditorView"];
 
 /** Node data as served since RYZ-2397: access state wrapper around the node payload. */
@@ -32,14 +31,6 @@ export type UnwrappedNodeData =
 			message?: string;
 	  };
 
-function oidOf(value: unknown): string | null {
-	if (value && typeof value === "object" && "$oid" in value) {
-		const oid = (value as ObjectId).$oid;
-		return typeof oid === "string" ? oid : null;
-	}
-	return null;
-}
-
 function unwrapAuthorized(
 	content: NodeDocumentData | NodeGroupData,
 ): UnwrappedNodeData {
@@ -59,7 +50,7 @@ function unwrapAuthorized(
 export function unwrapNodeData(
 	data: NodeDataAccessView | LegacyNodeData | null | undefined,
 ): UnwrappedNodeData {
-	if (!data || typeof data !== "object") {
+	if (!data) {
 		return { kind: "unavailable", state: "Error", id: null };
 	}
 
@@ -71,14 +62,14 @@ export function unwrapNodeData(
 			return {
 				kind: "unavailable",
 				state: data._type,
-				id: oidOf(data._content),
+				id: data._content.$oid,
 			};
 		case "Error":
 			return {
 				kind: "unavailable",
 				state: "Error",
-				id: oidOf(data._content?.documentId),
-				message: data._content?.message,
+				id: data._content.documentId.$oid,
+				message: data._content.message,
 			};
 		case "Document":
 		case "Group":

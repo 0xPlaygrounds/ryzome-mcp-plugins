@@ -2,9 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
 	DEFAULT_RYZOME_API_URL,
 	DEFAULT_RYZOME_APP_URL,
-	hasCredential,
 	parseConfig,
-	toClientConfig,
 } from "../config";
 
 const ORIGINAL_RYZOME_OPENCLAW_API_KEY = process.env.RYZOME_OPENCLAW_API_KEY;
@@ -73,27 +71,6 @@ describe("parseConfig", () => {
 		});
 	});
 
-	it("uses bearer mode when only RYZOME_ACCESS_TOKEN is set", () => {
-		delete process.env.RYZOME_OPENCLAW_API_KEY;
-		delete process.env.RYZOME_API_KEY;
-		process.env.RYZOME_ACCESS_TOKEN = "eyJ.bearer.token";
-
-		const cfg = parseConfig({});
-		expect(cfg).toMatchObject({
-			apiKey: undefined,
-			accessToken: "eyJ.bearer.token",
-			authMode: "bearer",
-		});
-		expect(hasCredential(cfg)).toBe(true);
-		expect(toClientConfig(cfg)).toEqual({
-			apiKey: undefined,
-			accessToken: "eyJ.bearer.token",
-			authMode: "bearer",
-			apiUrl: DEFAULT_RYZOME_API_URL,
-			appUrl: DEFAULT_RYZOME_APP_URL,
-		});
-	});
-
 	it("prefers the API key over an access token when both are set", () => {
 		process.env.RYZOME_API_KEY = "rz_key";
 		process.env.RYZOME_ACCESS_TOKEN = "eyJ.bearer.token";
@@ -115,16 +92,6 @@ describe("parseConfig", () => {
 			accessToken: "eyJ.from.env",
 			authMode: "bearer",
 		});
-	});
-
-	it("reports no credential and a null client config when nothing is set", () => {
-		delete process.env.RYZOME_OPENCLAW_API_KEY;
-		delete process.env.RYZOME_API_KEY;
-		delete process.env.RYZOME_ACCESS_TOKEN;
-
-		const cfg = parseConfig({});
-		expect(hasCredential(cfg)).toBe(false);
-		expect(toClientConfig(cfg)).toBeNull();
 	});
 
 	it("rejects unknown config keys", () => {

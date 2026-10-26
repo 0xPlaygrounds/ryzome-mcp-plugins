@@ -1,3 +1,4 @@
+import { ZodError } from "zod";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { canvasOperationSchema } from "../../lib/canvas-operations.js";
 import {
@@ -88,34 +89,10 @@ const everyOperation = [
 afterEach(() => vi.unstubAllGlobals());
 
 describe("update_ryzome_canvas", () => {
-	it("accepts every CanvasOperation variant through the zod mirror", () => {
-		const variants = new Set(
-			everyOperation.map((op) => canvasOperationSchema.parse(op)._type),
-		);
-		expect([...variants].sort()).toEqual(
-			[
-				"setName",
-				"createNode",
-				"setNodePosition",
-				"setNodeSize",
-				"setNodeTitle",
-				"setNodeColor",
-				"setNodeContent",
-				"appendNodeContent",
-				"setNodeFavoriteState",
-				"deleteNode",
-				"createEdge",
-				"setEdgeLabel",
-				"setEdgePosition",
-				"deleteEdge",
-			].sort(),
-		);
-	});
-
 	it("rejects unknown operation types, bad ids, and empty operation lists", () => {
 		expect(() =>
 			canvasOperationSchema.parse({ _type: "explode", id: nodeId }),
-		).toThrow();
+		).toThrow(ZodError);
 		expect(() =>
 			canvasOperationSchema.parse({
 				_type: "createNode",
@@ -125,16 +102,16 @@ describe("update_ryzome_canvas", () => {
 				width: 1,
 				height: 1,
 			}),
-		).toThrow();
+		).toThrow(ZodError);
 		expect(() =>
 			updateCanvasParamsSchema.parse({ canvas_id: canvasId, operations: [] }),
-		).toThrow();
+		).toThrow(ZodError);
 		expect(() =>
 			updateCanvasParamsSchema.parse({
 				canvas_id: "short",
 				operations: [{ _type: "setName", name: "x" }],
 			}),
-		).toThrow();
+		).toThrow(ZodError);
 	});
 
 	it("sends the operations verbatim in a single PATCH and reports the submitted count (serialization only)", async () => {

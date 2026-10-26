@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { resolveAuthMode, RyzomeClient } from "../ryzome-client.js";
+import { RyzomeClient } from "../ryzome-client.js";
 
 const documentResponse = () =>
 	new Response(
@@ -23,12 +23,16 @@ describe("RyzomeClient authentication headers", () => {
 		vi.unstubAllGlobals();
 	});
 
-	it("sends x-api-key in apiKey mode and no Authorization header", async () => {
+	it.each([
+		undefined,
+		"eyJ.bearer.token",
+	])("sends only x-api-key when a key is present (accessToken: %s)", async (accessToken) => {
 		const fetchMock = vi.fn().mockResolvedValue(documentResponse());
 		vi.stubGlobal("fetch", fetchMock);
 
 		const client = new RyzomeClient({
 			apiKey: "rz_key",
+			accessToken,
 			apiUrl: "https://api.example.com",
 			appUrl: "https://app.example.com",
 		});
@@ -39,13 +43,16 @@ describe("RyzomeClient authentication headers", () => {
 		expect(request.headers.get("authorization")).toBeNull();
 	});
 
-	it("sends Authorization: Bearer in bearer mode and no x-api-key", async () => {
+	it.each([
+		undefined,
+		"bearer",
+	] as const)("sends only Authorization when a token is present (authMode: %s)", async (authMode) => {
 		const fetchMock = vi.fn().mockResolvedValue(documentResponse());
 		vi.stubGlobal("fetch", fetchMock);
 
 		const client = new RyzomeClient({
 			accessToken: "eyJ.bearer.token",
-			authMode: "bearer",
+			authMode,
 			apiUrl: "https://api.example.com",
 			appUrl: "https://app.example.com",
 		});
@@ -56,12 +63,6 @@ describe("RyzomeClient authentication headers", () => {
 			"Bearer eyJ.bearer.token",
 		);
 		expect(request.headers.get("x-api-key")).toBeNull();
-	});
-
-	it("infers bearer mode when only an access token is provided", () => {
-		expect(resolveAuthMode({ accessToken: "t" })).toBe("bearer");
-		expect(resolveAuthMode({ apiKey: "k", accessToken: "t" })).toBe("apiKey");
-		expect(resolveAuthMode({ apiKey: "k" })).toBe("apiKey");
 	});
 
 	it("rejects a bearer client without an access token", () => {

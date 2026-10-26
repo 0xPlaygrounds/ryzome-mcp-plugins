@@ -1,5 +1,5 @@
+import { ZodError } from "zod";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { RyzomeClient } from "../../lib/ryzome-client.js";
 import { applyHeader, mergeTags } from "../../lib/provenance.js";
 import { executeCreateBundle } from "../create-bundle.js";
 import { executeCreateCanvas } from "../create-canvas.js";
@@ -125,12 +125,21 @@ describe("caller-supplied ids", () => {
 	});
 
 	it("create_ryzome_plan and create_ryzome_research pass ids through", async () => {
-		const createCanvas = vi
-			.spyOn(RyzomeClient.prototype, "createCanvas")
-			.mockResolvedValue({ canvas_id: { $oid: suppliedId } });
-		const patchCanvas = vi
-			.spyOn(RyzomeClient.prototype, "patchCanvas")
-			.mockResolvedValue(undefined);
+		const fetch = vi.fn(async (request: Request) =>
+			request.method === "POST"
+				? response({
+						documents: [
+							documentView({
+								content: {
+									_type: "Canvas",
+									_content: { nodes: [], edges: [] },
+								},
+							}),
+						],
+					})
+				: new Response(null, { status: 200 }),
+		);
+		vi.stubGlobal("fetch", fetch);
 
 		await executePlanCanvas(
 			{
@@ -140,14 +149,12 @@ describe("caller-supplied ids", () => {
 			},
 			config,
 		);
-		expect(createCanvas).toHaveBeenLastCalledWith(
-			expect.objectContaining({ id: suppliedId }),
+		expect((await bodyOf(fetch, 0)).body.documents[0]._id).toBe(suppliedId);
+		expect((await bodyOf(fetch, 1)).body.operations).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ _type: "createNode", id: nodeA }),
+			]),
 		);
-		expect(
-			patchCanvas.mock.calls[0][1].operations.find(
-				(o) => o._type === "createNode",
-			),
-		).toMatchObject({ id: nodeA });
 
 		await executeResearchCanvas(
 			{
@@ -158,13 +165,12 @@ describe("caller-supplied ids", () => {
 			},
 			config,
 		);
-		expect(createCanvas).toHaveBeenLastCalledWith(
-			expect.objectContaining({ id: suppliedId }),
+		expect((await bodyOf(fetch, 2)).body.documents[0]._id).toBe(suppliedId);
+		expect((await bodyOf(fetch, 3)).body.operations).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ _type: "createNode", id: nodeB }),
+			]),
 		);
-		const researchOps = patchCanvas.mock.calls[1][1].operations;
-		expect(
-			researchOps.filter((o) => o._type === "createNode").map((o) => o.id),
-		).toContain(nodeB);
 	});
 
 	it("create_ryzome_bundle sends id as _id", async () => {
@@ -219,7 +225,7 @@ describe("caller-supplied ids", () => {
 		vi.stubGlobal("fetch", fetch);
 		await expect(
 			executeCreateDocument({ id: "not-an-id", title: "x" }, config),
-		).rejects.toThrow();
+		).rejects.toThrow(ZodError);
 		await expect(
 			executeCreateCanvas(
 				{
@@ -228,7 +234,7 @@ describe("caller-supplied ids", () => {
 				},
 				config,
 			),
-		).rejects.toThrow();
+		).rejects.toThrow(ZodError);
 		expect(fetch).not.toHaveBeenCalled();
 	});
 
@@ -358,12 +364,21 @@ describe("provenance", () => {
 	});
 
 	it("create_ryzome_plan and create_ryzome_research forward provenance", async () => {
-		const createCanvas = vi
-			.spyOn(RyzomeClient.prototype, "createCanvas")
-			.mockResolvedValue({ canvas_id: { $oid: suppliedId } });
-		const patchCanvas = vi
-			.spyOn(RyzomeClient.prototype, "patchCanvas")
-			.mockResolvedValue(undefined);
+		const fetch = vi.fn(async (request: Request) =>
+			request.method === "POST"
+				? response({
+						documents: [
+							documentView({
+								content: {
+									_type: "Canvas",
+									_content: { nodes: [], edges: [] },
+								},
+							}),
+						],
+					})
+				: new Response(null, { status: 200 }),
+		);
+		vi.stubGlobal("fetch", fetch);
 
 		await executePlanCanvas(
 			{
@@ -373,20 +388,21 @@ describe("provenance", () => {
 			},
 			config,
 		);
-		expect(createCanvas).toHaveBeenLastCalledWith(
-			expect.objectContaining({ tags: ["plan"] }),
-		);
-		const planNode = patchCanvas.mock.calls[0][1].operations.find(
-			(o) => o._type === "createNode",
-		);
-		expect(planNode).toMatchObject({
-			data: {
-				_type: "NewDocument",
-				_content: {
-					content: { _content: { text: "Plan header\n\nDo it" } },
+		expect((await bodyOf(fetch, 0)).body.documents[0].tags).toEqual(["plan"]);
+		expect((await bodyOf(fetch, 1)).body.operations).toMatchObject([
+			{
+				_type: "createNode",
+				data: {
+					_type: "NewDocument",
+					_content: {
+						content: {
+							_type: "Text",
+							_content: { text: "Plan header\n\nDo it" },
+						},
+					},
 				},
 			},
-		});
+		]);
 
 		await executeResearchCanvas(
 			{
@@ -397,9 +413,9 @@ describe("provenance", () => {
 			},
 			config,
 		);
-		expect(createCanvas).toHaveBeenLastCalledWith(
-			expect.objectContaining({ tags: ["research"] }),
-		);
+		expect((await bodyOf(fetch, 2)).body.documents[0].tags).toEqual([
+			"research",
+		]);
 	});
 
 	it("create_ryzome_bundle merges provenance tags", async () => {

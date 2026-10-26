@@ -1,5 +1,4 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { RyzomeClient } from "../../lib/ryzome-client.js";
 import { executeUploadImage } from "../upload-image.js";
 
 const canvasId = "aaaaaaaaaaaaaaaaaaaaaaaa";
@@ -9,26 +8,31 @@ const config = {
 	appUrl: "https://app.example.test",
 };
 afterEach(() => {
-	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
 
 it("does not replay an image node creation after a committed PATCH loses its response", async () => {
-	vi.spyOn(RyzomeClient.prototype, "requestUploadUrl").mockResolvedValue({
-		url: "https://storage.example.test",
-		fields: {},
-	});
-	const upload = vi
-		.spyOn(RyzomeClient.prototype, "uploadFile")
-		.mockResolvedValue(undefined);
 	let commits = 0;
+	let uploads = 0;
 	vi.stubGlobal(
 		"fetch",
 		vi.fn(async (input: Request | string) => {
-			if (typeof input === "string")
+			const url = typeof input === "string" ? input : input.url;
+			if (url === "https://images.example.test/a.png")
 				return new Response("image", {
 					headers: { "content-type": "image/png" },
 				});
+			if (url === "https://api.example.test/v1/files")
+				return Response.json({
+					url: "https://storage.example.test",
+					fields: {},
+				});
+			if (url === "https://storage.example.test") {
+				uploads++;
+				return new Response(null, { status: 204 });
+			}
+			if (!(input instanceof Request))
+				throw new Error(`Unexpected request: ${url}`);
 			expect(input.method).toBe("PATCH");
 			const body = await input.json();
 			expect(body.operations[0]._type).toBe("createNode");
@@ -44,5 +48,5 @@ it("does not replay an image node creation after a committed PATCH loses its res
 		),
 	).rejects.toMatchObject({ stage: "patchCanvas", canvasId });
 	expect(commits).toBe(1);
-	expect(upload).toHaveBeenCalledOnce();
+	expect(uploads).toBe(1);
 });
