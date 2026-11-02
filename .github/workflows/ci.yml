@@ -84,7 +84,7 @@ jobs:
             echo "No changeset files to parse."
             exit 0
           fi
-          pnpm changeset status
+          pnpm changeset status --since=origin/main
 
       - name: Build packages
         run: pnpm build
