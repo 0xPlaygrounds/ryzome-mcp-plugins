@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { executeCanvasWithSteps } from "../lib/canvas-executor.js";
 import type { StepInput } from "../lib/graph-builder.js";
+import { objectIdStringSchema } from "../lib/ids.js";
+import { provenanceSchema } from "../lib/provenance.js";
 import type { RyzomeClientConfig } from "../lib/ryzome-client.js";
 
 export const planCanvasToolName = "create_ryzome_plan";
@@ -15,8 +17,13 @@ const hexColorSchema = z
 	.optional();
 
 export const planCanvasParamsSchema = z.object({
+	id: objectIdStringSchema
+		.optional()
+		.describe("Optional caller-supplied 24-hex id for the canvas document"),
 	title: z.string().describe("Canvas title"),
 	description: z.string().optional().describe("Canvas description"),
+	tags: z.array(z.string()).optional().describe("Canvas tags"),
+	provenance: provenanceSchema.optional(),
 	steps: z
 		.array(
 			z.object({
@@ -31,6 +38,11 @@ export const planCanvasParamsSchema = z.object({
 					.optional()
 					.describe(
 						"IDs of steps this step depends on (defaults to previous step)",
+					),
+				nodeId: objectIdStringSchema
+					.optional()
+					.describe(
+						"Optional caller-supplied 24-hex id for the canvas node and any new backing document",
 					),
 				color: hexColorSchema.describe("Step color as hex (e.g. '#FF6B6B')"),
 				group: z
@@ -59,7 +71,7 @@ export const planCanvasParamsSchema = z.object({
 export async function executePlanCanvas(
 	rawParams: unknown,
 	clientConfig: RyzomeClientConfig,
-): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+) {
 	const params = planCanvasParamsSchema.parse(rawParams);
 
 	const resolvedIds = params.steps.map((s, i) => s.id ?? `step-${i}`);
@@ -72,6 +84,7 @@ export async function executePlanCanvas(
 			title: s.title,
 			description: s.description,
 			dependsOn,
+			nodeId: s.nodeId,
 			color: s.color,
 			group: s.group,
 		};
@@ -79,8 +92,11 @@ export async function executePlanCanvas(
 
 	return executeCanvasWithSteps(
 		{
+			id: params.id,
 			title: params.title,
 			description: params.description,
+			tags: params.tags,
+			provenance: params.provenance,
 			steps,
 			groups: params.groups,
 		},

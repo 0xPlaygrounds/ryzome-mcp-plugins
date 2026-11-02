@@ -13,7 +13,10 @@ export function generateToolManifest() {
 }
 
 async function main() {
-	const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+	const packageRoot = path.resolve(
+		path.dirname(fileURLToPath(import.meta.url)),
+		"..",
+	);
 	const manifestPath = path.join(
 		packageRoot,
 		"ryzome_hermes_plugin",

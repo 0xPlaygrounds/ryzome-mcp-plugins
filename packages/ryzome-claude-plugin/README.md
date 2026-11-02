@@ -15,7 +15,7 @@ The first command registers this repo as a plugin marketplace; the second instal
 
 ## What's Included
 
-### MCP Tools (11)
+### MCP Tools (23)
 
 | Tool | Description |
 |------|-------------|
@@ -30,9 +30,18 @@ The first command registers this repo as a plugin marketplace; the second instal
 | `update_ryzome_document` | Update document metadata or content, including appending text |
 | `save_ryzome_node_to_library` | Promote a canvas node's backing document into the library |
 | `upload_ryzome_image` | Upload an image from a URL to an existing canvas |
+| `update_ryzome_canvas` | Submit ordered canvas operations using `canvas_id` |
+| `verify_ryzome_structure` | Read back a canvas or bundle using `document_id` |
 | `create_ryzome_bundle` | Create an ordered collection of existing documents |
 | `get_ryzome_bundle` | Retrieve a bundle and its member metadata, including access status |
 | `update_ryzome_bundle` | Add, remove, or reorder documents in a bundle |
+| `create_ryzome_conversation` | Create an empty conversation (thread), optionally with context documents |
+| `get_ryzome_conversation` | Read a conversation with its context and full message history |
+| `list_ryzome_conversations` | List conversations, optionally filtered to pinned ones |
+| `update_ryzome_conversation` | Update a conversation's title, pinned state, or context |
+| `add_ryzome_conversation_message` | Append a user message to a conversation, optionally with context |
+| `search_ryzome_conversations` | Search conversations by title or message content |
+| `delete_ryzome_conversation` | Delete conversations by ID (caller must own them) |
 
 ### MCP Resources
 
@@ -42,6 +51,8 @@ The first command registers this repo as a plugin marketplace; the second instal
 | `ryzome://canvas/{id}` | Single canvas rendered as structured markdown |
 | `ryzome://documents` | JSON list of library-visible document summaries |
 | `ryzome://document/{id}` | Single document rendered as structured markdown |
+| `ryzome://conversations` | JSON list of all conversation summaries |
+| `ryzome://conversation/{id}` | Single conversation rendered as structured markdown with context and messages |
 
 ### Skills
 

@@ -16,6 +16,7 @@ type StubRequest = {
 
 const CANVAS_ID = "507f1f77bcf86cd799439011";
 const DOCUMENT_ID = "507f1f77bcf86cd799439012";
+const CONVERSATION_ID = "507f1f77bcf86cd799439099";
 const LIBRARY_DOCUMENT_ID = "507f1f77bcf86cd799439013";
 const NODE_ID = "507f1f77bcf86cd799439014";
 const NOW = "2026-04-15T00:00:00.000Z";
@@ -240,6 +241,12 @@ async function startStubServer() {
 			return;
 		}
 
+		if (method === "GET" && url === `/v1/conversation/${CONVERSATION_ID}`) {
+			requests.push({ method, url, apiKey, body: undefined });
+			writeJson(res, 503, { error: "conversation unavailable" });
+			return;
+		}
+
 		if (method === "POST" && url === "/v1/files") {
 			const body = await readJsonBody(req);
 			requests.push({ method, url, apiKey, body });
@@ -354,15 +361,14 @@ describe("Hermes runner integration", () => {
 				request.method === "PATCH" && request.url === `/v1/canvas/${CANVAS_ID}`,
 		);
 		expect(createRequest?.apiKey).toBe("stub-api-key");
+		const patchOperations = (
+			patchRequest?.body as
+				| { operations?: Array<{ _type: string }> }
+				| undefined
+		)?.operations;
+		expect(Array.isArray(patchOperations)).toBe(true);
 		expect(
-			Array.isArray(
-				(patchRequest?.body as { operations?: unknown[] })?.operations,
-			),
-		).toBe(true);
-		expect(
-			(
-				patchRequest?.body as { operations: Array<{ _type: string }> }
-			).operations.some((operation) => operation._type === "createEdge"),
+			patchOperations?.some((operation) => operation._type === "createEdge"),
 		).toBe(true);
 	});
 
@@ -468,6 +474,30 @@ describe("Hermes runner integration", () => {
 				request.url === `/v1/document/${LIBRARY_DOCUMENT_ID}/metadata`,
 		);
 		expect(metadataRequest?.body).toMatchObject({ inLibrary: true });
+	});
+
+	it("preserves conversationId on serialized conversation failures", async () => {
+		activeStub = await startStubServer();
+
+		const result = await runTool({
+			toolName: "get_ryzome_conversation",
+			params: { conversation_id: CONVERSATION_ID },
+			config: {
+				apiKey: "stub-api-key",
+				apiUrl: activeStub.apiUrl,
+				appUrl: activeStub.appUrl,
+			},
+		});
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.error).toMatchObject({
+				name: "RyzomeApiError",
+				status: 503,
+				retryable: true,
+				conversationId: CONVERSATION_ID,
+			});
+		}
 	});
 
 	it("uploads an image and patches the target canvas", async () => {

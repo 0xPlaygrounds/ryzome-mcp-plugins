@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { components } from "./schema";
 
 const objectIdSchema = z.object({ $oid: z.string() });
 const memberMetadataSchema = z.looseObject({
@@ -28,10 +29,10 @@ export const bundleDocumentSchema = z.looseObject({
 });
 export type BundleDocument = z.infer<typeof bundleDocumentSchema>;
 export type BundleContent = z.infer<typeof bundleContentSchema>;
-export interface CreateBundleContent {
-	_type: "Bundle";
-	_content: { ids: string[] };
-}
+export type CreateBundleContent = Extract<
+	components["schemas"]["CreateDocumentContentView"],
+	{ _type: "Bundle" }
+>;
 export const bundleOperationSchema = z.discriminatedUnion("_type", [
 	z.object({
 		_type: z.literal("addDocument"),

@@ -1,17 +1,17 @@
 import { z } from "zod";
 import { buildDocumentViewAppUrl } from "../lib/app-url.js";
 import { documentContentTypeSchema } from "../lib/document-content.js";
-import {
-	RyzomeClient,
-	type RyzomeClientConfig,
-} from "../lib/ryzome-client.js";
+import { RyzomeClient, type RyzomeClientConfig } from "../lib/ryzome-client.js";
 
 export const listDocumentsToolName = "list_ryzome_documents";
 export const listDocumentsToolDescription =
 	"List standalone Ryzome documents, optionally filtered by library visibility, favorites, tags, or content type.";
 
 export const listDocumentsParamsSchema = z.object({
-	tag: z.string().optional().describe("Filter to documents containing this tag"),
+	tag: z
+		.string()
+		.optional()
+		.describe("Filter to documents containing this tag"),
 	favorite: z
 		.boolean()
 		.optional()
@@ -19,7 +19,9 @@ export const listDocumentsParamsSchema = z.object({
 	in_library_only: z
 		.boolean()
 		.optional()
-		.describe("Only return documents visible in the library (defaults to true)"),
+		.describe(
+			"Only return documents visible in the library (defaults to true)",
+		),
 	content_types: z
 		.array(documentContentTypeSchema)
 		.optional()

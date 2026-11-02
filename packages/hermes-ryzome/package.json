@@ -1,45 +1,45 @@
 {
-  "name": "@ryzome-ai/hermes-ryzome",
-  "version": "1.0.1",
-  "private": true,
-  "description": "Ryzome Hermes plugin runner and Python plugin assets",
-  "license": "MIT",
-  "type": "module",
-  "packageManager": "pnpm@10.31.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/0xPlaygrounds/ryzome-mcp-plugins.git",
-    "directory": "packages/hermes-ryzome"
-  },
-  "homepage": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/tree/main/packages/hermes-ryzome",
-  "bugs": {
-    "url": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/issues"
-  },
-  "keywords": [
-    "hermes-agent",
-    "ryzome",
-    "plugin",
-    "canvas",
-    "agent"
-  ],
-  "scripts": {
-    "build": "tsc && node dist/generate-tool-manifest.js && node scripts/copy-runner.mjs",
-    "test": "vitest run && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests",
-    "test:watch": "vitest watch",
-    "typecheck": "tsc --noEmit",
-    "lint": "biome lint package.json tsconfig.json biome.json vitest.config.ts src && tsc --noEmit",
-    "lint:check": "biome lint --diagnostic-level=error package.json tsconfig.json biome.json vitest.config.ts src",
-    "format": "biome format --write package.json tsconfig.json biome.json vitest.config.ts src",
-    "format:check": "biome format package.json tsconfig.json biome.json vitest.config.ts src"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.6",
-    "@types/node": "^25.4.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
-  },
-  "dependencies": {
-    "@ryzome-ai/ryzome-core": "workspace:*",
-    "zod": "^4.3.6"
-  }
+	"name": "@ryzome-ai/hermes-ryzome",
+	"version": "1.1.0",
+	"private": true,
+	"description": "Ryzome Hermes plugin runner and Python plugin assets",
+	"license": "MIT",
+	"type": "module",
+	"packageManager": "pnpm@12.6.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/0xPlaygrounds/ryzome-mcp-plugins.git",
+		"directory": "packages/hermes-ryzome"
+	},
+	"homepage": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/tree/main/packages/hermes-ryzome",
+	"bugs": {
+		"url": "https://github.com/0xPlaygrounds/ryzome-mcp-plugins/issues"
+	},
+	"keywords": [
+		"hermes-agent",
+		"ryzome",
+		"plugin",
+		"canvas",
+		"agent"
+	],
+	"scripts": {
+		"build": "tsc && node dist/generate-tool-manifest.js && node scripts/copy-runner.mjs",
+		"test": "vitest run && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests",
+		"test:watch": "vitest watch",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome lint package.json tsconfig.json biome.json vitest.config.ts src && tsc --noEmit",
+		"lint:check": "biome lint --diagnostic-level=error package.json tsconfig.json biome.json vitest.config.ts src",
+		"format": "biome format --write package.json tsconfig.json biome.json vitest.config.ts src",
+		"format:check": "biome format package.json tsconfig.json biome.json vitest.config.ts src"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.14",
+		"@types/node": "^24",
+		"typescript": "^7.0.2",
+		"vitest": "^5.0.1"
+	},
+	"dependencies": {
+		"@ryzome-ai/ryzome-core": "workspace:*",
+		"zod": "^4.6.5"
+	}
 }

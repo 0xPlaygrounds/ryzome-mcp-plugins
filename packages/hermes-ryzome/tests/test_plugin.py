@@ -48,6 +48,40 @@ class FakeContext:
 
 
 class HermesPluginTests(unittest.TestCase):
+    def setUp(self) -> None:
+        env = patch.dict(os.environ, {}, clear=True)
+        env.start()
+        self.addCleanup(env.stop)
+
+    def test_status_and_discovery_use_the_selected_credential(self) -> None:
+        cases = [
+            ({"accessToken": "bearer-secret-value"}, {}, "bearer"),
+            ({}, {"RYZOME_ACCESS_TOKEN": "bearer-secret-value"}, "bearer"),
+            ({}, {"RYZOME_API_KEY": "api-secret-value"}, "apiKey"),
+            ({"accessToken": "bearer-secret-value"}, {"RYZOME_API_KEY": "api-secret-value"}, "apiKey"),
+            ({}, {}, None),
+        ]
+        for raw, env, mode in cases:
+            with self.subTest(mode=mode), patch.dict(os.environ, env, clear=True), patch.object(runtime, "load_raw_config", return_value=raw):
+                info = runtime.describe_configuration()
+                self.assertEqual(info["configured"], mode is not None)
+                self.assertEqual(info["auth_mode"], mode)
+                self.assertNotIn("bearer-secret-value", json.dumps(info))
+                self.assertNotIn("api-secret-value", json.dumps(info))
+                context = FakeContext()
+                register(context)
+                self.assertTrue(all(tool["check_fn"]() == (mode is not None) for tool in context.tools))
+                self.assertTrue(all(not tool.get("requires_env") for tool in context.tools))
+                status = context.commands[0]["handler"]("")
+                self.assertIn(mode if mode else "not configured", status)
+
+    def test_tool_handler_preserves_structured_content(self) -> None:
+        handler = create_tool_handler("get_ryzome_canvas", "0.0.0")
+        structured = {"id": "abc", "nodes": []}
+        for content in [[], [{"type": "text", "text": "Canvas"}]]:
+            with patch("ryzome_hermes_plugin.tools.run_node_tool", return_value={"ok": True, "content": content, "structuredContent": structured}):
+                self.assertEqual(json.loads(handler({}))["structuredContent"], structured)
+
     def test_register_uses_generated_tool_schemas(self) -> None:
         context = FakeContext()
 
@@ -60,7 +94,7 @@ class HermesPluginTests(unittest.TestCase):
             [schema["name"] for schema in TOOL_SCHEMAS],
         )
         for tool in context.tools:
-            self.assertEqual(tool["requires_env"], ["RYZOME_API_KEY"])
+            self.assertNotIn("requires_env", tool)
         self.assertEqual(len(context.commands), 1)
         self.assertEqual(context.commands[0]["name"], "ryzome-status")
 
@@ -73,8 +107,9 @@ class HermesPluginTests(unittest.TestCase):
             return_value={
                 "configured": True,
                 "config_path": "/tmp/ryzome.json",
-                "api_key_source": "environment (RYZOME_API_KEY)",
-                "masked_api_key": "rz_t...1234",
+                "auth_mode": "apiKey",
+                "credential_source": "environment (RYZOME_API_KEY)",
+                "masked_credential": "rz_t...1234",
                 "api_url": "https://api.ryzome.ai",
                 "app_url": "https://ryzome.ai",
             },
@@ -116,6 +151,23 @@ class HermesPluginTests(unittest.TestCase):
             resolved = parse_config({"apiKey": "${MISSING_VAR}"})
 
         self.assertEqual(resolved.api_key, "rz_env_fallback")
+
+    def test_parse_config_accepts_access_token_as_bearer_credential(self) -> None:
+        env = {"RYZOME_API_KEY": "", "RYZOME_OPENCLAW_API_KEY": "", "RYZOME_ACCESS_TOKEN": "eyJ.token"}
+        with patch.dict(os.environ, env, clear=False):
+            resolved = parse_config({})
+
+        self.assertIsNone(resolved.api_key)
+        self.assertEqual(resolved.access_token, "eyJ.token")
+        self.assertTrue(resolved.has_credential)
+
+    def test_parse_config_reads_access_token_from_user_config(self) -> None:
+        env = {"RYZOME_API_KEY": "", "RYZOME_OPENCLAW_API_KEY": "", "RYZOME_ACCESS_TOKEN": ""}
+        with patch.dict(os.environ, env, clear=False):
+            resolved = parse_config({"accessToken": "eyJ.config"})
+
+        self.assertEqual(resolved.access_token, "eyJ.config")
+        self.assertTrue(resolved.has_credential)
 
     def test_parse_config_rejects_unknown_keys(self) -> None:
         with self.assertRaises(ValueError):

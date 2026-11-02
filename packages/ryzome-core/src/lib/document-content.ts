@@ -32,8 +32,8 @@ const textDocumentContentSchema = z.object({
 	_type: z.literal("Text"),
 	_content: z.object({
 		text: z.string().nullable().optional(),
-		origin: messageRefSchema.optional(),
-		agentConfig: agentConfigSchema.optional(),
+		origin: messageRefSchema.nullish(),
+		agentConfig: agentConfigSchema.nullish(),
 	}),
 });
 
@@ -71,11 +71,19 @@ const websiteDocumentContentSchema = z.object({
 const canvasDocumentContentSchema = z.object({
 	_type: z.literal("Canvas"),
 	_content: z.object({
-		nodes: z.array(z.unknown()),
-		edges: z.array(z.unknown()),
+		nodes: z
+			.array(z.never())
+			.max(0)
+			.describe("Must be empty; add nodes with canvas tools"),
+		edges: z
+			.array(z.never())
+			.max(0)
+			.describe("Must be empty; add edges with canvas tools"),
 	}),
 });
 
+// Deliberately scoped input. Bundle membership uses bundle tools; non-empty
+// Canvas views are read models, not unvalidated mutation payloads.
 export const documentContentInputSchema = z.discriminatedUnion("_type", [
 	textDocumentContentSchema,
 	fileDocumentContentSchema,
@@ -112,10 +120,7 @@ export type DocumentOperationInput = z.infer<
 export function toDocumentContentView(
 	content: DocumentContentInput,
 ): Exclude<DocumentContentView, { _type: "Bundle" }> {
-	return content as unknown as Exclude<
-		DocumentContentView,
-		{ _type: "Bundle" }
-	>;
+	return content;
 }
 
 export function toDocumentOperation(
@@ -128,7 +133,7 @@ export function toDocumentOperation(
 		};
 	}
 
-	return operation as DocumentOperation;
+	return operation;
 }
 
 export function getDocumentUrlType(

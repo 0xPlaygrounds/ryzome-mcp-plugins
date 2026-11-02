@@ -34,7 +34,11 @@ const GROUP_HEADER_PADDING = 60;
 function buildAlgorithmLayoutOptions(params: {
 	algorithm: LayoutAlgorithm;
 	direction: LayoutDirection;
-	spacing: { nodeNode: number; nodeNodeBetweenLayers: number; edgeNode: number };
+	spacing: {
+		nodeNode: number;
+		nodeNodeBetweenLayers: number;
+		edgeNode: number;
+	};
 	aspectRatio?: number;
 	includeHierarchyHandling?: "INCLUDE_CHILDREN" | "SEPARATE_CHILDREN";
 }): ElkLayoutOptions {
@@ -191,8 +195,8 @@ export async function computeCanvasLayout(
 	const elk = new ELK();
 	const laidOut = await elk.layout(root);
 
-	const nodeRects: Record<string, LayoutRect> = {};
-	const groupRects: Record<string, LayoutRect> = {};
+	const nodeRects: Record<string, LayoutRect> = Object.create(null);
+	const groupRects: Record<string, LayoutRect> = Object.create(null);
 
 	const walk = (
 		node: ElkNode,

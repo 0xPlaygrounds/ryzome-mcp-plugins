@@ -3,7 +3,10 @@ export function buildCanvasAppUrl(appUrl: string, canvasId: string): string {
 	return `${appBase}/workspace?document=${encodeURIComponent(canvasId)}`;
 }
 
-export function buildDocumentAppUrl(appUrl: string, documentId: string): string {
+export function buildDocumentAppUrl(
+	appUrl: string,
+	documentId: string,
+): string {
 	const appBase = appUrl.replace(/\/+$/, "");
 	return `${appBase}/workspace?document=${encodeURIComponent(documentId)}`;
 }

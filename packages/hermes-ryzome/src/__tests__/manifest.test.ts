@@ -5,7 +5,10 @@ import { toolRegistry } from "@ryzome-ai/ryzome-core";
 import { z } from "zod";
 import { describe, expect, it } from "vitest";
 
-const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const packageRoot = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"../..",
+);
 const manifestPath = path.join(
 	packageRoot,
 	"ryzome_hermes_plugin",
@@ -41,7 +44,9 @@ function readProvidesTools(): string[] {
 
 describe("Hermes manifest parity", () => {
 	it("keeps the generated tool manifest aligned with toolRegistry", () => {
-		const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as Array<{
+		const manifest = JSON.parse(
+			fs.readFileSync(manifestPath, "utf8"),
+		) as Array<{
 			name: string;
 			description: string;
 			parameters: unknown;

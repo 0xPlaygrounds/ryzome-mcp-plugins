@@ -15,7 +15,15 @@ RYZOME_API_KEY_ENV_VARS = (
     "RYZOME_API_KEY",
     "PLUGIN_USER_CONFIG_API_KEY",
 )
-ALLOWED_KEYS = {"apiKey", "apiUrl", "appUrl"}
+RYZOME_ACCESS_TOKEN_ENV_VARS = (
+    "RYZOME_ACCESS_TOKEN",
+    "PLUGIN_USER_CONFIG_ACCESS_TOKEN",
+)
+ALLOWED_KEYS = {"apiKey", "accessToken", "apiUrl", "appUrl"}
+CREDENTIAL_SETUP_HINT = (
+    "Set `RYZOME_API_KEY` (API key) or `RYZOME_ACCESS_TOKEN` (bearer token), "
+    "or create `~/.hermes/ryzome.json`."
+)
 RUNNER_ENV_VAR = "RYZOME_HERMES_RUNNER"
 CONFIG_PATH_ENV_VAR = "RYZOME_HERMES_CONFIG_PATH"
 
@@ -25,6 +33,11 @@ class ResolvedConfig:
     api_key: str | None
     api_url: str
     app_url: str
+    access_token: str | None = None
+
+    @property
+    def has_credential(self) -> bool:
+        return bool(self.api_key or self.access_token)
 
 
 def default_config_path() -> Path:
@@ -84,6 +97,14 @@ def resolve_api_key_from_env() -> tuple[str | None, str | None]:
     return None, None
 
 
+def resolve_access_token_from_env() -> str | None:
+    for env_var in RYZOME_ACCESS_TOKEN_ENV_VARS:
+        value = os.getenv(env_var)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
 def parse_config(raw: Mapping[str, Any] | None) -> ResolvedConfig:
     config = dict(raw or {})
     if config:
@@ -98,6 +119,15 @@ def parse_config(raw: Mapping[str, Any] | None) -> ResolvedConfig:
             except ValueError:
                 api_key = None
 
+    access_token = resolve_access_token_from_env()
+    if not access_token:
+        raw_access_token = config.get("accessToken")
+        if isinstance(raw_access_token, str) and raw_access_token.strip():
+            try:
+                access_token = _resolve_env_placeholders(raw_access_token.strip())
+            except ValueError:
+                access_token = None
+
     raw_api_url = config.get("apiUrl")
     raw_app_url = config.get("appUrl")
     api_url = (
@@ -111,29 +141,18 @@ def parse_config(raw: Mapping[str, Any] | None) -> ResolvedConfig:
         else DEFAULT_RYZOME_APP_URL
     )
 
-    return ResolvedConfig(api_key=api_key, api_url=api_url, app_url=app_url)
-
-
-def resolve_api_key_status(raw: Mapping[str, Any] | None) -> tuple[str | None, str | None]:
-    api_key, source = resolve_api_key_from_env()
-    if api_key:
-        return api_key, source
-
-    config = dict(raw or {})
-    raw_api_key = config.get("apiKey")
-    if isinstance(raw_api_key, str) and raw_api_key.strip():
-        try:
-            return _resolve_env_placeholders(raw_api_key.strip()), "config"
-        except ValueError:
-            return None, None
-
-    return None, None
+    return ResolvedConfig(
+        api_key=api_key,
+        api_url=api_url,
+        app_url=app_url,
+        access_token=access_token,
+    )
 
 
 def is_configured() -> bool:
     try:
         raw = load_raw_config()
-        return bool(parse_config(raw).api_key)
+        return parse_config(raw).has_credential
     except Exception:
         return False
 
@@ -169,26 +188,28 @@ def resolve_runner_command(plugin_version: str) -> list[str]:
 def run_node_tool(tool_name: str, args: Mapping[str, Any], plugin_version: str) -> dict[str, Any]:
     raw_config = load_raw_config()
     resolved = parse_config(raw_config)
-    if not resolved.api_key:
+    if not resolved.has_credential:
         return {
             "ok": False,
             "error": {
                 "name": "ConfigError",
-                "message": (
-                    "Ryzome API key not configured. Set `RYZOME_API_KEY` or create "
-                    "`~/.hermes/ryzome.json`."
-                ),
+                "message": f"Ryzome credentials not configured. {CREDENTIAL_SETUP_HINT}",
             },
         }
+
+    config_payload: dict[str, Any] = {
+        "apiUrl": resolved.api_url,
+        "appUrl": resolved.app_url,
+    }
+    if resolved.api_key:
+        config_payload["apiKey"] = resolved.api_key
+    if resolved.access_token:
+        config_payload["accessToken"] = resolved.access_token
 
     payload = {
         "toolName": tool_name,
         "params": dict(args),
-        "config": {
-            "apiKey": resolved.api_key,
-            "apiUrl": resolved.api_url,
-            "appUrl": resolved.app_url,
-        },
+        "config": config_payload,
     }
 
     command = resolve_runner_command(plugin_version)
@@ -242,7 +263,15 @@ def describe_configuration() -> dict[str, Any]:
     try:
         raw = load_raw_config(config_path)
         resolved = parse_config(raw)
-        api_key, source = resolve_api_key_status(raw)
+        credential = resolved.api_key or resolved.access_token
+        auth_mode = "apiKey" if resolved.api_key else "bearer"
+        env_vars = (
+            RYZOME_API_KEY_ENV_VARS if resolved.api_key else RYZOME_ACCESS_TOKEN_ENV_VARS
+        )
+        source = next(
+            (f"environment ({name})" for name in env_vars if os.getenv(name, "").strip()),
+            "config",
+        )
     except Exception as exc:
         return {
             "configured": False,
@@ -251,10 +280,11 @@ def describe_configuration() -> dict[str, Any]:
         }
 
     return {
-        "configured": bool(api_key),
+        "configured": resolved.has_credential,
         "config_path": str(config_path),
-        "api_key_source": source,
-        "masked_api_key": _mask_secret(api_key) if api_key else None,
+        "auth_mode": auth_mode if credential else None,
+        "credential_source": source if credential else None,
+        "masked_credential": _mask_secret(credential) if credential else None,
         "api_url": resolved.api_url,
         "app_url": resolved.app_url,
     }

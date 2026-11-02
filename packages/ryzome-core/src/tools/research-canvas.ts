@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { executeCanvasWithSteps } from "../lib/canvas-executor.js";
 import type { StepInput } from "../lib/graph-builder.js";
+import { objectIdStringSchema } from "../lib/ids.js";
+import { provenanceSchema } from "../lib/provenance.js";
 import type { RyzomeClientConfig } from "../lib/ryzome-client.js";
 
 export const researchCanvasToolName = "create_ryzome_research";
@@ -15,8 +17,13 @@ const hexColorSchema = z
 	.optional();
 
 export const researchCanvasParamsSchema = z.object({
+	id: objectIdStringSchema
+		.optional()
+		.describe("Optional caller-supplied 24-hex id for the canvas document"),
 	title: z.string().describe("Canvas title"),
 	description: z.string().optional().describe("Canvas description"),
+	tags: z.array(z.string()).optional().describe("Canvas tags"),
+	provenance: provenanceSchema.optional(),
 	topic: z.string().describe("Root node title (auto-assigned id 'topic')"),
 	topicColor: hexColorSchema.describe(
 		"Root node color as hex (e.g. '#FF6B6B')",
@@ -32,6 +39,11 @@ export const researchCanvasParamsSchema = z.object({
 					.optional()
 					.describe(
 						"IDs of nodes this finding depends on (use 'topic' to connect to root)",
+					),
+				nodeId: objectIdStringSchema
+					.optional()
+					.describe(
+						"Optional caller-supplied 24-hex id for the canvas node and any new backing document",
 					),
 				color: hexColorSchema.describe("Finding color as hex (e.g. '#FF6B6B')"),
 				group: z
@@ -60,7 +72,7 @@ export const researchCanvasParamsSchema = z.object({
 export async function executeResearchCanvas(
 	rawParams: unknown,
 	clientConfig: RyzomeClientConfig,
-): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+) {
 	const params = researchCanvasParamsSchema.parse(rawParams);
 
 	const topicStep: StepInput = {
@@ -75,14 +87,18 @@ export async function executeResearchCanvas(
 		title: f.title,
 		description: f.description,
 		dependsOn: f.dependsOn,
+		nodeId: f.nodeId,
 		color: f.color,
 		group: f.group,
 	}));
 
 	return executeCanvasWithSteps(
 		{
+			id: params.id,
 			title: params.title,
 			description: params.description,
+			tags: params.tags,
+			provenance: params.provenance,
 			steps: [topicStep, ...findingSteps],
 			groups: params.groups,
 		},

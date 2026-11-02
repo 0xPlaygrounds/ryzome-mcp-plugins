@@ -1,9 +1,12 @@
 import { pathToFileURL } from "node:url";
 import {
 	parseConfig,
+	RYZOME_CREDENTIAL_SETUP_HINT,
 	RyzomeApiError,
+	toClientConfig,
 	toolRegistry,
 	type RyzomeClientConfig,
+	type ToolResult,
 } from "@ryzome-ai/ryzome-core";
 import { z } from "zod";
 
@@ -21,6 +24,7 @@ export interface RunnerSuccess {
 	ok: true;
 	toolName: string;
 	content: Array<{ type: "text"; text: string }>;
+	structuredContent?: ToolResult["structuredContent"];
 }
 
 export interface RunnerFailure {
@@ -35,6 +39,7 @@ export interface RunnerFailure {
 		body?: string;
 		canvasId?: string;
 		documentId?: string;
+		conversationId?: string;
 	};
 }
 
@@ -43,11 +48,10 @@ export type RunnerOutput = RunnerSuccess | RunnerFailure;
 function notConfiguredError(): RunnerFailure {
 	return {
 		ok: false,
-			error: {
-				name: "ConfigError",
-				message:
-					"Ryzome API key not configured. Set `RYZOME_API_KEY` or create `~/.hermes/ryzome.json`.",
-			},
+		error: {
+			name: "ConfigError",
+			message: `Ryzome credentials not configured. ${RYZOME_CREDENTIAL_SETUP_HINT} Or create \`~/.hermes/ryzome.json\`.`,
+		},
 	};
 }
 
@@ -65,6 +69,7 @@ function serializeError(error: unknown, toolName?: string): RunnerFailure {
 				body: error.body,
 				canvasId: error.canvasId,
 				documentId: error.documentId,
+				conversationId: error.conversationId,
 			},
 		};
 	}
@@ -93,20 +98,14 @@ function serializeError(error: unknown, toolName?: string): RunnerFailure {
 function resolveClientConfig(
 	rawConfig: Record<string, unknown> | undefined,
 ): RyzomeClientConfig | null {
-	const resolved = parseConfig(rawConfig ?? {});
-	if (!resolved.apiKey) {
-		return null;
-	}
-
-	return {
-		apiKey: resolved.apiKey,
-		apiUrl: resolved.apiUrl,
-		appUrl: resolved.appUrl,
-	};
+	// "Has any credential": API key (x-api-key) or access token (bearer).
+	return toClientConfig(parseConfig(rawConfig ?? {}));
 }
 
 export async function runTool(input: RunnerInput): Promise<RunnerOutput> {
-	const tool = toolRegistry.find((candidate) => candidate.name === input.toolName);
+	const tool = toolRegistry.find(
+		(candidate) => candidate.name === input.toolName,
+	);
 	if (!tool) {
 		return {
 			ok: false,
@@ -129,6 +128,9 @@ export async function runTool(input: RunnerInput): Promise<RunnerOutput> {
 			ok: true,
 			toolName: tool.name,
 			content: result.content,
+			...(result.structuredContent
+				? { structuredContent: result.structuredContent }
+				: {}),
 		};
 	} catch (error) {
 		return serializeError(error, tool.name);

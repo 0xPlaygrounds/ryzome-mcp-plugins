@@ -186,10 +186,7 @@ describe("computeCanvasLayout", () => {
 
 	it("places nodes whose group id is not declared as root members", async () => {
 		const result = await computeCanvasLayout({
-			nodes: [
-				{ id: "a", group: "undeclared" },
-				{ id: "b" },
-			],
+			nodes: [{ id: "a", group: "undeclared" }, { id: "b" }],
 		});
 		expect(result.nodes.a).toBeDefined();
 		expect(result.nodes.b).toBeDefined();

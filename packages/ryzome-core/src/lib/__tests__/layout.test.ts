@@ -41,9 +41,7 @@ describe("computeLegacyLayoutRects (RYZOME_LAYOUT_ENGINE=legacy fallback)", () =
 
 		expect(nodeRects.size).toBe(2);
 		expect(nodeRects.get("a")?.width).toBe(NODE_WIDTH);
-		expect(nodeRects.get("b")?.y).toBeGreaterThan(
-			nodeRects.get("a")?.y ?? 0,
-		);
+		expect(nodeRects.get("b")?.y).toBeGreaterThan(nodeRects.get("a")?.y ?? 0);
 	});
 
 	it("wraps a group rect around its members", () => {

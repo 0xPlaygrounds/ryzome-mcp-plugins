@@ -1,8 +1,7 @@
 {
-  "root": false,
-  "$schema": "https://biomejs.dev/schemas/2.4.6/schema.json",
-  "extends": ["../../biome.json"],
-  "vcs": {
-    "useIgnoreFile": false
-  }
+	"$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+	"extends": ["../../biome.json"],
+	"vcs": {
+		"useIgnoreFile": false
+	}
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { RyzomeClient, type RyzomeClientConfig } from "../lib/ryzome-client.js";
 import { formatBundleAsMarkdown } from "../lib/format-bundle-markdown.js";
+import { toStructuredBundle } from "../lib/structured.js";
 export const getBundleToolName = "get_ryzome_bundle";
 export const getBundleToolDescription =
 	"Read a Ryzome bundle and its ordered document metadata, including unavailable members.";
@@ -21,5 +22,6 @@ export async function executeGetBundle(
 				text: formatBundleAsMarkdown(bundle, { appUrl: clientConfig.appUrl }),
 			},
 		],
+		structuredContent: toStructuredBundle(bundle),
 	};
 }

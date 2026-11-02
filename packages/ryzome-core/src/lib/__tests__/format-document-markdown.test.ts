@@ -31,7 +31,9 @@ describe("formatDocumentAsMarkdown", () => {
 
 		expect(markdown).toContain("# Spec");
 		expect(markdown).toContain("> Type: Text");
-		expect(markdown).toContain("> View: https://ryzome.ai/workspace?document=doc123");
+		expect(markdown).toContain(
+			"> View: https://ryzome.ai/workspace?document=doc123",
+		);
 		expect(markdown).toContain("Hello world");
 		expect(markdown).toContain("> Tags: draft");
 	});
@@ -54,6 +56,8 @@ describe("formatDocumentAsMarkdown", () => {
 		);
 
 		expect(markdown).toContain("# Canvas doc");
-		expect(markdown).toContain("> View: https://ryzome.ai/workspace?document=doc123");
+		expect(markdown).toContain(
+			"> View: https://ryzome.ai/workspace?document=doc123",
+		);
 	});
 });

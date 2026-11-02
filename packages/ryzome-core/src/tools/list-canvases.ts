@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { buildCanvasAppUrl } from "../lib/app-url.js";
-import {
-	RyzomeClient,
-	type RyzomeClientConfig,
-} from "../lib/ryzome-client.js";
+import { RyzomeClient, type RyzomeClientConfig } from "../lib/ryzome-client.js";
 
 export const listCanvasesToolName = "list_ryzome_canvases";
 export const listCanvasesToolDescription =

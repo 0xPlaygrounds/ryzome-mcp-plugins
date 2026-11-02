@@ -1,5 +1,22 @@
 # @ryzome-ai/ryzome-core
 
+## 0.3.0
+
+### Minor Changes
+
+- 5717d0e: Fix document and canvas listing for the current API metadata response envelope, including BSON timestamps. Send tags and pinned filters, preserve favorite summaries, and report invalid responses with their HTTP status instead of retrying them as network failures.
+
+  Add tools to create, inspect, and update bundles of documents, and allow filtering document lists by Bundle content type. Keep adapter manifests synchronized with the shared tools.
+
+- e328aeb: Add conversation and message tools now that the backend conversation routes accept API key authentication: create, read, list, search, update, append messages to, and delete Ryzome conversations. Add MCP conversation resources and keep adapter manifests synchronized with the shared tools.
+
+### Patch Changes
+
+- bb0a6fb: Canonicalize and surface canvas/document URLs:
+
+  - `buildCanvasAppUrl` now emits `/workspace?document=<id>` instead of `/workspace?canvas=<id>`. The canvas app still resolves `?canvas=` via a backward-compat shim, but canvases are documents now (same IDs), so the document form is the right one to ship.
+  - `create_ryzome_canvas`, `create_ryzome_plan`, `create_ryzome_research`, and `create_ryzome_document` tool outputs now lead with the `View: <url>` line, and their tool descriptions explicitly ask the calling agent to include that URL verbatim in its reply. Reduces the chance the URL gets dropped during model summarization.
+
 ## 0.2.4
 
 ### Patch Changes

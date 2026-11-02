@@ -92,10 +92,7 @@ describe("bundle tools and API contracts", () => {
 	});
 	it("renders bundles from the generic get document tool", async () => {
 		mockFetch(response(bundle));
-		const result = await executeGetDocument(
-			{ document_id: id },
-			config,
-		);
+		const result = await executeGetDocument({ document_id: id }, config);
 		expect(JSON.parse(result.content[0].text).content).toEqual(bundle.content);
 	});
 	it("sends exact add, remove, and reorder operation shapes", async () => {

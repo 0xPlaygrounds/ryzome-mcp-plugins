@@ -6,7 +6,7 @@
 
 ## Requirements
 
-- [OpenClaw](https://docs.openclaw.ai/plugin)
+- [OpenClaw](https://docs.openclaw.ai/plugin) 2026.9.5 or newer
 - A Ryzome API key — [get one here](https://ryzome.ai/workspace#settings/api-keys)
 
 ## Install
@@ -24,6 +24,7 @@ For local development from a monorepo checkout:
 git clone https://github.com/0xPlaygrounds/ryzome-mcp-plugins
 cd ryzome-mcp-plugins
 pnpm install
+pnpm build
 openclaw plugins install -l packages/openclaw-ryzome
 ```
 
@@ -66,7 +67,7 @@ You can also configure manually in `~/.openclaw/openclaw.json`:
 | `apiUrl` | No | `https://api.ryzome.ai` | API base URL |
 | `appUrl` | No | `https://ryzome.ai` | App base URL (for viewer links) |
 
-Environment variables `RYZOME_OPENCLAW_API_KEY` or `RYZOME_API_KEY` also work.
+Environment variables `RYZOME_OPENCLAW_API_KEY` or `RYZOME_API_KEY` also work. To authenticate with a bearer token instead, set `accessToken` (or `RYZOME_ACCESS_TOKEN`); it is used only when no API key is configured.
 
 ## Tools
 
@@ -86,6 +87,13 @@ Environment variables `RYZOME_OPENCLAW_API_KEY` or `RYZOME_API_KEY` also work.
 | `create_ryzome_bundle` | Create an ordered collection of existing documents |
 | `get_ryzome_bundle` | Retrieve a bundle and its member metadata, including access status |
 | `update_ryzome_bundle` | Add, remove, or reorder documents in a bundle |
+| `create_ryzome_conversation` | Create an empty conversation (thread), optionally with context documents |
+| `get_ryzome_conversation` | Read a conversation with its context and full message history |
+| `list_ryzome_conversations` | List conversations, optionally filtered to pinned ones |
+| `update_ryzome_conversation` | Update a conversation's title, pinned state, or context |
+| `add_ryzome_conversation_message` | Append a user message to a conversation, optionally with context |
+| `search_ryzome_conversations` | Search conversations by title or message content |
+| `delete_ryzome_conversation` | Delete conversations by ID (caller must own them) |
 
 ### `create_ryzome_canvas`
 

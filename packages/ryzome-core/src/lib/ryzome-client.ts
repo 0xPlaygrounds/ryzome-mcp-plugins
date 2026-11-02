@@ -1,9 +1,23 @@
+import { z } from "zod";
 import {
 	bundleDocumentSchema,
 	patchBundleResponseSchema,
 	type BundleDocument,
 	type PatchBundleRequest,
 } from "./client/bundle.js";
+import {
+	addMessageResponseSchema,
+	conversationSummarySchema,
+	conversationViewSchema,
+	createConversationResponseSchema,
+	messageResponseSchema,
+	type AddMessageRequest,
+	type ConversationSummary,
+	type ConversationView,
+	type CreateConversationRequest,
+	type MessageView,
+	type UpdateConversationRequest,
+} from "./client/conversation.js";
 import { documentListResponseSchema } from "./client/document-list.js";
 import {
 	type CanvasEditorView,
@@ -22,8 +36,16 @@ import {
 	type UpdateDocumentMetadataResponse,
 } from "./client/index.js";
 
+import type { RyzomeAuthMode } from "../config.js";
+export type RyzomeClientAuthMode = RyzomeAuthMode;
+
 export interface RyzomeClientConfig {
-	apiKey: string;
+	/** API key, sent as `x-api-key`. Required unless `accessToken` is set. */
+	apiKey?: string;
+	/** Bearer token, sent as `Authorization: Bearer <token>` in bearer mode. */
+	accessToken?: string;
+	/** Defaults to "bearer" when only `accessToken` is present, otherwise "apiKey". */
+	authMode?: RyzomeClientAuthMode;
 	apiUrl: string;
 	appUrl: string;
 }
@@ -31,13 +53,20 @@ export interface RyzomeClientConfig {
 export type RyzomeRequestStage =
 	| "createCanvas"
 	| "createDocument"
+	| "createConversation"
 	| "getCanvas"
 	| "getDocument"
-	| "listCanvases"
+	| "getConversation"
+	| "listConversations"
 	| "listDocuments"
+	| "searchConversations"
 	| "patchCanvas"
 	| "patchDocument"
 	| "patchBundle"
+	| "patchConversation"
+	| "addConversationMessage"
+	| "listConversationMessages"
+	| "deleteConversations"
 	| "updateDocumentMetadata"
 	| "patchSharingConfig"
 	| "getUploadUrl"
@@ -74,6 +103,7 @@ function buildErrorMessage(params: {
 	body: string;
 	canvasId?: string;
 	documentId?: string;
+	conversationId?: string;
 }) {
 	const context = [
 		`${params.stage} failed`,
@@ -81,6 +111,7 @@ function buildErrorMessage(params: {
 		`status=${params.status}`,
 		params.canvasId ? `canvasId=${params.canvasId}` : null,
 		params.documentId ? `documentId=${params.documentId}` : null,
+		params.conversationId ? `conversationId=${params.conversationId}` : null,
 	]
 		.filter(Boolean)
 		.join(" | ");
@@ -97,6 +128,7 @@ export class RyzomeApiError extends Error {
 	readonly retryable: boolean;
 	readonly canvasId?: string;
 	readonly documentId?: string;
+	readonly conversationId?: string;
 
 	constructor(params: {
 		stage: RyzomeRequestStage;
@@ -107,6 +139,7 @@ export class RyzomeApiError extends Error {
 		retryable: boolean;
 		canvasId?: string;
 		documentId?: string;
+		conversationId?: string;
 		cause?: unknown;
 	}) {
 		super(buildErrorMessage(params), { cause: params.cause });
@@ -119,16 +152,36 @@ export class RyzomeApiError extends Error {
 		this.retryable = params.retryable;
 		this.canvasId = params.canvasId;
 		this.documentId = params.documentId;
+		this.conversationId = params.conversationId;
 	}
 }
 
 type CanvasApiClient = ReturnType<typeof createApiClient>;
 
-function makeApiKeyMiddleware(apiKey: string) {
+export function resolveAuthMode(
+	config: Pick<RyzomeClientConfig, "apiKey" | "accessToken" | "authMode">,
+): RyzomeClientAuthMode {
+	if (config.authMode) return config.authMode;
+	return !config.apiKey && config.accessToken ? "bearer" : "apiKey";
+}
+
+function makeAuthMiddleware(config: RyzomeClientConfig) {
+	const mode = resolveAuthMode(config);
+	if (mode === "bearer" && !config.accessToken) {
+		throw new Error("RyzomeClient: bearer auth mode requires accessToken");
+	}
+	if (mode === "apiKey" && !config.apiKey) {
+		throw new Error("RyzomeClient: apiKey auth mode requires apiKey");
+	}
+
 	return {
 		async onRequest({ request }: { request: Request }) {
 			const headers = new Headers(request.headers);
-			headers.set("x-api-key", apiKey);
+			if (mode === "bearer") {
+				headers.set("Authorization", `Bearer ${config.accessToken}`);
+			} else {
+				headers.set("x-api-key", config.apiKey as string);
+			}
 			headers.set("Content-Type", "application/json");
 			headers.set("User-Agent", `RyzomeOpenclawPlugin/0.1.0`);
 
@@ -158,7 +211,7 @@ export class RyzomeClient {
 
 	constructor(config: RyzomeClientConfig) {
 		this.client = createApiClient(`${config.apiUrl.replace(/\/+$/, "")}/v1`);
-		this.client.use(makeApiKeyMiddleware(config.apiKey));
+		this.client.use(makeAuthMiddleware(config));
 		this.client.use(makeResponseCaptureMiddleware(this.responseBodies));
 	}
 
@@ -170,6 +223,7 @@ export class RyzomeClient {
 		error: unknown;
 		canvasId?: string;
 		documentId?: string;
+		conversationId?: string;
 	}) {
 		const body =
 			this.responseBodies.get(params.response) ||
@@ -185,6 +239,7 @@ export class RyzomeClient {
 			retryable: isRetryableStatus(params.response.status),
 			canvasId: params.canvasId,
 			documentId: params.documentId,
+			conversationId: params.conversationId,
 		});
 	}
 
@@ -195,6 +250,7 @@ export class RyzomeClient {
 		error: unknown;
 		canvasId?: string;
 		documentId?: string;
+		conversationId?: string;
 	}) {
 		return new RyzomeApiError({
 			stage: params.stage,
@@ -205,6 +261,7 @@ export class RyzomeClient {
 			retryable: true,
 			canvasId: params.canvasId,
 			documentId: params.documentId,
+			conversationId: params.conversationId,
 			cause: params.error,
 		});
 	}
@@ -215,8 +272,10 @@ export class RyzomeClient {
 				body: {
 					documents: [
 						{
+							...(req.id ? { _id: req.id } : {}),
 							title: req.name,
 							description: req.description,
+							...(req.tags?.length ? { tags: req.tags } : {}),
 							content: {
 								_type: "Canvas",
 								_content: {
@@ -473,6 +532,7 @@ export class RyzomeClient {
 	}
 
 	async createBundle(params: {
+		id?: string;
 		title?: string;
 		description?: string;
 		tags?: string[];
@@ -480,6 +540,7 @@ export class RyzomeClient {
 	}): Promise<BundleDocument> {
 		return bundleDocumentSchema.parse(
 			await this.createDocument({
+				...(params.id ? { _id: params.id } : {}),
 				title: params.title,
 				description: params.description,
 				tags: params.tags,
@@ -533,6 +594,377 @@ export class RyzomeClient {
 				path,
 				error,
 				documentId: bundleId,
+			});
+		}
+	}
+
+	async createConversation(req: CreateConversationRequest): Promise<string> {
+		let httpResponse: Response | undefined;
+		try {
+			const { data, error, response } = await this.client.POST(
+				"/conversation",
+				{
+					body: req,
+				},
+			);
+
+			httpResponse = response;
+			if (!response.ok || !data) {
+				throw this.buildHttpError({
+					stage: "createConversation",
+					method: "POST",
+					path: "/conversation",
+					response,
+					error,
+				});
+			}
+
+			return createConversationResponseSchema.parse(data).conversation_id;
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			if (httpResponse) {
+				throw new RyzomeApiError({
+					stage: "createConversation",
+					method: "POST",
+					path: "/conversation",
+					status: httpResponse.status,
+					body: stringifyErrorBody(error),
+					retryable: false,
+					cause: error,
+				});
+			}
+			throw this.buildNetworkError({
+				stage: "createConversation",
+				method: "POST",
+				path: "/conversation",
+				error,
+			});
+		}
+	}
+
+	async getConversation(conversationId: string): Promise<ConversationView> {
+		const path = `/conversation/${conversationId}`;
+
+		let httpResponse: Response | undefined;
+		try {
+			const { data, error, response } = await this.client.GET(
+				"/conversation/{conversation_id}",
+				{
+					parseAs: "text",
+					params: { path: { conversation_id: conversationId } },
+				},
+			);
+
+			httpResponse = response;
+			if (!response.ok) {
+				throw this.buildHttpError({
+					stage: "getConversation",
+					method: "GET",
+					path,
+					response,
+					error,
+					conversationId,
+				});
+			}
+
+			return conversationViewSchema.parse(JSON.parse(data ?? ""));
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			if (httpResponse) {
+				throw new RyzomeApiError({
+					stage: "getConversation",
+					method: "GET",
+					path,
+					status: httpResponse.status,
+					body: stringifyErrorBody(error),
+					retryable: false,
+					cause: error,
+					conversationId,
+				});
+			}
+			throw this.buildNetworkError({
+				stage: "getConversation",
+				method: "GET",
+				path,
+				error,
+				conversationId,
+			});
+		}
+	}
+
+	async listConversations(opts?: {
+		pinned?: boolean;
+	}): Promise<ConversationSummary[]> {
+		const path = "/conversation";
+
+		let httpResponse: Response | undefined;
+		try {
+			const { data, error, response } = await this.client.GET("/conversation", {
+				parseAs: "text",
+				params: {
+					query: {
+						...(opts?.pinned != null ? { pinned: opts.pinned } : {}),
+					},
+				},
+			});
+
+			httpResponse = response;
+			if (!response.ok) {
+				throw this.buildHttpError({
+					stage: "listConversations",
+					method: "GET",
+					path,
+					response,
+					error,
+				});
+			}
+
+			return z.array(conversationSummarySchema).parse(JSON.parse(data ?? ""));
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			if (httpResponse) {
+				throw new RyzomeApiError({
+					stage: "listConversations",
+					method: "GET",
+					path,
+					status: httpResponse.status,
+					body: stringifyErrorBody(error),
+					retryable: false,
+					cause: error,
+				});
+			}
+			throw this.buildNetworkError({
+				stage: "listConversations",
+				method: "GET",
+				path,
+				error,
+			});
+		}
+	}
+
+	async searchConversations(query: string): Promise<ConversationSummary[]> {
+		const path = `/conversation/search?q=${encodeURIComponent(query)}`;
+
+		let httpResponse: Response | undefined;
+		try {
+			const { data, error, response } = await this.client.GET(
+				"/conversation/search",
+				{
+					parseAs: "text",
+					params: { query: { q: query } },
+				},
+			);
+
+			httpResponse = response;
+			if (!response.ok) {
+				throw this.buildHttpError({
+					stage: "searchConversations",
+					method: "GET",
+					path,
+					response,
+					error,
+				});
+			}
+
+			return z.array(conversationSummarySchema).parse(JSON.parse(data ?? ""));
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			if (httpResponse) {
+				throw new RyzomeApiError({
+					stage: "searchConversations",
+					method: "GET",
+					path,
+					status: httpResponse.status,
+					body: stringifyErrorBody(error),
+					retryable: false,
+					cause: error,
+				});
+			}
+			throw this.buildNetworkError({
+				stage: "searchConversations",
+				method: "GET",
+				path,
+				error,
+			});
+		}
+	}
+
+	async patchConversation(
+		conversationId: string,
+		req: UpdateConversationRequest,
+	): Promise<void> {
+		const path = `/conversation/${conversationId}`;
+
+		try {
+			const { error, response } = await this.client.PATCH(
+				"/conversation/{conversation_id}",
+				{
+					params: { path: { conversation_id: conversationId } },
+					body: req,
+				},
+			);
+
+			if (!response.ok) {
+				throw this.buildHttpError({
+					stage: "patchConversation",
+					method: "PATCH",
+					path,
+					response,
+					error,
+					conversationId,
+				});
+			}
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			throw this.buildNetworkError({
+				stage: "patchConversation",
+				method: "PATCH",
+				path,
+				error,
+				conversationId,
+			});
+		}
+	}
+
+	async addConversationMessage(
+		conversationId: string,
+		req: AddMessageRequest,
+	): Promise<MessageView> {
+		const path = `/conversation/${conversationId}/messages`;
+
+		let httpResponse: Response | undefined;
+		try {
+			const { data, error, response } = await this.client.POST(
+				"/conversation/{conversation_id}/messages",
+				{
+					params: { path: { conversation_id: conversationId } },
+					body: {
+						content: req.content,
+						agent_mode: req.agent_mode,
+						// The route deserializes `context` as bson ObjectIds (extended JSON).
+						context: req.context?.map((id) => ({ $oid: id })),
+					},
+				},
+			);
+
+			httpResponse = response;
+			if (!response.ok || !data) {
+				throw this.buildHttpError({
+					stage: "addConversationMessage",
+					method: "POST",
+					path,
+					response,
+					error,
+					conversationId,
+				});
+			}
+
+			return addMessageResponseSchema.parse(data).message;
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			if (httpResponse) {
+				throw new RyzomeApiError({
+					stage: "addConversationMessage",
+					method: "POST",
+					path,
+					status: httpResponse.status,
+					body: stringifyErrorBody(error),
+					retryable: false,
+					cause: error,
+					conversationId,
+				});
+			}
+			throw this.buildNetworkError({
+				stage: "addConversationMessage",
+				method: "POST",
+				path,
+				error,
+				conversationId,
+			});
+		}
+	}
+
+	async listConversationMessages(
+		conversationId: string,
+	): Promise<MessageView[]> {
+		const path = `/conversation/${conversationId}/messages`;
+
+		let httpResponse: Response | undefined;
+		try {
+			const { data, error, response } = await this.client.GET(
+				"/conversation/{conversation_id}/messages",
+				{
+					parseAs: "text",
+					params: { path: { conversation_id: conversationId } },
+				},
+			);
+
+			httpResponse = response;
+			if (!response.ok) {
+				throw this.buildHttpError({
+					stage: "listConversationMessages",
+					method: "GET",
+					path,
+					response,
+					error,
+					conversationId,
+				});
+			}
+
+			return z.array(messageResponseSchema).parse(JSON.parse(data ?? ""));
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			if (httpResponse) {
+				throw new RyzomeApiError({
+					stage: "listConversationMessages",
+					method: "GET",
+					path,
+					status: httpResponse.status,
+					body: stringifyErrorBody(error),
+					retryable: false,
+					cause: error,
+					conversationId,
+				});
+			}
+			throw this.buildNetworkError({
+				stage: "listConversationMessages",
+				method: "GET",
+				path,
+				error,
+				conversationId,
+			});
+		}
+	}
+
+	async deleteConversations(conversationIds: string[]): Promise<boolean> {
+		const path = "/conversations";
+
+		try {
+			const { data, error, response } = await this.client.DELETE(
+				"/conversations",
+				{
+					body: { conversation_ids: conversationIds },
+				},
+			);
+
+			if (!response.ok || !data) {
+				throw this.buildHttpError({
+					stage: "deleteConversations",
+					method: "DELETE",
+					path,
+					response,
+					error,
+				});
+			}
+
+			return data.deleted;
+		} catch (error) {
+			if (error instanceof RyzomeApiError) throw error;
+			throw this.buildNetworkError({
+				stage: "deleteConversations",
+				method: "DELETE",
+				path,
+				error,
 			});
 		}
 	}

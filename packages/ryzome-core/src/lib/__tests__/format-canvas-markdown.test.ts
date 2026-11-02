@@ -30,19 +30,40 @@ function makeTextNode(
 		x: 0,
 		y: 0,
 		data: {
-			_type: "Document" as const,
-			_id: { $oid: `doc-${id}` },
-			content: {
-				_type: "Text" as const,
-				_content: { text },
-			},
-			title,
-			createdAt: "2026-01-01T00:00:00Z",
-			updatedAt: "2026-01-01T00:00:00Z",
-			generated: true,
-			ownerId: "owner1",
+			_type: "Authorized" as const,
+			_content: makeDocumentPayload(id, title, text),
 		},
 		...overrides,
+	};
+}
+
+function makeDocumentPayload(id: string, title: string, text: string) {
+	return {
+		_type: "Document" as const,
+		_id: { $oid: `doc-${id}` },
+		content: {
+			_type: "Text" as const,
+			_content: { text },
+		},
+		title,
+		createdAt: "2026-01-01T00:00:00Z",
+		updatedAt: "2026-01-01T00:00:00Z",
+		generated: true,
+		ownerId: "owner1",
+	};
+}
+
+function makeNodeShell(id: string, data: Record<string, unknown>) {
+	return {
+		_id: { $oid: id },
+		color: "#ffffff",
+		createdAt: "2026-01-01T00:00:00Z",
+		updatedAt: "2026-01-01T00:00:00Z",
+		height: 200,
+		width: 320,
+		x: 0,
+		y: 0,
+		data,
 	};
 }
 
@@ -148,24 +169,57 @@ describe("formatCanvasAsMarkdown", () => {
 	it("should handle group nodes", () => {
 		const canvas = makeCanvas({
 			nodes: [
-				{
-					_id: { $oid: "g1" },
-					color: "#ffffff",
-					createdAt: "2026-01-01T00:00:00Z",
-					updatedAt: "2026-01-01T00:00:00Z",
-					height: 400,
-					width: 600,
-					x: 0,
-					y: 0,
-					data: {
-						_type: "Group" as const,
-						title: "Planning Phase",
-					},
-				},
+				makeNodeShell("g1", {
+					_type: "Authorized",
+					_content: { _type: "Group", title: "Planning Phase" },
+				}),
 			],
 		});
 
 		const md = formatCanvasAsMarkdown(canvas as never);
 		expect(md).toContain("### Planning Phase");
+	});
+
+	it("should render unavailable nodes with their access state instead of Untitled", () => {
+		const canvas = makeCanvas({
+			nodes: [
+				makeTextNode("n1", "Visible", "Readable content"),
+				makeNodeShell("n2", {
+					_type: "NotFound",
+					_content: { $oid: "doc-n2" },
+				}),
+				makeNodeShell("n3", {
+					_type: "Unauthorized",
+					_content: { $oid: "doc-n3" },
+				}),
+				makeNodeShell("n4", {
+					_type: "Error",
+					_content: { documentId: { $oid: "doc-n4" }, message: "boom" },
+				}),
+			],
+			edges: [makeEdge("n1", "n2")],
+		});
+
+		const md = formatCanvasAsMarkdown(canvas as never);
+		expect(md).toContain("## Nodes (4)");
+		expect(md).toContain("### (unavailable: NotFound)");
+		expect(md).toContain("### (unavailable: Unauthorized)");
+		expect(md).toContain("### (unavailable: Error)");
+		expect(md).not.toContain("Untitled");
+		expect(md).toContain("- Visible → (unavailable: NotFound)");
+	});
+
+	it("should still format legacy flat node data", () => {
+		const canvas = makeCanvas({
+			nodes: [
+				makeNodeShell("n1", makeDocumentPayload("n1", "Legacy", "Old shape")),
+				makeNodeShell("g1", { _type: "Group", title: "Legacy Group" }),
+			],
+		});
+
+		const md = formatCanvasAsMarkdown(canvas as never);
+		expect(md).toContain("### Legacy");
+		expect(md).toContain("Old shape");
+		expect(md).toContain("### Legacy Group");
 	});
 });
