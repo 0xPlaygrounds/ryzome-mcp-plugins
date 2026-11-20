@@ -11,7 +11,7 @@ In Claude Code:
 /plugin install claude-ryzome
 ```
 
-The first command registers this repo as a plugin marketplace; the second installs the plugin from it. You'll then be prompted for your Ryzome API key (stored securely in your system keychain). Get one at [ryzome.ai/workspace#settings/api-keys](https://ryzome.ai/workspace#settings/api-keys).
+The first command registers this repo as a plugin marketplace; the second installs the plugin from it. For OAuth, complete the [MCP login](../ryzome-mcp/README.md#sign-in-with-ryzome-oauth) and enter the same OAuth client ID in plugin settings. For API-key setup, enter your Ryzome API key (stored securely in your system keychain). Get one at [ryzome.ai/workspace#settings/api-keys](https://ryzome.ai/workspace#settings/api-keys).
 
 ## What's Included
 
@@ -72,15 +72,7 @@ The first command registers this repo as a plugin marketplace; the second instal
 
 ## Configuration
 
-The plugin uses Claude Code's `userConfig` system:
-
-1. On install (or via `/plugin`), you're prompted for `api_key` (marked as sensitive, stored in keychain)
-2. `.mcp.json` injects the value via `${user_config.api_key}` substitution into `RYZOME_API_KEY`
-3. The bundled MCP server (`@ryzome-ai/ryzome-mcp`) reads `RYZOME_API_KEY`
-
-```
-userConfig.api_key → ${user_config.api_key} → RYZOME_API_KEY → ryzome-mcp server
-```
+In Claude Code plugin settings, set `oauth_client_id` to the public client ID used for terminal login. Claude passes this to the MCP server as `RYZOME_OAUTH_CLIENT_ID`. For API-key authentication, set the sensitive `api_key` field instead. A configured API key takes precedence. Restart Claude Code after changing plugin settings.
 
 ## Architecture
 

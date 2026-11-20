@@ -11,8 +11,14 @@
 			"type": "string",
 			"title": "Ryzome API Key",
 			"description": "Your Ryzome API key. Get one at https://ryzome.ai/workspace#settings/api-keys",
-			"required": true,
+			"required": false,
 			"sensitive": true
+		},
+		"oauth_client_id": {
+			"type": "string",
+			"title": "Ryzome OAuth client ID",
+			"description": "Registered production native client ID used with ryzome-mcp login. Leave the API key empty to use OAuth.",
+			"required": false
 		}
 	}
 }
