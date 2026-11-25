@@ -23,7 +23,8 @@ export const documentListResponseSchema = z.object({
 			title: z.string().nullish(),
 			description: z.string().nullish(),
 			content: z.looseObject({
-				_type: documentContentTypeSchema,
+				// A type the backend adds later is kept instead of failing the whole list.
+				_type: z.union([documentContentTypeSchema, z.string()]),
 			}),
 			pinned: z.boolean(),
 			inLibrary: z.boolean(),
