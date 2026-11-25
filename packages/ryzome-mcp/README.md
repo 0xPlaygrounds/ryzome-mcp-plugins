@@ -12,7 +12,7 @@ Get your API key at [ryzome.ai/api-key](https://ryzome.ai/api-key).
 
 ## Sign in with Ryzome OAuth
 
-OAuth sign-in requires Node 24+ and a public client ID from your integration maintainer. The package currently ships without a default production registration. A production Ryzome admin registers a native client in **Admin → OAuth Apps** with callback `http://[::1]/oauth/callback`. Allow `documents:read`, `documents:write`, `conversations:read`, `conversations:write`, and `files:write` for the full tool set. The client also requests identity and offline access.
+OAuth sign-in requires Node 24+ and a public client ID from your integration maintainer. The package currently ships without a default production registration. A production Ryzome admin registers a native client in **Admin → OAuth Apps** with callback `http://[::1]/oauth/callback`. Allow `documents:read`, `documents:write`, `conversations:read`, `conversations:write`, `files:write`, `workspace:read`, `sharing:write`, `publishing:write`, and `generation:run` for the full tool set. Existing users can run login again to approve the added permissions. The client also requests identity and offline access.
 
 ```sh
 export RYZOME_OAUTH_CLIENT_ID='<registered production client ID>'
@@ -66,6 +66,13 @@ Add to your `.mcp.json` or MCP client config:
 | `add_ryzome_conversation_message` | Append a user message to a conversation, optionally with context |
 | `search_ryzome_conversations` | Search conversations by title or message content |
 | `delete_ryzome_conversation` | Delete conversations by ID (caller must own them) |
+| `search_ryzome` | Search across documents, conversations, public documents, or publications |
+| `get_ryzome_workspace_navigation` | Read the saved workspace navigation layout |
+| `set_ryzome_document_sharing` | Replace a document’s complete invite list and link permission |
+| `publish_ryzome_document` | Publish a document and return its publication ID |
+| `unpublish_ryzome_document` | Remove a publication by its publication ID |
+| `start_ryzome_generation` | Start a billable AI response to an existing conversation message |
+| `get_ryzome_generation` | Check status and find the resulting message |
 
 Use `list_ryzome_documents` with `content_types: ["Bundle"]` to discover bundles.
 For current API contracts and features that still need backend authentication support,

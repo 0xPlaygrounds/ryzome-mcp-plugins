@@ -21,6 +21,8 @@ import {
 } from "@ryzome-ai/ryzome-core";
 import type { RyzomeClientConfig } from "@ryzome-ai/ryzome-core";
 
+import { workspaceTools } from "./workspace-tools.js";
+
 function resourceIdToString(id: string | string[]): string {
 	return Array.isArray(id) ? (id[0] ?? "") : id;
 }
@@ -65,7 +67,7 @@ export function createRyzomeMcpServer(): McpServer {
 
 	// ── Tools ──────────────────────────────────────────────
 
-	for (const tool of toolRegistry) {
+	for (const tool of [...toolRegistry, ...workspaceTools]) {
 		server.tool(
 			tool.name,
 			tool.description,

@@ -17,6 +17,10 @@ const scopes = [
 	"conversations:read",
 	"conversations:write",
 	"files:write",
+	"workspace:read",
+	"sharing:write",
+	"publishing:write",
+	"generation:run",
 ];
 const reconnect = "Run ryzome-mcp login to authorize Ryzome.";
 const tokenResponse = z.object({
@@ -248,20 +252,36 @@ export async function accessToken(clientId: string): Promise<string> {
 
 async function revoke(clientId: string, saved: Grant) {
 	const refresh = saved.refresh ?? saved.spentRefresh;
-	const tokens = [saved.access, ...(refresh ? [refresh] : [])];
-	const results = await Promise.allSettled(
-		tokens.map((token) =>
-			post("revoke", {
+	// Revoking a refresh token can also delete the associated access token.
+	// Finish the access-token request first, then attempt refresh revocation
+	// even if the first request failed.
+	const failures: string[] = [];
+	async function revokeToken(
+		token: string,
+		hint: "access_token" | "refresh_token",
+	) {
+		try {
+			await post("revoke", {
 				client_id: clientId,
 				token,
-				token_type_hint:
-					token === saved.access ? "access_token" : "refresh_token",
-			}),
-		),
-	);
-	if (results.some((r) => r.status === "rejected"))
+				token_type_hint: hint,
+			});
+		} catch (error) {
+			failures.push(
+				hint +
+					" (" +
+					(error instanceof Error ? error.message : "request failed") +
+					")",
+			);
+		}
+	}
+	await revokeToken(saved.access, "access_token");
+	if (refresh) await revokeToken(refresh, "refresh_token");
+	if (failures.length)
 		throw new Error(
-			"Revocation incomplete. Disconnect the app in Ryzome Settings.",
+			"Revocation incomplete for " +
+				failures.join(", ") +
+				". Disconnect the app in Ryzome Settings.",
 		);
 }
 
@@ -307,7 +327,9 @@ export async function oauthCommand(
 		console.error("Signed in. Granted scopes: " + saved.scope);
 		if (typeof previous?.value === "string") {
 			try {
-				await revoke(clientId, grant.parse(JSON.parse(previous.value)));
+				const old = grant.parse(JSON.parse(previous.value));
+				// Revocation of an already-spent refresh token can invalidate the new grant's family.
+				await revoke(clientId, { ...old, spentRefresh: undefined });
 			} catch {
 				console.error(
 					"The new login is active. Ryzome could not confirm revocation of the previous tokens.",

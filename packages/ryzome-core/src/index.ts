@@ -13,6 +13,7 @@ export {
 } from "./config.js";
 
 export {
+	createAuthenticatedApiClient,
 	RyzomeClient,
 	RyzomeApiError,
 	resolveAuthMode,
@@ -51,3 +52,5 @@ export type {
 
 export { toolRegistry } from "./tools/index.js";
 export type { ToolEntry, ToolResult } from "./tools/index.js";
+
+export { objectIdStringSchema } from "./lib/ids.js";

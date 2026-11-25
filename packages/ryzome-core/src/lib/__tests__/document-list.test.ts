@@ -47,8 +47,13 @@ describe("document list API contract", () => {
 		expect(url.searchParams.get("pinned")).toBe("true");
 		expect(url.searchParams.has("isFavorite")).toBe(false);
 	});
-	it("maps document favorites and serializes tags and false favorites", async () => {
-		const fetchMock = mockResponse({ documents: [metadata] });
+	it("filters document metadata by tag and sends false favorites", async () => {
+		const fetchMock = mockResponse({
+			documents: [
+				metadata,
+				{ ...metadata, tags: [], content: { _type: "Applet" } },
+			],
+		});
 		const result = await executeListDocuments(
 			{ tag: "research & notes", favorite: false },
 			config,
@@ -58,7 +63,8 @@ describe("document list API contract", () => {
 			contentType: "Canvas",
 		});
 		const url = new URL(fetchMock.mock.calls[0][0].url);
-		expect(url.searchParams.getAll("tags")).toEqual(["research & notes"]);
+		expect(JSON.parse(result.content[0].text).count).toBe(1);
+		expect(url.searchParams.has("tags")).toBe(false);
 		expect(url.searchParams.get("pinned")).toBe("false");
 		expect(url.searchParams.has("tag")).toBe(false);
 	});

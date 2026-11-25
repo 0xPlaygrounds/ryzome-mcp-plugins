@@ -8,7 +8,7 @@ This is a source-contract audit, not a live deployment verification.
 
 `GET /v1/document` returns `{ documents: DocumentMetadataView[] }`. Metadata includes
 `content._type`, `pinned`, `inLibrary`, and BSON timestamps; it does not include full
-text, canvas nodes, or bundle members. List filters use `tags` and `pinned`.
+text, canvas nodes, or bundle members. The client sends `pinned` to the API and filters tags on the returned metadata.
 The shared client normalizes timestamps and retains `isFavorite` in tool summaries.
 
 Malformed successful responses must retain their HTTP status and must not be

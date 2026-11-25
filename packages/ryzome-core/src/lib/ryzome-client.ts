@@ -25,7 +25,6 @@ import {
 	type CreateCanvasRequest,
 	type CreateCanvasResponse,
 	type CreateDocumentRequestDocument,
-	type DocumentContentView,
 	type DocumentView,
 	type GetUploadUrlResponse,
 	type ListCanvasesResponse,
@@ -76,7 +75,7 @@ export interface ListDocumentsOptions {
 	tag?: string;
 	favorite?: boolean;
 	inLibraryOnly?: boolean;
-	contentTypes?: DocumentContentView["_type"][];
+	contentTypes?: ListDocumentsResponse["data"][number]["content"]["_type"][];
 }
 
 function isRetryableStatus(status: number): boolean {
@@ -205,13 +204,18 @@ function makeResponseCaptureMiddleware(
 	};
 }
 
+export function createAuthenticatedApiClient(config: RyzomeClientConfig) {
+	const client = createApiClient(`${config.apiUrl.replace(/\/+$/, "")}/v1`);
+	client.use(makeAuthMiddleware(config));
+	return client;
+}
+
 export class RyzomeClient {
 	private readonly client: CanvasApiClient;
 	private readonly responseBodies = new WeakMap<Response, string>();
 
 	constructor(config: RyzomeClientConfig) {
-		this.client = createApiClient(`${config.apiUrl.replace(/\/+$/, "")}/v1`);
-		this.client.use(makeAuthMiddleware(config));
+		this.client = createAuthenticatedApiClient(config);
 		this.client.use(makeResponseCaptureMiddleware(this.responseBodies));
 	}
 
@@ -464,7 +468,6 @@ export class RyzomeClient {
 				parseAs: "text",
 				params: {
 					query: {
-						...(opts?.tag ? { tags: [opts.tag] } : {}),
 						...(opts?.favorite != null ? { pinned: opts.favorite } : {}),
 					},
 				},
@@ -492,6 +495,7 @@ export class RyzomeClient {
 			}
 
 			const documents = parsed.data.documents.filter((doc) => {
+				if (opts?.tag && !doc.tags.includes(opts.tag)) return false;
 				if (opts?.inLibraryOnly && !doc.inLibrary) return false;
 				if (
 					opts?.contentTypes?.length &&

@@ -15,7 +15,7 @@ The first command registers this repo as a plugin marketplace; the second instal
 
 ## What's Included
 
-### MCP Tools (23)
+### MCP Tools (30)
 
 | Tool | Description |
 |------|-------------|
@@ -42,6 +42,13 @@ The first command registers this repo as a plugin marketplace; the second instal
 | `add_ryzome_conversation_message` | Append a user message to a conversation, optionally with context |
 | `search_ryzome_conversations` | Search conversations by title or message content |
 | `delete_ryzome_conversation` | Delete conversations by ID (caller must own them) |
+| `search_ryzome` | Search across documents, conversations, public documents, or publications |
+| `get_ryzome_workspace_navigation` | Read the saved workspace navigation layout |
+| `set_ryzome_document_sharing` | Replace a document’s complete invite list and link permission |
+| `publish_ryzome_document` | Publish a document and return its publication ID |
+| `unpublish_ryzome_document` | Remove a publication by its publication ID |
+| `start_ryzome_generation` | Start a billable AI response to an existing conversation message |
+| `get_ryzome_generation` | Check status and find the resulting message |
 
 ### MCP Resources
 

@@ -1,3 +1,4 @@
+import { documentContentTypeSchema } from "../document-content.js";
 import { z } from "zod";
 
 const timestampSchema = z.union([
@@ -22,14 +23,7 @@ export const documentListResponseSchema = z.object({
 			title: z.string().nullish(),
 			description: z.string().nullish(),
 			content: z.looseObject({
-				_type: z.enum([
-					"Canvas",
-					"Text",
-					"File",
-					"Youtube",
-					"Website",
-					"Bundle",
-				]),
+				_type: documentContentTypeSchema,
 			}),
 			pinned: z.boolean(),
 			inLibrary: z.boolean(),
