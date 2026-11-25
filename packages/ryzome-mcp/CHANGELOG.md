@@ -1,5 +1,31 @@
 # @ryzome-ai/ryzome-mcp
 
+## 0.4.0
+
+### Minor Changes
+
+- 722e990: Support scoped production OAuth login and logout for the local MCP server and Claude plugin.
+  
+  Expose workspace navigation, cross-collection search, sharing, publication and conversation generation through MCP. Filter document tags using returned metadata.
+- 67eb75f: Align canvas reads with resource access states and add reference nodes, explicit layout,
+  caller-supplied IDs, provenance, canvas updates, structural inspection, bearer authentication,
+  and structured results. Preserve parallel edges, validate identity collisions before writes,
+  and avoid replaying ambiguous canvas mutations. Keep adapter diagnostics and results aligned.
+  
+  Respect explicit dimensions in legacy layout spacing and send image-node canvas mutations only once.
+
+### Patch Changes
+
+- 73a284c: Update package dependencies and move the workspace to pnpm 12. Build the
+  OpenClaw plugin as JavaScript for current OpenClaw releases, and use its new
+  config mutation API. Regenerate the bundled Hermes tool manifest with the
+  updated Zod schema output.
+- Updated dependencies [73a284c]
+- Updated dependencies [722e990]
+- Updated dependencies [67eb75f]
+- Updated dependencies [be5cb74]
+  - @ryzome-ai/ryzome-core@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

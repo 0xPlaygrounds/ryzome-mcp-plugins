@@ -1,5 +1,20 @@
 # @ryzome-ai/ryzome-claude-plugin
 
+## 2.1.0
+
+### Minor Changes
+
+- 722e990: Support scoped production OAuth login and logout for the local MCP server and Claude plugin.
+  
+  Expose workspace navigation, cross-collection search, sharing, publication and conversation generation through MCP. Filter document tags using returned metadata.
+
+### Patch Changes
+
+- Updated dependencies [73a284c]
+- Updated dependencies [722e990]
+- Updated dependencies [67eb75f]
+  - @ryzome-ai/ryzome-mcp@0.4.0
+
 ## 2.0.0
 
 ### Patch Changes
