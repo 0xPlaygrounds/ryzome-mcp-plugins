@@ -40,7 +40,7 @@ function result<T>(reply: {
 				? reply.error
 				: JSON.stringify(reply.error);
 		throw new Error(
-			`Ryzome API returned HTTP ${reply.response.status}: ${detail ?? reply.response.statusText}`,
+			`Ryzome API returned HTTP ${reply.response.status}: ${detail || reply.response.statusText}`,
 		);
 	}
 	return reply.data;

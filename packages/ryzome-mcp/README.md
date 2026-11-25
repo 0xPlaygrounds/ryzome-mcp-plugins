@@ -21,6 +21,8 @@ npx -y @ryzome-ai/ryzome-mcp login
 
 Open the printed link on the same computer and approve the permissions you want. Login reports granted scopes. Operations requiring a declined permission receive HTTP 403. Put the same `RYZOME_OAUTH_CLIENT_ID` in the MCP server’s `env` below in place of the API key. Run the terminal and MCP host as the same OS user. Grants are stored locally in `~/.ryzome-mcp/oauth.sqlite` and refreshed as needed. On a lost refresh response, run login again. To revoke access, run `npx -y @ryzome-ai/ryzome-mcp logout` with the same client ID.
 
+Use an OAuth bearer grant for private search, workspace navigation, sharing, publishing, and generation. Clear any configured API key when using OAuth because the server gives API keys precedence.
+
 ## MCP Client Configuration
 
 Add to your `.mcp.json` or MCP client config:

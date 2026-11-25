@@ -88,17 +88,17 @@ The metadata update request does not accept `tags`, so `update_ryzome_document`
 no longer advertises that field: tags can only be set when creating a document.
 Supporting tag updates needs a matching backend operation.
 
-## Follow-up tools requiring backend authentication work
+## Scoped OAuth tools
 
-The following newer features currently use session credentials rather than API-key
-authentication. Exposing tools for them would also require backend changes:
-
-| Feature | Candidate tool | Current backend route |
+| Capability | Tools | Required resource scopes |
 | --- | --- | --- |
-| Workspace search | `search_ryzome_documents` | `GET /v1/search` |
-| Copy documents | `copy_ryzome_document` | `POST /v1/document/copy` |
-| Delete documents | `delete_ryzome_documents` | `DELETE /v1/documents` |
-| Workspace navigation and state | Workspace inspection/navigation tools | Workspace routes |
+| Private search | `search_ryzome` | `documents:read` and/or `conversations:read` for the requested private collections |
+| Workspace navigation | `get_ryzome_workspace_navigation` | `workspace:read` |
+| Document sharing | `set_ryzome_document_sharing` | `sharing:write` |
+| Publishing | `publish_ryzome_document`, `unpublish_ryzome_document` | `publishing:write`, plus `documents:read` when publishing |
+| Generation | `start_ryzome_generation`, `get_ryzome_generation` | `generation:run`, plus document and conversation read/write when starting |
+
+Public-only search allows anonymous reads. For private operations on these routes, configure MCP with an OAuth bearer grant.
 
 Before adding a tool, check the handler's authentication extractor as well as its
 OpenAPI security declaration. Keep read, create, and patch contracts distinct:
