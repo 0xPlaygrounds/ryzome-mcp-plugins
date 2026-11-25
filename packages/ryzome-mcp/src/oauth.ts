@@ -70,12 +70,12 @@ async function authorize(clientId: string) {
 	const server = createServer();
 	try {
 		await new Promise<void>((resolve, reject) =>
-			server.once("error", reject).listen(0, "127.0.0.1", resolve),
+			server.once("error", reject).listen(0, "::1", resolve),
 		);
 		const address = server.address();
 		if (!address || typeof address === "string")
 			throw new Error("Missing callback port");
-		const redirect = `http://127.0.0.1:${address.port}/oauth/callback`;
+		const redirect = `http://[::1]:${address.port}/oauth/callback`;
 		const url = new URL(issuer + "/oauth2/authorize");
 		url.search = new URLSearchParams({
 			response_type: "code",
@@ -250,7 +250,14 @@ async function revoke(clientId: string, saved: Grant) {
 	const refresh = saved.refresh ?? saved.spentRefresh;
 	const tokens = [saved.access, ...(refresh ? [refresh] : [])];
 	const results = await Promise.allSettled(
-		tokens.map((token) => post("revoke", { client_id: clientId, token })),
+		tokens.map((token) =>
+			post("revoke", {
+				client_id: clientId,
+				token,
+				token_type_hint:
+					token === saved.access ? "access_token" : "refresh_token",
+			}),
+		),
 	);
 	if (results.some((r) => r.status === "rejected"))
 		throw new Error(
