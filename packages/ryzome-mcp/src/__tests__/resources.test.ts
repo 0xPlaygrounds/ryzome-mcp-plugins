@@ -1,6 +1,6 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -82,17 +82,8 @@ const mockDocuments = [
 	},
 ];
 
-async function createConnectedClient(envOverrides?: Record<string, string>) {
-	const originalEnv = { ...process.env };
-	if (envOverrides) {
-		Object.assign(process.env, envOverrides);
-	}
-
+async function createConnectedClient() {
 	const server = createRyzomeMcpServer();
-
-	// Restore env after server creation (config is resolved at creation time)
-	process.env = originalEnv;
-
 	const [clientTransport, serverTransport] =
 		InMemoryTransport.createLinkedPair();
 
@@ -105,21 +96,30 @@ async function createConnectedClient(envOverrides?: Record<string, string>) {
 }
 
 describe("MCP resources", () => {
-	const originalEnv = process.env;
-
 	beforeEach(() => {
-		process.env = { ...originalEnv, RYZOME_API_KEY: "test-key" };
+		vi.stubEnv("RYZOME_API_KEY", "test-key");
+		for (const key of [
+			"RYZOME_OPENCLAW_API_KEY",
+			"PLUGIN_USER_CONFIG_API_KEY",
+			"RYZOME_ACCESS_TOKEN",
+			"PLUGIN_USER_CONFIG_ACCESS_TOKEN",
+			"RYZOME_OAUTH_CLIENT_ID",
+		])
+			vi.stubEnv(key, undefined);
 	});
 
 	afterEach(() => {
-		process.env = originalEnv;
+		vi.unstubAllEnvs();
 		vi.restoreAllMocks();
 	});
 
 	it("lists the static resources before OAuth sign-in", async () => {
 		const dir = await mkdtemp(join(tmpdir(), "ryzome-resources-"));
-		process.env = { HOME: dir, RYZOME_OAUTH_CLIENT_ID: "test-client" };
+		vi.stubEnv(process.platform === "win32" ? "USERPROFILE" : "HOME", dir);
+		vi.stubEnv("RYZOME_API_KEY", undefined);
+		vi.stubEnv("RYZOME_OAUTH_CLIENT_ID", "test-client");
 		try {
+			expect(homedir()).toBe(dir);
 			const { client } = await createConnectedClient();
 			const result = await client.listResources();
 			expect(result.resources.map((resource) => resource.uri).sort()).toEqual([
@@ -141,9 +141,7 @@ describe("MCP resources", () => {
 			data: mockDocuments as never,
 		});
 
-		const { client } = await createConnectedClient({
-			RYZOME_API_KEY: "test-key",
-		});
+		const { client } = await createConnectedClient();
 		const result = await client.listResources();
 
 		// Should have the static canvas-list resource
@@ -176,9 +174,7 @@ describe("MCP resources", () => {
 			data: mockCanvases,
 		});
 
-		const { client } = await createConnectedClient({
-			RYZOME_API_KEY: "test-key",
-		});
+		const { client } = await createConnectedClient();
 		const result = await client.readResource({ uri: "ryzome://canvases" });
 
 		expect(result.contents).toHaveLength(1);
@@ -200,9 +196,7 @@ describe("MCP resources", () => {
 			data: mockDocuments as never,
 		});
 
-		const { client } = await createConnectedClient({
-			RYZOME_API_KEY: "test-key",
-		});
+		const { client } = await createConnectedClient();
 		const result = await client.readResource({ uri: "ryzome://documents" });
 
 		expect(result.contents).toHaveLength(1);
@@ -227,9 +221,7 @@ describe("MCP resources", () => {
 				: never,
 		);
 
-		const { client } = await createConnectedClient({
-			RYZOME_API_KEY: "test-key",
-		});
+		const { client } = await createConnectedClient();
 		const result = await client.readResource({
 			uri: "ryzome://canvas/aaa111",
 		});
@@ -255,9 +247,7 @@ describe("MCP resources", () => {
 				: never,
 		);
 
-		const { client } = await createConnectedClient({
-			RYZOME_API_KEY: "test-key",
-		});
+		const { client } = await createConnectedClient();
 		const result = await client.readResource({
 			uri: "ryzome://document/doc123",
 		});
