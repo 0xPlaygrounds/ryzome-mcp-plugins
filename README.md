@@ -6,6 +6,8 @@ Ryzome lets AI agents externalize their working context (plans, research, reason
 
 This monorepo provides Ryzome canvas tools for AI agents across multiple integration surfaces.
 
+The MCP server and Claude plugin offer [production OAuth sign-in for registered clients](packages/ryzome-mcp/README.md#sign-in-with-ryzome-oauth).
+
 ## Packages
 
 | Package | Description | Registry |

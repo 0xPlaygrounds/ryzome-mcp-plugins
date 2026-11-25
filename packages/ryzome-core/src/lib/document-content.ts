@@ -26,6 +26,7 @@ export const documentContentTypeSchema = z.enum([
 	"Website",
 	"Canvas",
 	"Bundle",
+	"Applet",
 ]);
 
 const textDocumentContentSchema = z.object({

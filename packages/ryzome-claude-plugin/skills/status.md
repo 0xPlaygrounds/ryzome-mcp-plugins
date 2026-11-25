@@ -12,6 +12,6 @@ Check the Ryzome integration status:
    - Number of library documents found
    - List the 5 most recent canvases (name, description snippet, URL)
    - List the 5 most recent documents (title, content type, URL)
-3. If either call fails, report the error and suggest checking the API key configuration.
+3. If either call fails, report the error and suggest checking the configured credential. For OAuth, verify the client ID and run `ryzome-mcp login` if the grant needs renewal.
 
 Format the output as a concise status report.

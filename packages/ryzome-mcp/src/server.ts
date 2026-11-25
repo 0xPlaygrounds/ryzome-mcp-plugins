@@ -21,6 +21,8 @@ import {
 } from "@ryzome-ai/ryzome-core";
 import type { RyzomeClientConfig } from "@ryzome-ai/ryzome-core";
 
+import { workspaceTools } from "./workspace-tools.js";
+
 function resourceIdToString(id: string | string[]): string {
 	return Array.isArray(id) ? (id[0] ?? "") : id;
 }
@@ -35,11 +37,20 @@ const { version: SERVER_VERSION } = JSON.parse(
 	readFileSync(packageJsonPath, "utf8"),
 ) as { version: string };
 
-function resolveClientConfig(): RyzomeClientConfig | null {
-	return toClientConfig(parseConfig({}));
+async function resolveClientConfig(): Promise<RyzomeClientConfig | null> {
+	const config = parseConfig({});
+	const staticConfig = toClientConfig(config);
+	const clientId = process.env.RYZOME_OAUTH_CLIENT_ID?.trim();
+	if (staticConfig || !clientId) return staticConfig;
+	const { accessToken } = await import("./oauth.js");
+	return {
+		...config,
+		authMode: "bearer",
+		accessToken: await accessToken(clientId),
+	};
 }
 
-const NOT_CONFIGURED_MESSAGE = `Ryzome credentials not configured. ${RYZOME_CREDENTIAL_SETUP_HINT}`;
+const NOT_CONFIGURED_MESSAGE = `Ryzome credentials not configured. ${RYZOME_CREDENTIAL_SETUP_HINT} For OAuth, configure RYZOME_OAUTH_CLIENT_ID and run ryzome-mcp login.`;
 
 function notConfiguredError() {
 	return {
@@ -54,19 +65,17 @@ export function createRyzomeMcpServer(): McpServer {
 		version: SERVER_VERSION,
 	});
 
-	const clientConfig = resolveClientConfig();
-
 	// ── Tools ──────────────────────────────────────────────
 
-	for (const tool of toolRegistry) {
+	for (const tool of [...toolRegistry, ...workspaceTools]) {
 		server.tool(
 			tool.name,
 			tool.description,
 			tool.paramsSchema.shape,
 			async (params) => {
-				if (!clientConfig) return notConfiguredError();
-
 				try {
+					const clientConfig = await resolveClientConfig();
+					if (!clientConfig) return notConfiguredError();
 					// Forward structuredContent alongside text content when a tool provides it.
 					const result = await tool.execute(params, clientConfig);
 					return {
@@ -105,6 +114,7 @@ export function createRyzomeMcpServer(): McpServer {
 			mimeType: "application/json",
 		},
 		async (uri) => {
+			const clientConfig = await resolveClientConfig();
 			if (!clientConfig) {
 				return {
 					contents: [
@@ -149,6 +159,7 @@ export function createRyzomeMcpServer(): McpServer {
 			mimeType: "application/json",
 		},
 		async (uri) => {
+			const clientConfig = await resolveClientConfig();
 			if (!clientConfig) {
 				return {
 					contents: [
@@ -190,9 +201,9 @@ export function createRyzomeMcpServer(): McpServer {
 		"canvas",
 		new ResourceTemplate("ryzome://canvas/{id}", {
 			list: async () => {
-				if (!clientConfig) return { resources: [] };
-
 				try {
+					const clientConfig = await resolveClientConfig();
+					if (!clientConfig) return { resources: [] };
 					const client = new RyzomeClient(clientConfig);
 					const result = await client.listCanvases();
 					return {
@@ -214,6 +225,7 @@ export function createRyzomeMcpServer(): McpServer {
 			mimeType: "text/markdown",
 		},
 		async (uri, { id }) => {
+			const clientConfig = await resolveClientConfig();
 			if (!clientConfig) {
 				return {
 					contents: [
@@ -248,9 +260,9 @@ export function createRyzomeMcpServer(): McpServer {
 		"document",
 		new ResourceTemplate("ryzome://document/{id}", {
 			list: async () => {
-				if (!clientConfig) return { resources: [] };
-
 				try {
+					const clientConfig = await resolveClientConfig();
+					if (!clientConfig) return { resources: [] };
 					const client = new RyzomeClient(clientConfig);
 					const result = await client.listDocuments({ inLibraryOnly: true });
 					return {
@@ -272,6 +284,7 @@ export function createRyzomeMcpServer(): McpServer {
 			mimeType: "text/markdown",
 		},
 		async (uri, { id }) => {
+			const clientConfig = await resolveClientConfig();
 			if (!clientConfig) {
 				return {
 					contents: [
@@ -311,6 +324,7 @@ export function createRyzomeMcpServer(): McpServer {
 			mimeType: "application/json",
 		},
 		async (uri) => {
+			const clientConfig = await resolveClientConfig();
 			if (!clientConfig) {
 				return {
 					contents: [
@@ -352,9 +366,9 @@ export function createRyzomeMcpServer(): McpServer {
 		"conversation",
 		new ResourceTemplate("ryzome://conversation/{id}", {
 			list: async () => {
-				if (!clientConfig) return { resources: [] };
-
 				try {
+					const clientConfig = await resolveClientConfig();
+					if (!clientConfig) return { resources: [] };
 					const client = new RyzomeClient(clientConfig);
 					const conversations = await client.listConversations();
 					return {
@@ -375,6 +389,7 @@ export function createRyzomeMcpServer(): McpServer {
 			mimeType: "text/markdown",
 		},
 		async (uri, { id }) => {
+			const clientConfig = await resolveClientConfig();
 			if (!clientConfig) {
 				return {
 					contents: [
