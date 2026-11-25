@@ -261,4 +261,19 @@ describe("conversation tools and API contracts", () => {
 		const result = await client.listConversations();
 		expect(result[0].createdAt).toBe("2026-01-01T00:00:00.000Z");
 	});
+	it("reads context attachment ids stored as BSON ObjectIds", async () => {
+		mockFetch(
+			response([
+				{
+					...conversation,
+					richContext: [{ _type: "document", id: { $oid: contextId } }],
+				},
+			]),
+		);
+		const client = new RyzomeClient(config);
+		const result = await client.listConversations();
+		expect(result[0].richContext).toEqual([
+			{ _type: "document", id: contextId },
+		]);
+	});
 });

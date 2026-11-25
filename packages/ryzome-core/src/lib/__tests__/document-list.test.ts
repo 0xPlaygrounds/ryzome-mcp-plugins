@@ -84,6 +84,13 @@ describe("document list API contract", () => {
 			updatedAt: "2026-01-01T00:00:00Z",
 		});
 	});
+	it("keeps listing when the backend sends a document type the plugin doesn't know yet", async () => {
+		mockResponse({
+			documents: [metadata, { ...metadata, content: { _type: "Spreadsheet" } }],
+		});
+		const result = await new RyzomeClient(config).listDocuments();
+		expect(result.data).toHaveLength(2);
+	});
 	it("accepts an empty envelope", async () => {
 		mockResponse({ documents: [] });
 		expect(await new RyzomeClient(config).listDocuments()).toEqual({

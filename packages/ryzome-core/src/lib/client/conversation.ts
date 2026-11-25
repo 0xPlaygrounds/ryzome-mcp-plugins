@@ -16,15 +16,21 @@ const timestampSchema = z.union([
 		),
 ]);
 
+// Older threads store attachment ids as BSON ObjectIds, which the API returns as { $oid }.
+const attachmentIdSchema = z.union([
+	z.string(),
+	objectIdSchema.transform((value) => value.$oid),
+]);
+
 // NOTE: Manually added — regenerate later from the backend conversation routes.
 export const contextAttachmentSchema = z.discriminatedUnion("_type", [
-	z.object({ _type: z.literal("document"), id: z.string() }),
+	z.object({ _type: z.literal("document"), id: attachmentIdSchema }),
 	z.object({
 		_type: z.literal("publication"),
-		id: z.string(),
+		id: attachmentIdSchema,
 		version: z.string(),
 	}),
-	z.object({ _type: z.literal("file"), id: z.string() }),
+	z.object({ _type: z.literal("file"), id: attachmentIdSchema }),
 ]);
 export type ContextAttachment = z.infer<typeof contextAttachmentSchema>;
 
