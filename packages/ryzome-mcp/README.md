@@ -12,7 +12,7 @@ Get your API key at [ryzome.ai/api-key](https://ryzome.ai/api-key).
 
 ## Sign in with Ryzome OAuth
 
-On Node 24+, a production Ryzome admin can register a native client in **Admin → OAuth Apps** with callback `http://127.0.0.1/oauth/callback`. Allow `documents:read`, `documents:write`, `conversations:read`, `conversations:write`, and `files:write` for the full tool set. The client also requests identity and offline access.
+OAuth sign-in requires Node 24+ and a public client ID from your integration maintainer. The package currently ships without a default production registration. A production Ryzome admin registers a native client in **Admin → OAuth Apps** with callback `http://127.0.0.1/oauth/callback`. Allow `documents:read`, `documents:write`, `conversations:read`, `conversations:write`, and `files:write` for the full tool set. The client also requests identity and offline access.
 
 ```sh
 export RYZOME_OAUTH_CLIENT_ID='<registered production client ID>'

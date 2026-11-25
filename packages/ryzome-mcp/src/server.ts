@@ -199,10 +199,9 @@ export function createRyzomeMcpServer(): McpServer {
 		"canvas",
 		new ResourceTemplate("ryzome://canvas/{id}", {
 			list: async () => {
-				const clientConfig = await resolveClientConfig();
-				if (!clientConfig) return { resources: [] };
-
 				try {
+					const clientConfig = await resolveClientConfig();
+					if (!clientConfig) return { resources: [] };
 					const client = new RyzomeClient(clientConfig);
 					const result = await client.listCanvases();
 					return {
@@ -259,10 +258,9 @@ export function createRyzomeMcpServer(): McpServer {
 		"document",
 		new ResourceTemplate("ryzome://document/{id}", {
 			list: async () => {
-				const clientConfig = await resolveClientConfig();
-				if (!clientConfig) return { resources: [] };
-
 				try {
+					const clientConfig = await resolveClientConfig();
+					if (!clientConfig) return { resources: [] };
 					const client = new RyzomeClient(clientConfig);
 					const result = await client.listDocuments({ inLibraryOnly: true });
 					return {
@@ -366,10 +364,9 @@ export function createRyzomeMcpServer(): McpServer {
 		"conversation",
 		new ResourceTemplate("ryzome://conversation/{id}", {
 			list: async () => {
-				const clientConfig = await resolveClientConfig();
-				if (!clientConfig) return { resources: [] };
-
 				try {
+					const clientConfig = await resolveClientConfig();
+					if (!clientConfig) return { resources: [] };
 					const client = new RyzomeClient(clientConfig);
 					const conversations = await client.listConversations();
 					return {

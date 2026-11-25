@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { mkdirSync, openSync, closeSync } from "node:fs";
+import { mkdirSync, openSync, closeSync, constants, fchmodSync } from "node:fs";
 import { createServer } from "node:http";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -79,6 +79,7 @@ async function authorize(clientId: string) {
 		const url = new URL(issuer + "/oauth2/authorize");
 		url.search = new URLSearchParams({
 			response_type: "code",
+			prompt: "consent",
 			client_id: clientId,
 			redirect_uri: redirect,
 			scope: scopes.join(" "),
@@ -92,7 +93,10 @@ async function authorize(clientId: string) {
 				300000,
 			);
 			server.once("close", () => clearTimeout(timer));
+			let accepted = false;
 			server.on("request", (req, res) => {
+				res.setHeader("Content-Type", "text/plain; charset=utf-8");
+				res.setHeader("Cache-Control", "no-store");
 				const callback = URL.parse(req.url ?? "/", redirect);
 				if (!callback) {
 					res.writeHead(400).end("Invalid callback.");
@@ -102,6 +106,7 @@ async function authorize(clientId: string) {
 				const matches = (name: string, value: string) =>
 					query.getAll(name).length === 1 && query.get(name) === value;
 				if (
+					accepted ||
 					req.method !== "GET" ||
 					req.headers.host !== new URL(redirect).host ||
 					callback.origin + callback.pathname !== redirect ||
@@ -111,20 +116,25 @@ async function authorize(clientId: string) {
 					res.writeHead(400).end("Invalid callback.");
 					return;
 				}
+				accepted = true;
 				const code = query.get("code");
 				if (query.has("error") || !code || query.getAll("code").length !== 1) {
-					res.writeHead(400).end("Authorization declined or incomplete.");
-					reject(new Error("Authorization declined or incomplete."));
+					res
+						.writeHead(400)
+						.end("Authorization declined or incomplete.", () =>
+							reject(new Error("Authorization declined or incomplete.")),
+						);
 					return;
 				}
-				res.end("Return to your terminal to finish sign-in.");
-				resolve(code);
+				res.end("Return to your terminal to finish sign-in.", () =>
+					resolve(code),
+				);
 			});
 			console.error(
 				"Open this link in a browser on this computer:\n" + url.href,
 			);
 		});
-		return await exchange(
+		return exchange(
 			{
 				grant_type: "authorization_code",
 				client_id: clientId,
@@ -147,7 +157,26 @@ function store() {
 	const dir = join(homedir(), ".ryzome-mcp");
 	mkdirSync(dir, { mode: 0o700, recursive: true });
 	const file = join(dir, "oauth.sqlite");
-	closeSync(openSync(file, "a", 0o600));
+	if (process.platform === "win32") {
+		closeSync(openSync(file, "a", 0o600));
+	} else {
+		const dirFd = openSync(dir, constants.O_DIRECTORY | constants.O_NOFOLLOW);
+		try {
+			fchmodSync(dirFd, 0o700);
+		} finally {
+			closeSync(dirFd);
+		}
+		const fd = openSync(
+			file,
+			constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW,
+			0o600,
+		);
+		try {
+			fchmodSync(fd, 0o600);
+		} finally {
+			closeSync(fd);
+		}
+	}
 	const db = new DatabaseSync(file);
 	db.exec(
 		"PRAGMA busy_timeout=1000; PRAGMA secure_delete=ON; CREATE TABLE IF NOT EXISTS grants (client TEXT PRIMARY KEY, value TEXT NOT NULL)",
@@ -202,8 +231,14 @@ export async function accessToken(clientId: string): Promise<string> {
 				);
 				throw new Error("OAuth refresh failed. " + reconnect);
 			}
-			if (replace.run(JSON.stringify(fresh), clientId, claim).changes)
-				return fresh.access;
+			if (!fresh.refresh) fresh.spentRefresh = saved.refresh;
+			try {
+				if (replace.run(JSON.stringify(fresh), clientId, claim).changes)
+					return fresh.access;
+			} catch (error) {
+				await revoke(clientId, fresh);
+				throw error;
+			}
 			await revoke(clientId, fresh);
 		}
 	} finally {
@@ -238,15 +273,16 @@ export async function oauthCommand(
 			console.error("Signed out.");
 			return;
 		}
+		const readPrevious = db.prepare("SELECT value FROM grants WHERE client=?");
 		const saved = await authorize(clientId);
 		if (!identity.every((s) => saved.scope.split(" ").includes(s))) {
 			await revoke(clientId, saved);
 			throw new Error("Ryzome API access requires openid, profile and email.");
 		}
-		db.exec("BEGIN IMMEDIATE");
-		const readPrevious = db.prepare("SELECT value FROM grants WHERE client=?");
+
 		let previous: ReturnType<typeof readPrevious.get>;
 		try {
+			db.exec("BEGIN IMMEDIATE");
 			previous = readPrevious.get(clientId);
 			db.prepare("INSERT OR REPLACE INTO grants VALUES (?,?)").run(
 				clientId,
@@ -254,13 +290,23 @@ export async function oauthCommand(
 			);
 			db.exec("COMMIT");
 		} catch (error) {
-			db.exec("ROLLBACK");
-			await revoke(clientId, saved);
+			try {
+				if (db.isTransaction) db.exec("ROLLBACK");
+			} finally {
+				await revoke(clientId, saved);
+			}
 			throw error;
 		}
-		if (typeof previous?.value === "string")
-			await revoke(clientId, grant.parse(JSON.parse(previous.value)));
 		console.error("Signed in. Granted scopes: " + saved.scope);
+		if (typeof previous?.value === "string") {
+			try {
+				await revoke(clientId, grant.parse(JSON.parse(previous.value)));
+			} catch {
+				console.error(
+					"The new login is active. Ryzome could not confirm revocation of the previous tokens.",
+				);
+			}
+		}
 	} finally {
 		db.close();
 	}

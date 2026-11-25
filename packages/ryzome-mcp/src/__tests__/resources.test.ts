@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -111,6 +114,23 @@ describe("MCP resources", () => {
 	afterEach(() => {
 		process.env = originalEnv;
 		vi.restoreAllMocks();
+	});
+
+	it("lists the static resources before OAuth sign-in", async () => {
+		const dir = await mkdtemp(join(tmpdir(), "ryzome-resources-"));
+		process.env = { HOME: dir, RYZOME_OAUTH_CLIENT_ID: "test-client" };
+		try {
+			const { client } = await createConnectedClient();
+			const result = await client.listResources();
+			expect(result.resources.map((resource) => resource.uri).sort()).toEqual([
+				"ryzome://canvases",
+				"ryzome://conversations",
+				"ryzome://documents",
+			]);
+			await client.close();
+		} finally {
+			await rm(dir, { recursive: true, force: true });
+		}
 	});
 
 	it("lists resources including canvas-list and canvas template", async () => {
